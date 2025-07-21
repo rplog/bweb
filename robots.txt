@@ -1,2 +1,4 @@
 User-agent: *
-Disallow: /contact
+Disallow:
+
+Sitemap: https://bahauddin.in/sitemap.xml

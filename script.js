@@ -10,7 +10,7 @@ output.innerHTML = `<div>${welcomeMessage}</div>`;
 
 const commands = {
     whoami: 'Neo',
-    ls: '<a href="gallery.html">gallery</a> <a href="about.html">about</a> <a href="contact.html">contact</a>',
+    ls: '<a href="/gallery/">gallery</a> <a href="/about/">about</a> <a href="/contact/">contact</a>',
     help: 'Available commands: whoami, ls, help, clear, date, ping, sudo, matrix, weather, joke, cd',
     date: () => new Date().toString(),
     ping: 'pong',
@@ -27,7 +27,7 @@ function clearTerminal() {
 
 function handleCd(arg) {
     if (arg === 'gallery' || arg === 'about' || arg === 'contact') {
-        window.location.href = `${arg}.html`;
+        window.location.href = `/${arg}/`;
         return `Navigating to ${arg}...`;
     }
     return `cd: no such file or directory: ${arg}`;

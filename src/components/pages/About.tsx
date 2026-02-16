@@ -112,7 +112,7 @@ export const About: React.FC<AboutProps> = ({ onExit, onNavigate }) => {
                                         My work focuses on creating seamless user experiences with cutting-edge web
                                         technologies, always pushing the boundaries of what's possible in the browser.
                                     </p>
-                                    <p className="text-elegant-text-muted text-xs font-mono mt-4 pt-4 border-t border-elegant-border">
+                                    <p className="text-elegant-accent text-xs font-mono mt-4 pt-4 border-t border-elegant-border">
                                         $ whoami → Building the future, one commit at a time.
                                     </p>
                                 </div>

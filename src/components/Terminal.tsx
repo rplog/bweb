@@ -45,7 +45,7 @@ export const Terminal: React.FC = () => {
         <div className="w-full h-full relative">
             {/* Full Screen Component Layer */}
             {activeComponent && (
-                <div className="absolute inset-0 z-50 bg-elegant-bg text-elegant-text-primary font-mono text-base p-4 overflow-hidden">
+                <div className="fixed inset-0 z-50 bg-elegant-bg text-elegant-text-primary font-mono text-base p-4 overflow-hidden">
                     {activeComponent}
                 </div>
             )}

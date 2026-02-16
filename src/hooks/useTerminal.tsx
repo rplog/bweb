@@ -1,7 +1,8 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { commands } from '../utils/commands';
 import { initialFileSystem } from '../utils/fileSystem';
 import { resolvePath, resolvePathArray } from '../utils/fileSystemUtils';
+import { ROUTES } from '../utils/routes';
 import React from 'react';
 
 export interface TerminalOutput {
@@ -28,6 +29,7 @@ export const useTerminal = () => {
     const [activeComponent, setActiveComponent] = useState<React.ReactNode | null>(null);
     const [isInputVisible, setIsInputVisible] = useState(true);
     const [fileSystem, setFileSystem] = useState(initialFileSystem);
+    const [initialized, setInitialized] = useState(false);
 
     const getPromptPath = useCallback(() => {
         const pathStr = '/' + currentPath.join('/');
@@ -54,15 +56,31 @@ export const useTerminal = () => {
         setHistory([]);
     }, []);
 
-    const execute = async (commandStr: string) => {
+    // Wrapper to update URL when setting full screen
+    const setFullScreenWithRoute = useCallback((component: React.ReactNode | null, path?: string) => {
+        setActiveComponent(component);
+        if (path) {
+            if (window.location.pathname !== path) {
+                window.history.pushState({}, '', path);
+            }
+        } else if (component === null) {
+            if (window.location.pathname !== '/') {
+                window.history.pushState({}, '', '/');
+            }
+        }
+    }, []);
+
+    const execute = async (commandStr: string, isInitialLoad = false) => {
         const trimmed = commandStr.trim();
         if (!trimmed) {
-            addToHistory(trimmed, '');
+            if (!isInitialLoad) addToHistory(trimmed, '');
             return;
         }
 
-        // Add to input history
-        setInputHistory((prev) => [...prev, trimmed]);
+        // Add to input history only if user typed it
+        if (!isInitialLoad) {
+            setInputHistory((prev) => [...prev, trimmed]);
+        }
 
         const [cmdName, ...args] = trimmed.split(' ');
 
@@ -72,8 +90,7 @@ export const useTerminal = () => {
         }
 
         if (cmdName === 'cd') {
-            // Handle CD locally for now as it needs state access
-            // TODO: Move to commands.ts with context if it gets complex
+            // Handle CD locally
             if (args.length === 0) {
                 setCurrentPath(['home', 'neo']);
                 addToHistory(trimmed, '');
@@ -99,15 +116,15 @@ export const useTerminal = () => {
             try {
                 const context = {
                     currentPath,
-                    setFullScreen: setActiveComponent,
+                    setFullScreen: setFullScreenWithRoute,
                     setIsInputVisible,
                     fileSystem,
                     setFileSystem
                 };
                 const result = await cmd.execute(args, context);
-                // If the command set a fullscreen component, we don't add to history yet (or we add empty)
-                // Actually if it returns null/undefined we might skip?
-                // For now, if result is provided, we show it.
+
+                // If the command returned active component (via context), we might not want to show output?
+                // But for "about", "gallery", etc, they return string '' or null usually.
                 if (result) {
                     addToHistory(trimmed, result);
                 }
@@ -119,19 +136,46 @@ export const useTerminal = () => {
         }
     };
 
+    // Handle initial routing and popstate
+    useEffect(() => {
+        if (!initialized) {
+            const path = window.location.pathname;
+            const command = ROUTES[path];
+            if (command) {
+                execute(command, true);
+            }
+            setInitialized(true);
+        }
+
+        const handlePopState = () => {
+            const path = window.location.pathname;
+            if (path === '/') {
+                setActiveComponent(null);
+            } else {
+                const command = ROUTES[path];
+                if (command) {
+                    // We just re-execute to open the modal
+                    // Pass true to avoid polluting history? Or false to show "user navigated"?
+                    // Let's pass true to keep it clean on back button
+                    execute(command, true);
+                }
+            }
+        };
+
+        window.addEventListener('popstate', handlePopState);
+        return () => window.removeEventListener('popstate', handlePopState);
+    }, [initialized, execute]); // dependencies should be stable
+
     const handleTabCompletion = (input: string): string => {
         if (!input) return '';
-
         const [cmd, ...args] = input.split(' ');
 
-        // Command completion
         if (args.length === 0 && !input.endsWith(' ')) {
             const matches = Object.keys(commands).filter(c => c.startsWith(cmd));
             if (matches.length === 1) return matches[0] + ' ';
             return input;
         }
 
-        // File/Directory completion
         if (['cd', 'cat', 'ls', 'nano'].includes(cmd)) {
             const partialName = args[args.length - 1] || '';
             const node = resolvePath(fileSystem, currentPath, '.');
@@ -142,15 +186,12 @@ export const useTerminal = () => {
 
                 if (matches.length === 1) {
                     const completed = matches[0];
-                    // Reconstruct input
                     const newArgs = [...args];
                     newArgs[newArgs.length - 1] = completed;
                     return `${cmd} ${newArgs.join(' ')}`;
-                    // Note: Could add trailing slash for dirs if we check type
                 }
             }
         }
-
         return input;
     };
 
@@ -162,11 +203,11 @@ export const useTerminal = () => {
         addToHistory,
         setCurrentPath,
         getPromptPath,
-        execute,
+        execute: (cmd: string) => execute(cmd), // Simple wrapper
         clearHistory,
         activeComponent,
         isInputVisible,
-        handleTabCompletion, // Exported
+        handleTabCompletion,
         fileSystem,
         setFileSystem
     };

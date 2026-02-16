@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Spotlight } from '../Spotlight';
+import { PageHeader } from '../PageHeader';
 import { Send, User, Mail, MessageSquare } from 'lucide-react';
 
 interface ContactProps {
@@ -8,53 +9,118 @@ interface ContactProps {
 }
 
 export const Contact: React.FC<ContactProps> = ({ onExit, onNavigate }) => {
+    const [formData, setFormData] = useState({ name: '', email: '', message: '' });
+
     const handleNavigate = (dest: string) => {
         if (dest === 'Terminal') onExit();
         else if (onNavigate) onNavigate(dest);
     };
 
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        alert(`Message sent!\nName: ${formData.name}\nEmail: ${formData.email}\nMessage: ${formData.message}`);
+        setFormData({ name: '', email: '', message: '' });
+    };
+
     return (
-        <div className="h-full w-full bg-black text-gray-300 p-8 overflow-y-auto font-mono flex items-center justify-center selection:bg-white/20">
-            <Spotlight onNavigate={handleNavigate} />
+        <div className="h-full w-full bg-black text-gray-300 font-mono selection:bg-white/20 overflow-y-auto lg:overflow-hidden">
+            <div className="h-full flex flex-col">
+                <Spotlight onNavigate={handleNavigate} />
+                <PageHeader currentPath="contact" onNavigate={handleNavigate} className="shrink-0" />
 
-            <div className="max-w-md w-full bg-[#0a0a0a] p-10 rounded-xl border border-[#222] shadow-2xl relative">
-
-                <h2 className="text-3xl font-bold mb-8 text-gray-200 flex items-center gap-3">
-                    <Send size={28} className="text-gray-200" />
-                    <span>Signal Uplink</span>
-                </h2>
-
-                <div className="space-y-6">
-                    <div className="relative">
-                        <label className="block text-xs uppercase text-gray-500 mb-2 font-bold tracking-wider">Identity</label>
-                        <div className="relative">
-                            <User size={16} className="absolute left-3 top-3 text-gray-600" />
-                            <input type="text" className="w-full bg-[#111] border border-[#333] rounded-lg pl-10 pr-4 py-3 text-gray-200 outline-none focus:border-white/40 transition-colors placeholder-gray-700" placeholder="Codename" />
-                        </div>
-                    </div>
-                    <div className="relative">
-                        <label className="block text-xs uppercase text-gray-500 mb-2 font-bold tracking-wider">Frequency</label>
-                        <div className="relative">
-                            <Mail size={16} className="absolute left-3 top-3 text-gray-600" />
-                            <input type="email" className="w-full bg-[#111] border border-[#333] rounded-lg pl-10 pr-4 py-3 text-gray-200 outline-none focus:border-white/40 transition-colors placeholder-gray-700" placeholder="frequency@net.io" />
-                        </div>
-                    </div>
-                    <div className="relative">
-                        <label className="block text-xs uppercase text-gray-500 mb-2 font-bold tracking-wider">Packet Data</label>
-                        <div className="relative">
-                            <MessageSquare size={16} className="absolute left-3 top-3 text-gray-600" />
-                            <textarea className="w-full bg-[#111] border border-[#333] rounded-lg pl-10 pr-4 py-3 text-gray-200 h-32 outline-none focus:border-white/40 transition-colors resize-none placeholder-gray-700" placeholder="Transmit your message..."></textarea>
-                        </div>
+                {/* Main Content */}
+                <main className="flex-1 max-w-2xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 h-full flex flex-col justify-center">
+                    {/* Breadcrumbs */}
+                    <div className="mb-6 text-base font-semibold text-gray-600 flex items-center gap-2 shrink-0">
+                        <button
+                            onClick={() => onExit()}
+                            className="hover:text-gray-300 transition-colors hover:underline decoration-gray-600 underline-offset-4"
+                        >
+                            ~
+                        </button>
+                        <span>/</span>
+                        <span className="text-gray-300 font-bold">contact</span>
                     </div>
 
-                    <button className="w-full bg-gray-200 text-black font-bold py-3 rounded-lg hover:bg-gray-300 transition-colors flex items-center justify-center gap-2 mt-2">
-                        <Send size={18} /> Establish Connection
-                    </button>
-                </div>
+                    <div className="bg-[#0a0a0a] border border-gray-800 rounded-sm p-6 shadow-2xl">
+                        <div className="flex items-center gap-3 mb-6">
+                            <Send className="text-gray-500" size={20} />
+                            <h2 className="text-xl font-bold text-white">Send Message</h2>
+                        </div>
 
-                <div className="mt-8 text-center text-[10px] text-gray-600 uppercase tracking-widest">
-                    Secured via AES-256 • Press <span className="text-gray-200">L</span> to disconnect
-                </div>
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs text-gray-500 mb-1.5">
+                                        Name <span className="text-gray-700">*</span>
+                                    </label>
+                                    <div className="relative">
+                                        <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-600" />
+                                        <input
+                                            type="text"
+                                            required
+                                            value={formData.name}
+                                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                            className="w-full bg-black border border-gray-800 rounded-sm pl-10 pr-3 py-2.5 text-sm text-white outline-none focus:outline-none focus:ring-0 focus:border-gray-600 transition-all placeholder-gray-700"
+                                            placeholder="Enter your name"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs text-gray-500 mb-1.5">
+                                        Email <span className="text-gray-700">*</span>
+                                    </label>
+                                    <div className="relative">
+                                        <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-600" />
+                                        <input
+                                            type="email"
+                                            required
+                                            value={formData.email}
+                                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                            className="w-full bg-black border border-gray-800 rounded-sm pl-10 pr-3 py-2.5 text-sm text-white outline-none focus:outline-none focus:ring-0 focus:border-gray-600 transition-all placeholder-gray-700"
+                                            placeholder="your.email@example.com"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-xs text-gray-500 mb-1.5">
+                                    Message <span className="text-gray-700">*</span>
+                                </label>
+                                <div className="relative">
+                                    <MessageSquare size={16} className="absolute left-3 top-3 text-gray-600" />
+                                    <textarea
+                                        required
+                                        value={formData.message}
+                                        onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                                        rows={5}
+                                        className="w-full bg-black border border-gray-800 rounded-sm pl-10 pr-3 py-2.5 text-sm text-white outline-none focus:outline-none focus:ring-0 focus:border-gray-600 transition-all resize-none placeholder-gray-700"
+                                        placeholder="Write your message here..."
+                                    />
+                                </div>
+                            </div>
+
+                            <button
+                                type="submit"
+                                className="w-full bg-gray-800 hover:bg-gray-700 text-gray-200 font-bold py-2.5 px-6 rounded-sm transition-all duration-300 flex items-center justify-center gap-2 border border-gray-700 text-sm"
+                            >
+                                <Send size={16} />
+                                Send Message
+                            </button>
+                        </form>
+                    </div>
+                </main>
+
+                {/* Footer */}
+                <footer className="border-t border-gray-900 bg-black py-2 mt-auto shrink-0">
+                    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+                        <p className="text-xs text-gray-800 text-center font-mono">
+                            neosphere v2.0
+                        </p>
+                    </div>
+                </footer>
             </div>
         </div>
     );

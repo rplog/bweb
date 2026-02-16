@@ -190,10 +190,30 @@ export const commands: Record<string, Command> = {
             if (args.length === 0) return 'Usage: weather <city>';
             const city = args.join(' ');
             try {
-                // TODO: Replace with real API call or proxy
-                // Simulating API delay
-                await new Promise(r => setTimeout(r, 1000));
-                return `Weather for ${city}: 22°C, Scattered Clouds (Simulated)`;
+                const res = await fetch(`/api/weather?city=${encodeURIComponent(city)}`);
+
+                if (res.status === 404) return `Error: City '${city}' not found.`;
+                if (!res.ok) return `Error: ${await res.text()}`;
+
+                const data = await res.json();
+                const temp = Math.round(data.main.temp);
+                const desc = data.weather[0].description;
+                const humidity = data.main.humidity;
+                const wind = data.wind.speed;
+                const country = data.sys.country;
+                const name = data.name;
+
+                return (
+                    <div className="text-sm">
+                        <div className="text-cyan-400 font-bold mb-1">Weather Report: {name}, {country}</div>
+                        <div className="grid grid-cols-2 gap-x-4 gap-y-1 max-w-xs text-gray-300">
+                            <span>Temperature:</span> <span className="text-white">{temp}°C</span>
+                            <span>Condition:</span> <span className="text-white capitalize">{desc}</span>
+                            <span>Humidity:</span> <span className="text-white">{humidity}%</span>
+                            <span>Wind:</span> <span className="text-white">{wind} m/s</span>
+                        </div>
+                    </div>
+                );
             } catch (e) {
                 return `Error fetching weather for ${city}`;
             }
@@ -224,12 +244,15 @@ export const commands: Record<string, Command> = {
         description: 'Nano text editor',
         usage: 'nano <filename>',
         execute: (args, { setFullScreen, currentPath, fileSystem, setFileSystem }) => {
-            if (args.length === 0) return 'nano: filename missing';
-            const filename = args[0];
+            // Allow opening without filename
+            const filename = args.length > 0 ? args[0] : undefined;
 
             // Resolve file content if it exists
-            const node = resolvePath(fileSystem, currentPath, filename);
-            const initialContent = (node && node.type === 'file') ? (node.content || '') : '';
+            let initialContent = '';
+            if (filename) {
+                const node = resolvePath(fileSystem, currentPath, filename);
+                initialContent = (node && node.type === 'file') ? (node.content || '') : '';
+            }
 
             if (setFullScreen) {
                 setFullScreen(
@@ -237,12 +260,14 @@ export const commands: Record<string, Command> = {
                         filename={filename}
                         initialContent={initialContent}
                         onSave={(newContent) => {
-                            if (setFileSystem) {
-                                // Write to FS
-                                // Note: writeFile currently only supports writing to current directory easily
-                                // We might need to handle 'resolvePath' equivalent for writing if filename has paths
-                                // For now passed filename is assumed to be in current dir if simplistic
+                            if (setFileSystem && filename) {
                                 const newFS = writeFile(fileSystem, currentPath, filename, newContent);
+                                setFileSystem(newFS);
+                            }
+                        }}
+                        onSaveAs={(newFilename, newContent) => {
+                            if (setFileSystem) {
+                                const newFS = writeFile(fileSystem, currentPath, newFilename, newContent);
                                 setFileSystem(newFS);
                             }
                         }}
@@ -260,9 +285,9 @@ export const commands: Record<string, Command> = {
             if (setFullScreen) {
                 const navigate = (dest: string) => {
                     if (dest === 'Terminal') setFullScreen(null);
-                    else if (dest === 'Gallery') setFullScreen(<Gallery onExit={() => setFullScreen(null)} onNavigate={navigate} />);
-                    else if (dest === 'About') setFullScreen(<About onExit={() => setFullScreen(null)} onNavigate={navigate} />);
-                    else if (dest === 'Contact') setFullScreen(<Contact onExit={() => setFullScreen(null)} onNavigate={navigate} />);
+                    else if (dest === 'Gallery') setFullScreen(<Gallery onExit={() => setFullScreen(null)} onNavigate={navigate} />, '/gallery');
+                    else if (dest === 'About') setFullScreen(<About onExit={() => setFullScreen(null)} onNavigate={navigate} />, '/about');
+                    else if (dest === 'Contact') setFullScreen(<Contact onExit={() => setFullScreen(null)} onNavigate={navigate} />, '/contact');
                 };
                 navigate('Gallery');
                 return '';
@@ -276,9 +301,9 @@ export const commands: Record<string, Command> = {
             if (setFullScreen) {
                 const navigate = (dest: string) => {
                     if (dest === 'Terminal') setFullScreen(null);
-                    else if (dest === 'Gallery') setFullScreen(<Gallery onExit={() => setFullScreen(null)} onNavigate={navigate} />);
-                    else if (dest === 'About') setFullScreen(<About onExit={() => setFullScreen(null)} onNavigate={navigate} />);
-                    else if (dest === 'Contact') setFullScreen(<Contact onExit={() => setFullScreen(null)} onNavigate={navigate} />);
+                    else if (dest === 'Gallery') setFullScreen(<Gallery onExit={() => setFullScreen(null)} onNavigate={navigate} />, '/gallery');
+                    else if (dest === 'About') setFullScreen(<About onExit={() => setFullScreen(null)} onNavigate={navigate} />, '/about');
+                    else if (dest === 'Contact') setFullScreen(<Contact onExit={() => setFullScreen(null)} onNavigate={navigate} />, '/contact');
                 };
                 navigate('About');
                 return '';
@@ -292,9 +317,9 @@ export const commands: Record<string, Command> = {
             if (setFullScreen) {
                 const navigate = (dest: string) => {
                     if (dest === 'Terminal') setFullScreen(null);
-                    else if (dest === 'Gallery') setFullScreen(<Gallery onExit={() => setFullScreen(null)} onNavigate={navigate} />);
-                    else if (dest === 'About') setFullScreen(<About onExit={() => setFullScreen(null)} onNavigate={navigate} />);
-                    else if (dest === 'Contact') setFullScreen(<Contact onExit={() => setFullScreen(null)} onNavigate={navigate} />);
+                    else if (dest === 'Gallery') setFullScreen(<Gallery onExit={() => setFullScreen(null)} onNavigate={navigate} />, '/gallery');
+                    else if (dest === 'About') setFullScreen(<About onExit={() => setFullScreen(null)} onNavigate={navigate} />, '/about');
+                    else if (dest === 'Contact') setFullScreen(<Contact onExit={() => setFullScreen(null)} onNavigate={navigate} />, '/contact');
                 };
                 navigate('Contact');
                 return '';

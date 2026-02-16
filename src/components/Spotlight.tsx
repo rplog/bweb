@@ -75,7 +75,7 @@ export const Spotlight: React.FC<SpotlightProps> = ({ onNavigate }) => {
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-start justify-center pt-[20vh] font-mono" onClick={() => setIsOpen(false)}>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-[2px] z-50 flex items-center justify-center font-mono" onClick={() => setIsOpen(false)}>
             <div
                 className="w-full max-w-xl bg-black border border-[#333] rounded-xl shadow-2xl overflow-hidden flex flex-col box-border ring-1 ring-white/10"
                 onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside

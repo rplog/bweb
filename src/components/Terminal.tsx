@@ -3,6 +3,7 @@ import { useTerminal } from '../hooks/useTerminal';
 import type { CommandInputHandle } from './CommandInput';
 import { CommandInput } from './CommandInput';
 import { OutputDisplay } from './OutputDisplay';
+import { Minus, Square, X } from 'lucide-react';
 
 export const Terminal: React.FC = () => {
     const {
@@ -41,15 +42,22 @@ export const Terminal: React.FC = () => {
 
             {/* Terminal Layer - Hidden but mounted when activeComponent exists */}
             <div className={`flex flex-col h-full w-full ${activeComponent ? 'invisible' : ''}`}>
-                {/* Top Bar - Moved from App.tsx */}
-                <div className="w-full h-10 bg-[#1a1a1a] flex items-center px-4 justify-between border-b border-[#333] flex-shrink-0">
-                    <div className="flex gap-2">
-                        <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                        <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-                        <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                {/* Top Bar - KDE / Linux Style */}
+                <div className="w-full h-10 bg-[#1a1a1a] flex items-center px-4 justify-end border-b border-[#333] flex-shrink-0 select-none relative">
+                    <div className="absolute left-1/2 transform -translate-x-1/2 text-gray-400 text-sm font-mono">
+                        neo@neosphere:~
                     </div>
-                    <div className="text-gray-400 text-sm font-mono">neo@neosphere:~</div>
-                    <div className="w-10"></div>
+                    <div className="flex gap-3 relative z-10">
+                        <div className="p-1.5 hover:bg-white/10 rounded-full transition-colors cursor-pointer text-gray-500 hover:text-white" title="Minimize">
+                            <Minus size={14} />
+                        </div>
+                        <div className="p-1.5 hover:bg-white/10 rounded-full transition-colors cursor-pointer text-gray-500 hover:text-white" title="Maximize">
+                            <Square size={12} />
+                        </div>
+                        <div className="p-1.5 hover:bg-red-500 hover:text-white rounded-full transition-colors cursor-pointer text-gray-500" title="Close">
+                            <X size={14} />
+                        </div>
+                    </div>
                 </div>
 
                 <div

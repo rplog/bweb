@@ -58,12 +58,24 @@ export const commands: Record<string, Command> = {
     fastfetch: {
         description: 'Display system information (fast)',
         execute: () => {
-            // Calculate uptime
-            const uptimeSec = Math.floor(performance.now() / 1000);
-            const days = Math.floor(uptimeSec / 86400);
-            const hours = Math.floor((uptimeSec % 86400) / 3600);
-            const mins = Math.floor((uptimeSec % 3600) / 60);
-            const uptimeStr = `${days} days, ${hours} hours, ${mins} mins`;
+            // Simulate realistic uptime (45 days since that's what the server shows)
+            const baseDays = 45;
+            const baseHours = 10;
+            const baseMins = 38;
+
+            // Add some variation based on current time
+            const now = new Date();
+            const extraMins = now.getMinutes();
+            const extraHours = now.getHours() % 12;
+
+            const totalMins = baseMins + extraMins;
+            const totalHours = baseHours + extraHours + Math.floor(totalMins / 60);
+            const totalDays = baseDays + Math.floor(totalHours / 24);
+
+            const finalMins = totalMins % 60;
+            const finalHours = totalHours % 24;
+
+            const uptimeStr = `${totalDays} days, ${finalHours} hours, ${finalMins} mins`;
 
             // Calculate memory (simulated)
             const memUsed = 4.2;
@@ -71,70 +83,71 @@ export const commands: Record<string, Command> = {
             const memPercent = Math.round((memUsed / memTotal) * 100);
 
             return (
-                <div className="flex gap-6 font-mono text-sm leading-relaxed">
-                    {/* Ubuntu ASCII Art */}
-                    <div className="hidden md:block text-orange-500 whitespace-pre select-none flex-shrink-0" style={{ fontSize: '10px', lineHeight: '1.1' }}>
-{`         .,,:clooo:  .:looooo:.
-     .;looooooooc .oooooooooo'
-   .,looooool:,''   :ooooooooooc
-  ;looool;:.      'oooooooooo,
- ;clool'           .cooooooc.  ,,
-   ...               .....   ,:oo,
-  :clol:,.                 .looooo'
-.:oooooooo,               'oooool
-'ooooooooooo.              loooo.
-'ooooooooool               coooo.
- ,looooooooc.             .loooo.
-  .,,,, .                ;oooooc
-       ...             ,ooool.
-      .cooooc.      '  ,cooo.
-        ;ooooo:.     :ooooooc.  :l.
-         .coooooc,.. cooooooooo.
-           .:ooooooolc:. .oooooooooo'
-              '!:looooo:  ,ooooooooc
-                  .. ;::c'  .:loooo:`}</div>
+                <div className="flex gap-6 font-mono text-sm leading-tight">
+                    {/* Arch Linux ASCII Art */}
+                    <div className="hidden md:block text-cyan-400 whitespace-pre select-none flex-shrink-0 text-xs leading-tight">
+                        {`                   -\`
+                  .o+\`
+                 \`ooo/
+                \`+oooo:
+               \`+oooooo:
+               -+oooooo+:
+             \`/:-:++oooo+:
+            \`/++++/+++++++:
+           \`/++++++++++++++:
+          \`/+++ooooooooooooo/\`
+         ./ooosssso++osssssso+\`
+        .oossssso-\`\`\`\`/ossssss+\`
+       -osssssso.      :ssssssso.
+      :osssssss/        osssso+++.
+     /ossssssss/        +ssssooo/-
+   \`/ossssso+/:-        -:/+osssso+-
+  \`+sso+:-\`                 \`.-/+oso:
+ \`++:.                           \`-/+/
+ .\`                                 \`/`}
+                    </div>
 
                     {/* System Information */}
-                    <div className="flex flex-col justify-center space-y-0.5 text-white flex-1 min-w-0">
-                        <div className="mb-1">
-                            <span className="text-orange-500 font-bold">neo@neosphere</span>
+                    <div className="flex flex-col justify-center space-y-0 text-white flex-1 min-w-0 text-sm">
+                        <div className="mb-0.5">
+                            <span className="text-cyan-400 font-bold">neo@neosphere</span>
                         </div>
-                        <div className="text-orange-500 mb-1">{'─'.repeat(17)}</div>
+                        <div className="text-cyan-400 mb-1">{'─'.repeat(17)}</div>
 
-                        <div><span className="text-orange-500 font-bold">OS:</span> <span className="text-gray-300">Neosphere OS v2.0 LTS x86_64</span></div>
-                        <div><span className="text-orange-500 font-bold">Host:</span> <span className="text-gray-300">Cloudflare Pages (Virtual)</span></div>
-                        <div><span className="text-orange-500 font-bold">Kernel:</span> <span className="text-gray-300">Linux 6.8.0-matrix-generic</span></div>
-                        <div><span className="text-orange-500 font-bold">Uptime:</span> <span className="text-gray-300">{uptimeStr}</span></div>
-                        <div><span className="text-orange-500 font-bold">Packages:</span> <span className="text-gray-300">1337 (npm), 42 (cargo)</span></div>
-                        <div><span className="text-orange-500 font-bold">Shell:</span> <span className="text-gray-300">react-bash 1.0.0</span></div>
-                        <div><span className="text-orange-500 font-bold">Terminal:</span> <span className="text-gray-300">/dev/web/0</span></div>
-                        <div><span className="text-orange-500 font-bold">CPU:</span> <span className="text-gray-300">8 x Virtual Core @ 3.40 GHz</span></div>
-                        <div><span className="text-orange-500 font-bold">GPU:</span> <span className="text-gray-300">WebGL 2.0 Renderer</span></div>
-                        <div><span className="text-orange-500 font-bold">Memory:</span> <span className="text-gray-300">{memUsed.toFixed(2)} GiB / {memTotal.toFixed(2)} GiB ({memPercent}%)</span></div>
-                        <div><span className="text-orange-500 font-bold">Disk (/):</span> <span className="text-gray-300">Virtual Storage</span></div>
-                        <div><span className="text-orange-500 font-bold">Local IP:</span> <span className="text-gray-300">127.0.0.1</span></div>
-                        <div><span className="text-orange-500 font-bold">Locale:</span> <span className="text-gray-300">en_US.UTF-8</span></div>
+                        <div><span className="text-cyan-400 font-bold">OS:</span> <span className="text-gray-300">Neosphere OS v2.0 LTS x86_64</span></div>
+                        <div><span className="text-cyan-400 font-bold">Host:</span> <span className="text-gray-300">Cloudflare Workers (Virtual)</span></div>
+                        <div><span className="text-cyan-400 font-bold">Kernel:</span> <span className="text-gray-300">6.8.0-matrix-generic</span></div>
+                        <div><span className="text-cyan-400 font-bold">Uptime:</span> <span className="text-gray-300">{uptimeStr}</span></div>
+                        <div><span className="text-cyan-400 font-bold">Packages:</span> <span className="text-gray-300">1337 (pacman), 42 (cargo)</span></div>
+                        <div><span className="text-cyan-400 font-bold">Shell:</span> <span className="text-gray-300">bash 5.2.21</span></div>
+                        <div><span className="text-cyan-400 font-bold">Terminal:</span> <span className="text-gray-300">/dev/pts/0</span></div>
+                        <div><span className="text-cyan-400 font-bold">CPU:</span> <span className="text-gray-300">8 x Virtual Core @ 3.40 GHz</span></div>
+                        <div><span className="text-cyan-400 font-bold">GPU:</span> <span className="text-gray-300">WebGL 2.0 Renderer</span></div>
+                        <div><span className="text-cyan-400 font-bold">Memory:</span> <span className="text-gray-300">{memUsed.toFixed(2)} GiB / {memTotal.toFixed(2)} GiB ({memPercent}%)</span></div>
+                        <div><span className="text-cyan-400 font-bold">Disk (/):</span> <span className="text-gray-300">40.11 GiB / 95.82 GiB (42%)</span></div>
+                        <div><span className="text-cyan-400 font-bold">Local IP:</span> <span className="text-gray-300">10.0.0.100</span></div>
+                        <div><span className="text-cyan-400 font-bold">Locale:</span> <span className="text-gray-300">en_US.UTF-8</span></div>
 
                         {/* Color Palette */}
-                        <div className="mt-3 flex gap-1.5">
-                            <div className="w-8 h-4 bg-gray-700"></div>
-                            <div className="w-8 h-4 bg-red-500"></div>
-                            <div className="w-8 h-4 bg-green-500"></div>
-                            <div className="w-8 h-4 bg-yellow-500"></div>
-                            <div className="w-8 h-4 bg-blue-500"></div>
-                            <div className="w-8 h-4 bg-purple-500"></div>
-                            <div className="w-8 h-4 bg-cyan-500"></div>
-                            <div className="w-8 h-4 bg-gray-300"></div>
+                        <div className="mt-2 flex gap-1">
+                            <div className="w-6 h-3 bg-gray-800"></div>
+                            <div className="w-6 h-3 bg-red-600"></div>
+                            <div className="w-6 h-3 bg-green-600"></div>
+                            <div className="w-6 h-3 bg-yellow-600"></div>
+                            <div className="w-6 h-3 bg-blue-600"></div>
+                            <div className="w-6 h-3 bg-purple-600"></div>
+                            <div className="w-6 h-3 bg-cyan-600"></div>
+                            <div className="w-6 h-3 bg-gray-400"></div>
                         </div>
-                        <div className="flex gap-1.5">
-                            <div className="w-8 h-4 bg-gray-500"></div>
-                            <div className="w-8 h-4 bg-red-400"></div>
-                            <div className="w-8 h-4 bg-green-400"></div>
-                            <div className="w-8 h-4 bg-yellow-400"></div>
-                            <div className="w-8 h-4 bg-blue-400"></div>
-                            <div className="w-8 h-4 bg-purple-400"></div>
-                            <div className="w-8 h-4 bg-cyan-400"></div>
-                            <div className="w-8 h-4 bg-white"></div>
+                        <div className="flex gap-1">
+                            <div className="w-6 h-3 bg-gray-600"></div>
+                            <div className="w-6 h-3 bg-red-500"></div>
+                            <div className="w-6 h-3 bg-green-500"></div>
+                            <div className="w-6 h-3 bg-yellow-400"></div>
+                            <div className="w-6 h-3 bg-blue-500"></div>
+                            <div className="w-6 h-3 bg-purple-500"></div>
+                            <div className="w-6 h-3 bg-cyan-400"></div>
+                            <div className="w-6 h-3 bg-white"></div>
                         </div>
                     </div>
                 </div>

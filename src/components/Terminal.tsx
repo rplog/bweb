@@ -30,42 +30,44 @@ export const Terminal: React.FC = () => {
         inputRef.current?.focus();
     };
 
-    if (activeComponent) {
-        return (
-            <div className="w-full h-full p-4 font-mono text-base text-[#00ff00]">
-                {activeComponent}
-            </div>
-        );
-    }
-
     return (
-        <div className="flex flex-col h-full w-full">
-            {/* Top Bar - Moved from App.tsx */}
-            <div className="w-full h-10 bg-[#1a1a1a] flex items-center px-4 justify-between border-b border-[#333] flex-shrink-0">
-                <div className="flex gap-2">
-                    <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                    <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-                    <div className="w-3 h-3 rounded-full bg-green-500"></div>
+        <div className="w-full h-full relative">
+            {/* Full Screen Component Layer */}
+            {activeComponent && (
+                <div className="absolute inset-0 z-50 bg-black text-[#00ff00] font-mono text-base p-4 overflow-hidden">
+                    {activeComponent}
                 </div>
-                <div className="text-gray-400 text-sm font-mono">neo@neosphere:~</div>
-                <div className="w-10"></div>
-            </div>
+            )}
 
-            <div
-                className="flex-1 p-4 overflow-y-auto font-mono text-base bg-transparent scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent"
-                onClick={handleContainerClick}
-            >
-                <div className="max-w-5xl mx-auto">
-                    <OutputDisplay history={history} />
-                    {isInputVisible && (
-                        <CommandInput
-                            ref={inputRef}
-                            promptPath={getPromptPath()}
-                            onSubmit={execute}
-                            inputHistory={inputHistory}
-                            onTabComplete={handleTabCompletion} />
-                    )}
-                    <div ref={bottomRef} />
+            {/* Terminal Layer - Hidden but mounted when activeComponent exists */}
+            <div className={`flex flex-col h-full w-full ${activeComponent ? 'invisible' : ''}`}>
+                {/* Top Bar - Moved from App.tsx */}
+                <div className="w-full h-10 bg-[#1a1a1a] flex items-center px-4 justify-between border-b border-[#333] flex-shrink-0">
+                    <div className="flex gap-2">
+                        <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                        <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+                        <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                    </div>
+                    <div className="text-gray-400 text-sm font-mono">neo@neosphere:~</div>
+                    <div className="w-10"></div>
+                </div>
+
+                <div
+                    className="flex-1 p-4 overflow-y-auto font-mono text-base bg-transparent scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent"
+                    onClick={handleContainerClick}
+                >
+                    <div className="max-w-5xl mx-auto">
+                        <OutputDisplay history={history} />
+                        {isInputVisible && (
+                            <CommandInput
+                                ref={inputRef}
+                                promptPath={getPromptPath()}
+                                onSubmit={execute}
+                                inputHistory={inputHistory}
+                                onTabComplete={handleTabCompletion} />
+                        )}
+                        <div ref={bottomRef} />
+                    </div>
                 </div>
             </div>
         </div>

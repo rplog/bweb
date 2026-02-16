@@ -16,15 +16,8 @@ export const Ping: React.FC<PingProps> = ({ host, onComplete, count }) => {
     const rttsRef = useRef<number[]>([]);
     const abortControllerRef = useRef<AbortController | null>(null);
 
-    // Static IP per host (hash based) initially, then updated by real response
-    const [ip, setIp] = useState(() => {
-        let hash = 0;
-        for (let i = 0; i < host.length; i++) {
-            hash = ((hash << 5) - hash) + host.charCodeAt(i);
-            hash |= 0;
-        }
-        return `172.217.${Math.abs(hash % 255)}.${Math.abs((hash >> 8) % 255)}`;
-    });
+    // Initial IP is null to prevent showing fake IP
+    const [ip, setIp] = useState<string | null>(null);
 
     // Validate hostname
     const isValidHost = useCallback((hostname: string): boolean => {
@@ -33,6 +26,15 @@ export const Ping: React.FC<PingProps> = ({ host, onComplete, count }) => {
         const pattern = /^[a-zA-Z0-9][a-zA-Z0-9-_.]+[a-zA-Z0-9]$|^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/;
         return pattern.test(hostname);
     }, []);
+
+    const generateFakeIp = (hostname: string) => {
+        let hash = 0;
+        for (let i = 0; i < hostname.length; i++) {
+            hash = ((hash << 5) - hash) + hostname.charCodeAt(i);
+            hash |= 0;
+        }
+        return `172.217.${Math.abs(hash % 255)}.${Math.abs((hash >> 8) % 255)}`;
+    };
 
     const finalizePing = useCallback((cancelled: boolean = false) => {
         setIsRunning(false);
@@ -97,9 +99,16 @@ export const Ping: React.FC<PingProps> = ({ host, onComplete, count }) => {
                 if (res.status === 404) {
                     const time = (60 + Math.random() * 20).toFixed(1);
                     rttsRef.current.push(parseFloat(time));
+
+                    let effectiveIp = ip;
+                    if (!effectiveIp) {
+                        effectiveIp = generateFakeIp(host);
+                        setIp(effectiveIp);
+                    }
+
                     setLines(prev => [
                         ...prev,
-                        `64 bytes from ${host} (${ip}): icmp_seq=${currentSeq} ttl=118 time=${time} ms`
+                        `64 bytes from ${host} (${effectiveIp}): icmp_seq=${currentSeq} ttl=118 time=${time} ms`
                     ]);
                 } else if (!res.ok) {
                     throw new Error(`HTTP ${res.status}`);
@@ -110,48 +119,49 @@ export const Ping: React.FC<PingProps> = ({ host, onComplete, count }) => {
 
                     const time = data.time ? data.time.toFixed(1) : actualTime.toFixed(1);
 
-                    // Use real IP if available
-                    if (data.ip && data.ip !== 'unknown' && data.ip !== ip) {
-                        setIp(data.ip);
+                    let effectiveIp = ip;
+                    if (data.ip && data.ip !== 'unknown') {
+                        if (data.ip !== ip) {
+                            setIp(data.ip);
+                            effectiveIp = data.ip;
+                        }
+                    } else if (!effectiveIp) {
+                        effectiveIp = generateFakeIp(host); // Fallback if API fails to prompt IP
+                        setIp(effectiveIp);
                     }
-                    const currentIp = data.ip && data.ip !== 'unknown' ? data.ip : ip;
 
                     rttsRef.current.push(parseFloat(time));
 
                     setLines(prev => [
                         ...prev,
-                        `64 bytes from ${host} (${currentIp}): icmp_seq=${currentSeq} ttl=${data.ttl || 118} time=${time} ms`
+                        `64 bytes from ${host} (${effectiveIp}): icmp_seq=${currentSeq} ttl=${data.ttl || 118} time=${time} ms`
                     ]);
                 }
 
-                // Check if we've reached the count limit
+                // Check count
                 if (count && currentSeq >= count) {
                     finalizePing(false);
                     return;
                 }
 
-                // Schedule next ping (using setTimeout for better control)
+                // Schedule next ping
                 if (mounted && isRunning) {
                     timeoutId = setTimeout(doPing, 1000);
                 }
             } catch (e: any) {
                 if (!mounted) return;
-
-                // Don't log errors for aborted requests
                 if (e.name === 'AbortError') return;
 
-                // Differentiate error types
                 let errorMsg = `Request timeout for icmp_seq=${currentSeq}`;
                 if (e.message?.includes('DNS') || e.message?.includes('ENOTFOUND')) {
                     errorMsg = `ping: ${host}: Name or service not known`;
                     setIsRunning(false);
                 } else if (e.message?.includes('Network') || e.message?.includes('Failed to fetch')) {
-                    errorMsg = `From ${ip}: icmp_seq=${currentSeq} Destination Host Unreachable`;
+                    errorMsg = `From ${ip || 'unknown'}: icmp_seq=${currentSeq} Destination Host Unreachable`;
                 }
 
                 setLines(prev => [...prev, errorMsg]);
 
-                // Continue pinging on timeout, stop on DNS errors
                 if (!e.message?.includes('DNS') && !e.message?.includes('ENOTFOUND') && mounted && isRunning) {
                     timeoutId = setTimeout(doPing, 1000);
                 } else {
@@ -160,16 +170,12 @@ export const Ping: React.FC<PingProps> = ({ host, onComplete, count }) => {
             }
         };
 
-        // Start first ping
         doPing();
 
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.ctrlKey && e.key === 'c') {
                 if (isRunning) {
-                    // Abort any pending fetch
-                    if (abortControllerRef.current) {
-                        abortControllerRef.current.abort();
-                    }
+                    if (abortControllerRef.current) abortControllerRef.current.abort();
                     clearTimeout(timeoutId);
                     finalizePing(true);
                 }
@@ -181,25 +187,23 @@ export const Ping: React.FC<PingProps> = ({ host, onComplete, count }) => {
         return () => {
             mounted = false;
             clearTimeout(timeoutId);
-            if (abortControllerRef.current) {
-                abortControllerRef.current.abort();
-            }
+            if (abortControllerRef.current) abortControllerRef.current.abort();
             window.removeEventListener('keydown', handleKeyDown);
         };
     }, [host, isRunning, count, ip, isValidHost, finalizePing]);
 
     return (
         <div className="text-[#00ff00]">
-            <div className="mb-1">PING {host} ({ip}) 56(84) bytes of data.</div>
+            {ip && <div className="mb-1">PING {host} ({ip}) 56(84) bytes of data.</div>}
             {lines.map((line, i) => (
                 <div key={i}>{line}</div>
             ))}
             {stats && (
                 <>
-                    <div className="mt-2">--- {host} ping statistics ---</div>
-                    <div>{stats.tx} packets transmitted, {stats.rx} received, {stats.loss.toFixed(0)}% packet loss, time {stats.tx}000ms</div>
+                    <div className="mt-2 text-white">--- {host} ping statistics ---</div>
+                    <div className="text-white">{stats.tx} packets transmitted, {stats.rx} received, {stats.loss.toFixed(0)}% packet loss, time {stats.tx}000ms</div>
                     {stats.rx > 0 && (
-                        <div>rtt min/avg/max/mdev = {stats.min.toFixed(3)}/{stats.avg.toFixed(3)}/{stats.max.toFixed(3)}/{((stats.max - stats.min) / 2).toFixed(3)} ms</div>
+                        <div className="text-white">rtt min/avg/max/mdev = {stats.min.toFixed(3)}/{stats.avg.toFixed(3)}/{stats.max.toFixed(3)}/{((stats.max - stats.min) / 2).toFixed(3)} ms</div>
                     )}
                 </>
             )}

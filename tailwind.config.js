@@ -12,7 +12,7 @@ export default {
                     text: '#00ff00',
                     dim: '#6272a4',
                     accent: '#bd93f9',
-                }
+                },
             },
             fontFamily: {
                 mono: ['"Fira Code"', 'Consolas', 'Monaco', 'monospace'],

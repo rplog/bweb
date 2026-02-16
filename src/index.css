@@ -1,14 +1,27 @@
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
 @import "tailwindcss";
 
+@theme {
+  --color-elegant-bg: #121212;
+  --color-elegant-card: #1e1e1e;
+  --color-elegant-border: #333333;
+
+  --color-elegant-text-primary: #e0e0e0;
+  --color-elegant-text-secondary: #a0a0a0;
+  --color-elegant-text-muted: #666666;
+
+  --color-elegant-accent: #C9A66B;
+  --color-elegant-accent-hover: #E0C080;
+}
+
 :root {
-  --term-color: #00ff00;
-  --term-bg: #0a0a0a;
+  --term-color: var(--color-elegant-text-primary);
+  --term-bg: var(--color-elegant-bg);
   --term-font: 'JetBrains Mono', 'Consolas', 'Monaco', 'Andale Mono', 'Ubuntu Mono', monospace;
-  --term-prompt: #bd93f9;
+  --term-prompt: var(--color-elegant-accent);
   --term-error: #ff5555;
-  --term-link: #8be9fd;
-  --term-dim: #6272a4;
+  --term-link: var(--color-elegant-accent-hover);
+  --term-dim: var(--color-elegant-text-muted);
 }
 
 body {

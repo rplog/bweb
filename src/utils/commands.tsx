@@ -85,7 +85,7 @@ export const commands: Record<string, Command> = {
             return (
                 <div className="flex gap-6 font-mono text-sm leading-tight">
                     {/* Arch Linux ASCII Art */}
-                    <div className="hidden md:block text-cyan-400 whitespace-pre select-none flex-shrink-0 text-xs leading-tight">
+                    <div className="hidden md:block text-elegant-accent whitespace-pre select-none flex-shrink-0 text-xs leading-tight">
                         {`                   -\`
                   .o+\`
                  \`ooo/
@@ -108,25 +108,25 @@ export const commands: Record<string, Command> = {
                     </div>
 
                     {/* System Information */}
-                    <div className="flex flex-col justify-center space-y-0 text-white flex-1 min-w-0 text-sm">
+                    <div className="flex flex-col justify-center space-y-0 text-elegant-text-primary flex-1 min-w-0 text-sm">
                         <div className="mb-0.5">
-                            <span className="text-cyan-400 font-bold">neo@neosphere</span>
+                            <span className="text-elegant-accent font-bold">neo@neosphere</span>
                         </div>
-                        <div className="text-cyan-400 mb-1">{'─'.repeat(17)}</div>
+                        <div className="text-elegant-accent mb-1">{'─'.repeat(17)}</div>
 
-                        <div><span className="text-cyan-400 font-bold">OS:</span> <span className="text-gray-300">Neosphere OS v2.0 LTS x86_64</span></div>
-                        <div><span className="text-cyan-400 font-bold">Host:</span> <span className="text-gray-300">Cloudflare Workers (Virtual)</span></div>
-                        <div><span className="text-cyan-400 font-bold">Kernel:</span> <span className="text-gray-300">6.8.0-matrix-generic</span></div>
-                        <div><span className="text-cyan-400 font-bold">Uptime:</span> <span className="text-gray-300">{uptimeStr}</span></div>
-                        <div><span className="text-cyan-400 font-bold">Packages:</span> <span className="text-gray-300">1337 (pacman), 42 (cargo)</span></div>
-                        <div><span className="text-cyan-400 font-bold">Shell:</span> <span className="text-gray-300">bash 5.2.21</span></div>
-                        <div><span className="text-cyan-400 font-bold">Terminal:</span> <span className="text-gray-300">/dev/pts/0</span></div>
-                        <div><span className="text-cyan-400 font-bold">CPU:</span> <span className="text-gray-300">8 x Virtual Core @ 3.40 GHz</span></div>
-                        <div><span className="text-cyan-400 font-bold">GPU:</span> <span className="text-gray-300">WebGL 2.0 Renderer</span></div>
-                        <div><span className="text-cyan-400 font-bold">Memory:</span> <span className="text-gray-300">{memUsed.toFixed(2)} GiB / {memTotal.toFixed(2)} GiB ({memPercent}%)</span></div>
-                        <div><span className="text-cyan-400 font-bold">Disk (/):</span> <span className="text-gray-300">40.11 GiB / 95.82 GiB (42%)</span></div>
-                        <div><span className="text-cyan-400 font-bold">Local IP:</span> <span className="text-gray-300">10.0.0.100</span></div>
-                        <div><span className="text-cyan-400 font-bold">Locale:</span> <span className="text-gray-300">en_US.UTF-8</span></div>
+                        <div><span className="text-elegant-accent font-bold">OS:</span> <span className="text-elegant-text-secondary">Neosphere OS v2.0 LTS x86_64</span></div>
+                        <div><span className="text-elegant-accent font-bold">Host:</span> <span className="text-elegant-text-secondary">Cloudflare Workers (Virtual)</span></div>
+                        <div><span className="text-elegant-accent font-bold">Kernel:</span> <span className="text-elegant-text-secondary">6.8.0-matrix-generic</span></div>
+                        <div><span className="text-elegant-accent font-bold">Uptime:</span> <span className="text-elegant-text-secondary">{uptimeStr}</span></div>
+                        <div><span className="text-elegant-accent font-bold">Packages:</span> <span className="text-elegant-text-secondary">1337 (pacman), 42 (cargo)</span></div>
+                        <div><span className="text-elegant-accent font-bold">Shell:</span> <span className="text-elegant-text-secondary">bash 5.2.21</span></div>
+                        <div><span className="text-elegant-accent font-bold">Terminal:</span> <span className="text-elegant-text-secondary">/dev/pts/0</span></div>
+                        <div><span className="text-elegant-accent font-bold">CPU:</span> <span className="text-elegant-text-secondary">8 x Virtual Core @ 3.40 GHz</span></div>
+                        <div><span className="text-elegant-accent font-bold">GPU:</span> <span className="text-elegant-text-secondary">WebGL 2.0 Renderer</span></div>
+                        <div><span className="text-elegant-accent font-bold">Memory:</span> <span className="text-elegant-text-secondary">{memUsed.toFixed(2)} GiB / {memTotal.toFixed(2)} GiB ({memPercent}%)</span></div>
+                        <div><span className="text-elegant-accent font-bold">Disk (/):</span> <span className="text-elegant-text-secondary">40.11 GiB / 95.82 GiB (42%)</span></div>
+                        <div><span className="text-elegant-accent font-bold">Local IP:</span> <span className="text-elegant-text-secondary">10.0.0.100</span></div>
+                        <div><span className="text-elegant-accent font-bold">Locale:</span> <span className="text-elegant-text-secondary">en_US.UTF-8</span></div>
 
                         {/* Color Palette */}
                         <div className="mt-2 flex gap-1">
@@ -205,12 +205,12 @@ export const commands: Record<string, Command> = {
 
                 return (
                     <div className="text-sm">
-                        <div className="text-cyan-400 font-bold mb-1">Weather Report: {name}, {country}</div>
-                        <div className="grid grid-cols-2 gap-x-4 gap-y-1 max-w-xs text-gray-300">
-                            <span>Temperature:</span> <span className="text-white">{temp}°C</span>
-                            <span>Condition:</span> <span className="text-white capitalize">{desc}</span>
-                            <span>Humidity:</span> <span className="text-white">{humidity}%</span>
-                            <span>Wind:</span> <span className="text-white">{wind} m/s</span>
+                        <div className="text-elegant-accent font-bold mb-1">Weather Report: {name}, {country}</div>
+                        <div className="grid grid-cols-2 gap-x-4 gap-y-1 max-w-xs text-elegant-text-secondary">
+                            <span>Temperature:</span> <span className="text-elegant-text-primary">{temp}°C</span>
+                            <span>Condition:</span> <span className="text-elegant-text-primary capitalize">{desc}</span>
+                            <span>Humidity:</span> <span className="text-elegant-text-primary">{humidity}%</span>
+                            <span>Wind:</span> <span className="text-elegant-text-primary">{wind} m/s</span>
                         </div>
                     </div>
                 );

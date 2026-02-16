@@ -193,22 +193,22 @@ export const Ping: React.FC<PingProps> = ({ host, onComplete, count }) => {
     }, [host, isRunning, count, ip, isValidHost, finalizePing]);
 
     return (
-        <div className="text-[#00ff00]">
+        <div className="text-elegant-text-primary">
             {ip && <div className="mb-1">PING {host} ({ip}) 56(84) bytes of data.</div>}
             {lines.map((line, i) => (
                 <div key={i}>{line}</div>
             ))}
             {stats && (
                 <>
-                    <div className="mt-2 text-white">--- {host} ping statistics ---</div>
-                    <div className="text-white">{stats.tx} packets transmitted, {stats.rx} received, {stats.loss.toFixed(0)}% packet loss, time {stats.tx}000ms</div>
+                    <div className="mt-2 text-elegant-text-primary">--- {host} ping statistics ---</div>
+                    <div className="text-elegant-text-primary">{stats.tx} packets transmitted, {stats.rx} received, {stats.loss.toFixed(0)}% packet loss, time {stats.tx}000ms</div>
                     {stats.rx > 0 && (
-                        <div className="text-white">rtt min/avg/max/mdev = {stats.min.toFixed(3)}/{stats.avg.toFixed(3)}/{stats.max.toFixed(3)}/{((stats.max - stats.min) / 2).toFixed(3)} ms</div>
+                        <div className="text-elegant-text-primary">rtt min/avg/max/mdev = {stats.min.toFixed(3)}/{stats.avg.toFixed(3)}/{stats.max.toFixed(3)}/{((stats.max - stats.min) / 2).toFixed(3)} ms</div>
                     )}
                 </>
             )}
             {isRunning && (
-                <div className="mt-2 text-gray-500 text-xs">Press Ctrl+C to stop</div>
+                <div className="mt-2 text-elegant-text-muted text-xs">Press Ctrl+C to stop</div>
             )}
         </div>
     );

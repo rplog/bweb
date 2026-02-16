@@ -71,7 +71,7 @@ export const CommandInput = forwardRef<CommandInputHandle, CommandInputProps>(({
 
     return (
         <div className="flex items-center w-full relative">
-            <span className="text-[#bd93f9] mr-2 whitespace-nowrap">neo@neosphere:{promptPath}$</span>
+            <span className="text-elegant-accent mr-2 whitespace-nowrap">neo@neosphere:{promptPath}$</span>
             <div className="relative flex-grow">
                 {/* Syntax Highlight Layer */}
                 <div className="absolute inset-0 pointer-events-none whitespace-pre font-inherit" aria-hidden="true">
@@ -85,7 +85,7 @@ export const CommandInput = forwardRef<CommandInputHandle, CommandInputProps>(({
 
                         const firstSpaceIndex = input.indexOf(' ');
                         if (firstSpaceIndex === -1) {
-                            return <span className="text-[#00ff00]">{input}</span>;
+                            return <span className="text-elegant-text-primary">{input}</span>;
                         }
 
                         const commandPart = input.substring(0, firstSpaceIndex);
@@ -93,8 +93,8 @@ export const CommandInput = forwardRef<CommandInputHandle, CommandInputProps>(({
 
                         return (
                             <>
-                                <span className="text-[#00ff00]">{commandPart}</span>
-                                <span className="text-cyan-400">{argsPart}</span>
+                                <span className="text-elegant-text-primary">{commandPart}</span>
+                                <span className="text-elegant-text-secondary">{argsPart}</span>
                             </>
                         );
                     })()}
@@ -104,7 +104,7 @@ export const CommandInput = forwardRef<CommandInputHandle, CommandInputProps>(({
                 <input
                     ref={inputRef}
                     type="text"
-                    className="w-full bg-transparent border-none outline-none font-inherit text-transparent caret-[#00ff00]"
+                    className="w-full bg-transparent border-none outline-none font-inherit text-transparent caret-elegant-accent"
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={handleKeyDown}

@@ -30,20 +30,20 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
     const pages = ['About', 'Gallery', 'Contact'];
 
     return (
-        <header className={`border-b border-gray-800 bg-black px-4 sm:px-6 lg:px-8 py-3 ${className}`}>
+        <header className={`border-b border-elegant-border bg-elegant-bg px-4 sm:px-6 lg:px-8 py-3 ${className}`}>
             <div className={`${maxWidth} mx-auto flex items-center justify-end font-mono text-base relative`}>
-                <span className="text-gray-500 mr-2 select-none font-semibold">neo@neosphere:~/</span>
+                <span className="text-elegant-text-muted mr-2 select-none font-semibold">neo@neosphere:~/</span>
                 <div className="relative" ref={dropdownRef}>
                     <button
                         onClick={() => setIsOpen(!isOpen)}
-                        className="font-extrabold text-gray-200 hover:text-white flex items-center gap-1 transition-colors outline-none"
+                        className="font-extrabold text-elegant-text-primary hover:text-white flex items-center gap-1 transition-colors outline-none"
                     >
                         {currentPath}
                         <ChevronDown size={14} className={`transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
                     </button>
 
                     {isOpen && (
-                        <div className="absolute right-0 top-full mt-2 w-32 bg-[#1a1a1a] border border-gray-800 rounded-sm shadow-xl z-50 py-1">
+                        <div className="absolute right-0 top-full mt-2 w-32 bg-elegant-card border border-elegant-border rounded-sm shadow-xl z-50 py-1">
                             {pages.map((page) => (
                                 <button
                                     key={page}
@@ -53,20 +53,20 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
                                         }
                                         setIsOpen(false);
                                     }}
-                                    className={`w-full text-left px-4 py-2 text-xs hover:bg-white/10 transition-colors flex items-center justify-between ${page.toLowerCase() === currentPath ? 'text-green-500' : 'text-gray-400'
+                                    className={`w-full text-left px-4 py-2 text-xs hover:bg-white/10 transition-colors flex items-center justify-between ${page.toLowerCase() === currentPath ? 'text-elegant-accent' : 'text-elegant-text-secondary'
                                         }`}
                                 >
                                     {page.toLowerCase()}
-                                    {page.toLowerCase() === currentPath && <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>}
+                                    {page.toLowerCase() === currentPath && <span className="w-1.5 h-1.5 bg-elegant-accent rounded-full"></span>}
                                 </button>
                             ))}
-                            <div className="border-t border-gray-800 my-1"></div>
+                            <div className="border-t border-elegant-border my-1"></div>
                             <button
                                 onClick={() => {
                                     onNavigate('Terminal');
                                     setIsOpen(false);
                                 }}
-                                className="w-full text-left px-4 py-2 text-xs hover:bg-white/10 transition-colors text-gray-500 hover:text-white flex items-center gap-2"
+                                className="w-full text-left px-4 py-2 text-xs hover:bg-white/10 transition-colors text-elegant-text-muted hover:text-white flex items-center gap-2"
                             >
                                 <Terminal size={12} />
                                 terminal

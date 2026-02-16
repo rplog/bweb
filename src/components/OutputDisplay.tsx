@@ -13,7 +13,7 @@ export const OutputDisplay: React.FC<OutputDisplayProps> = ({ history }) => {
                 <div key={entry.id} className="mb-2">
                     {entry.command && (
                         <div className="flex flex-wrap">
-                            <span className="text-[#bd93f9] mr-2">neo@neosphere:{entry.path}$</span>
+                            <span className="text-elegant-accent mr-2">neo@neosphere:{entry.path}$</span>
                             <span className="whitespace-pre-wrap break-all">
                                 {(() => {
                                     const parts = entry.command.split(' ');
@@ -21,15 +21,15 @@ export const OutputDisplay: React.FC<OutputDisplayProps> = ({ history }) => {
                                     const args = parts.slice(1).join(' ');
                                     return (
                                         <>
-                                            <span className="text-[#00ff00]">{cmd}</span>
-                                            {args && <span className="text-cyan-400"> {args}</span>}
+                                            <span className="text-elegant-text-primary">{cmd}</span>
+                                            {args && <span className="text-elegant-text-secondary"> {args}</span>}
                                         </>
                                     );
                                 })()}
                             </span>
                         </div>
                     )}
-                    <div className="whitespace-pre-wrap break-words text-[#e0e0e0]">
+                    <div className="whitespace-pre-wrap break-words text-elegant-text-primary">
                         {typeof entry.response === 'string' ? (
                             <Typewriter text={entry.response} speed={10} />
                         ) : (

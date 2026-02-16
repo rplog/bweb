@@ -23,6 +23,16 @@ export const Terminal: React.FC = () => {
         bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [history]);
 
+    // Refocus input when activeComponent closes (e.g. exiting htop/nano)
+    useEffect(() => {
+        if (!activeComponent) {
+            // Small timeout to ensure DOM update is complete
+            setTimeout(() => {
+                inputRef.current?.focus();
+            }, 10);
+        }
+    }, [activeComponent]);
+
     const handleContainerClick = () => {
         // Don't focus if user is selecting text
         const selection = window.getSelection();
@@ -35,7 +45,7 @@ export const Terminal: React.FC = () => {
         <div className="w-full h-full relative">
             {/* Full Screen Component Layer */}
             {activeComponent && (
-                <div className="absolute inset-0 z-50 bg-black text-[#00ff00] font-mono text-base p-4 overflow-hidden">
+                <div className="absolute inset-0 z-50 bg-elegant-bg text-elegant-text-primary font-mono text-base p-4 overflow-hidden">
                     {activeComponent}
                 </div>
             )}
@@ -43,7 +53,7 @@ export const Terminal: React.FC = () => {
             {/* Terminal Layer - Hidden but mounted when activeComponent exists */}
             <div className={`flex flex-col h-full w-full ${activeComponent ? 'invisible' : ''}`}>
                 {/* Top Bar - KDE / Linux Style */}
-                <div className="w-full h-10 bg-[#1a1a1a] flex items-center px-4 justify-end border-b border-[#333] flex-shrink-0 select-none relative">
+                <div className="w-full h-10 bg-elegant-card flex items-center px-4 justify-end border-b border-elegant-border flex-shrink-0 select-none relative">
                     <div className="absolute left-1/2 transform -translate-x-1/2 text-gray-400 text-sm font-mono">
                         neo@neosphere:~
                     </div>
@@ -61,7 +71,7 @@ export const Terminal: React.FC = () => {
                 </div>
 
                 <div
-                    className="flex-1 p-4 overflow-y-auto font-mono text-base bg-transparent scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent"
+                    className="flex-1 min-h-0 p-4 overflow-y-auto font-mono text-base bg-transparent scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent"
                     onClick={handleContainerClick}
                 >
                     <div className="max-w-5xl mx-auto">

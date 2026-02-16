@@ -119,13 +119,14 @@ export const Htop: React.FC<HtopProps> = ({ onExit }) => {
         segments: number[];
         showMem?: { used: number; total: number };
     }) => {
-        const colors = ['bg-green-500', 'bg-red-500', 'bg-yellow-500', 'bg-blue-500', 'bg-magenta-500', 'bg-cyan-500'];
+        // Elegant gold/grey palette for bars
+        const colors = ['bg-elegant-accent', 'bg-elegant-text-primary', 'bg-elegant-text-secondary', 'bg-elegant-text-muted', 'bg-[#8a7a5a]', 'bg-[#5a4a3a]'];
         const sum = segments.reduce((a, b) => a + b, 0);
         const barWidth = showMem ? (showMem.used / showMem.total * 100) : sum;
 
         return (
             <div className="flex items-center font-mono text-xs leading-tight">
-                <span className={`w-6 ${label.includes('Mem') || label.includes('Swp') ? 'text-cyan-400' : 'text-white'} font-bold`}>
+                <span className={`w-6 ${label.includes('Mem') || label.includes('Swp') ? 'text-elegant-accent' : 'text-elegant-text-primary'} font-bold`}>
                     {label}
                 </span>
                 <span className="text-gray-500 mx-1">[</span>
@@ -143,13 +144,13 @@ export const Htop: React.FC<HtopProps> = ({ onExit }) => {
                         })}
                     </div>
                 </div>
-                <span className="text-gray-500 ml-1">]</span>
+                <span className="text-elegant-text-muted ml-1">]</span>
                 {showMem ? (
-                    <span className="ml-2 text-gray-400 w-24 text-right">
+                    <span className="ml-2 text-elegant-text-muted w-24 text-right">
                         {showMem.used.toFixed(0)}M/{showMem.total.toFixed(0)}M
                     </span>
                 ) : (
-                    <span className="ml-2 text-gray-400 w-12 text-right">{barWidth.toFixed(1)}%</span>
+                    <span className="ml-2 text-elegant-text-muted w-12 text-right">{barWidth.toFixed(1)}%</span>
                 )}
             </div>
         );
@@ -166,7 +167,7 @@ export const Htop: React.FC<HtopProps> = ({ onExit }) => {
     const loadAvg = [0.84, 0.45, 1.12];
 
     return (
-        <div className="w-full h-full bg-black text-gray-300 font-mono text-xs select-none overflow-hidden flex flex-col p-2">
+        <div className="w-full h-full bg-elegant-bg text-elegant-text-secondary font-mono text-xs select-none overflow-hidden flex flex-col p-2">
             {/* Header Section */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 mb-2 flex-shrink-0">
                 <div className="space-y-0">
@@ -181,22 +182,22 @@ export const Htop: React.FC<HtopProps> = ({ onExit }) => {
                     <MultiColorBar label="Swp" segments={[swp.used]} showMem={swp} />
                 </div>
                 <div className="space-y-0 text-xs flex flex-col justify-center">
-                    <div className="text-gray-400">
-                        Tasks: <span className="text-cyan-400 font-bold">{tasks.total}</span>,{' '}
-                        <span className="text-green-400 font-bold">{tasks.threads}</span> thr;{' '}
-                        <span className="text-green-400 font-bold">{tasks.running}</span> running
+                    <div className="text-elegant-text-muted">
+                        Tasks: <span className="text-elegant-accent font-bold">{tasks.total}</span>,{' '}
+                        <span className="text-elegant-text-primary font-bold">{tasks.threads}</span> thr;{' '}
+                        <span className="text-elegant-text-primary font-bold">{tasks.running}</span> running
                     </div>
-                    <div className="text-gray-400">
-                        Load average: <span className="text-cyan-400 font-bold">{loadAvg.join(' ')}</span>
+                    <div className="text-elegant-text-muted">
+                        Load average: <span className="text-elegant-accent font-bold">{loadAvg.join(' ')}</span>
                     </div>
-                    <div className="text-gray-400">
-                        Uptime: <span className="text-cyan-400 font-bold">{formatUptime(uptime)}</span>
+                    <div className="text-elegant-text-muted">
+                        Uptime: <span className="text-elegant-accent font-bold">{formatUptime(uptime)}</span>
                     </div>
                 </div>
             </div>
 
             {/* Table Header */}
-            <div className="bg-gray-900 text-white font-bold flex px-1 py-0.5 flex-shrink-0 border-t border-b border-gray-700">
+            <div className="bg-elegant-card text-elegant-text-primary font-bold flex px-1 py-0.5 flex-shrink-0 border-t border-b border-elegant-border">
                 <span className="w-16">PID</span>
                 <span className="w-20">USER</span>
                 <span className="w-10 text-right">PRI</span>
@@ -212,51 +213,51 @@ export const Htop: React.FC<HtopProps> = ({ onExit }) => {
             </div>
 
             {/* Process List */}
-            <div ref={scrollRef} className="flex-1 overflow-y-auto space-y-0">
+            <div ref={scrollRef} className="flex-1 overflow-y-auto space-y-0 scrollbar-thin scrollbar-thumb-elegant-border scrollbar-track-transparent">
                 {processes.map((p, idx) => {
                     const isHighlighted = idx === selectedIndex;
                     const isRunning = p.s === 'R';
-                    const userColor = p.user === 'root' ? 'text-red-400' :
-                        p.user.includes('systemd') ? 'text-blue-400' :
-                            p.user === 'x' ? 'text-cyan-400' : 'text-yellow-400';
+                    const userColor = p.user === 'root' ? 'text-red-400' : // Keeping red for root alert
+                        p.user.includes('systemd') ? 'text-elegant-accent' :
+                            p.user === 'x' ? 'text-elegant-text-primary' : 'text-elegant-text-secondary';
 
                     return (
                         <div
                             key={p.pid}
-                            className={`flex px-1 py-0 ${isHighlighted ? 'bg-cyan-900 text-white' : ''} hover:bg-gray-900 cursor-pointer`}
+                            className={`flex px-1 py-0 ${isHighlighted ? 'bg-elegant-accent text-elegant-bg font-bold' : ''} hover:bg-elegant-card cursor-pointer`}
                         >
-                            <span className={`w-16 ${isHighlighted ? 'text-white' : 'text-green-400'}`}>{p.pid}</span>
-                            <span className={`w-20 ${isHighlighted ? 'text-white' : userColor}`}>{p.user}</span>
+                            <span className={`w-16 ${isHighlighted ? 'text-elegant-bg' : 'text-elegant-accent'}`}>{p.pid}</span>
+                            <span className={`w-20 ${isHighlighted ? 'text-elegant-bg' : userColor}`}>{p.user}</span>
                             <span className="w-10 text-right">{p.pri}</span>
                             <span className="w-10 text-right">{p.ni}</span>
                             <span className="w-14 text-right">{p.virt}</span>
                             <span className="w-14 text-right">{p.res}</span>
                             <span className="w-14 text-right">{p.shr}</span>
-                            <span className={`w-8 ${isRunning ? 'text-green-400 font-bold' : ''}`}>{p.s}</span>
-                            <span className={`w-12 text-right ${isRunning && p.cpu > 1 ? 'text-green-400' : ''}`}>
+                            <span className={`w-8 ${isRunning && !isHighlighted ? 'text-elegant-accent font-bold' : ''}`}>{p.s}</span>
+                            <span className={`w-12 text-right ${isRunning && p.cpu > 1 && !isHighlighted ? 'text-elegant-accent' : ''}`}>
                                 {p.cpu.toFixed(1)}
                             </span>
                             <span className="w-12 text-right">{p.mem.toFixed(1)}</span>
                             <span className="w-20">{p.time}</span>
-                            <span className={`flex-1 truncate ${isHighlighted ? 'text-white' : 'text-white'}`}>{p.cmd}</span>
+                            <span className={`flex-1 truncate ${isHighlighted ? 'text-elegant-bg' : 'text-elegant-text-primary'}`}>{p.cmd}</span>
                         </div>
                     );
                 })}
             </div>
 
             {/* Footer */}
-            <div className="mt-2 flex gap-1 flex-wrap flex-shrink-0 border-t border-gray-800 pt-1">
-                <span className="bg-gray-700 text-white px-1.5 py-0.5 text-xs">F1Help</span>
-                <span className="bg-gray-700 text-white px-1.5 py-0.5 text-xs">F2Setup</span>
-                <span className="bg-gray-700 text-white px-1.5 py-0.5 text-xs">F3Search</span>
-                <span className="bg-gray-700 text-white px-1.5 py-0.5 text-xs">F4Filter</span>
-                <span className="bg-gray-700 text-white px-1.5 py-0.5 text-xs">F5Tree</span>
-                <span className="bg-gray-700 text-white px-1.5 py-0.5 text-xs">F6Sort</span>
-                <span className="bg-gray-700 text-white px-1.5 py-0.5 text-xs">F7Nice-</span>
-                <span className="bg-gray-700 text-white px-1.5 py-0.5 text-xs">F8Nice+</span>
-                <span className="bg-gray-700 text-white px-1.5 py-0.5 text-xs">F9Kill</span>
-                <span className="bg-gray-700 text-white px-1.5 py-0.5 text-xs">F10Quit</span>
-                <span className="ml-auto bg-cyan-900 text-cyan-200 px-2 py-0.5 text-xs font-bold animate-pulse">
+            <div className="mt-2 flex gap-1 flex-wrap flex-shrink-0 border-t border-elegant-border pt-1">
+                <span className="bg-elegant-card text-elegant-text-primary px-1.5 py-0.5 text-xs">F1Help</span>
+                <span className="bg-elegant-card text-elegant-text-primary px-1.5 py-0.5 text-xs">F2Setup</span>
+                <span className="bg-elegant-card text-elegant-text-primary px-1.5 py-0.5 text-xs">F3Search</span>
+                <span className="bg-elegant-card text-elegant-text-primary px-1.5 py-0.5 text-xs">F4Filter</span>
+                <span className="bg-elegant-card text-elegant-text-primary px-1.5 py-0.5 text-xs">F5Tree</span>
+                <span className="bg-elegant-card text-elegant-text-primary px-1.5 py-0.5 text-xs">F6Sort</span>
+                <span className="bg-elegant-card text-elegant-text-primary px-1.5 py-0.5 text-xs">F7Nice-</span>
+                <span className="bg-elegant-card text-elegant-text-primary px-1.5 py-0.5 text-xs">F8Nice+</span>
+                <span className="bg-elegant-card text-elegant-text-primary px-1.5 py-0.5 text-xs">F9Kill</span>
+                <span className="bg-elegant-card text-elegant-text-primary px-1.5 py-0.5 text-xs">F10Quit</span>
+                <span className="ml-auto bg-elegant-accent text-elegant-bg px-2 py-0.5 text-xs font-bold animate-pulse">
                     Press 'Q' to quit
                 </span>
             </div>

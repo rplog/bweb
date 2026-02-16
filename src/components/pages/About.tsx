@@ -1,7 +1,8 @@
 import React from 'react';
 import { Spotlight } from '../Spotlight';
 import { PageHeader } from '../PageHeader';
-import { Github, Twitter, Linkedin, Globe, Code } from 'lucide-react';
+import { Globe, Code } from 'lucide-react';
+import { SiGithub, SiX, SiLinkedin, SiReact, SiTypescript, SiVite, SiTailwindcss, SiCloudflare, SiNodedotjs } from 'react-icons/si';
 
 interface AboutProps {
     onExit: () => void;
@@ -61,13 +62,13 @@ export const About: React.FC<AboutProps> = ({ onExit, onNavigate }) => {
 
                                     <div className="flex gap-3 mb-6 justify-center">
                                         <a href="#" className="p-2 bg-elegant-bg hover:bg-elegant-card rounded transition-colors border border-elegant-border text-elegant-text-muted hover:text-elegant-text-primary">
-                                            <Github size={18} />
+                                            <SiGithub size={18} />
                                         </a>
                                         <a href="#" className="p-2 bg-elegant-bg hover:bg-elegant-card rounded transition-colors border border-elegant-border text-elegant-text-muted hover:text-elegant-text-primary">
-                                            <Twitter size={18} />
+                                            <SiX size={18} />
                                         </a>
                                         <a href="#" className="p-2 bg-elegant-bg hover:bg-elegant-card rounded transition-colors border border-elegant-border text-elegant-text-muted hover:text-elegant-text-primary">
-                                            <Linkedin size={18} />
+                                            <SiLinkedin size={18} />
                                         </a>
                                         <a href="#" className="p-2 bg-elegant-bg hover:bg-elegant-card rounded transition-colors border border-elegant-border text-elegant-text-muted hover:text-elegant-text-primary">
                                             <Globe size={18} />
@@ -122,12 +123,20 @@ export const About: React.FC<AboutProps> = ({ onExit, onNavigate }) => {
                             <div className="bg-elegant-card border border-elegant-border rounded-sm p-6">
                                 <h3 className="text-lg font-bold text-elegant-text-primary mb-6">Tech Stack</h3>
                                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                                    {['React', 'TypeScript', 'Vite', 'Tailwind', 'Cloudflare', 'Node.js'].map((skill) => (
+                                    {[
+                                        { name: 'React', icon: SiReact, color: 'text-[#61DAFB]' },
+                                        { name: 'TypeScript', icon: SiTypescript, color: 'text-[#3178C6]' },
+                                        { name: 'Vite', icon: SiVite, color: 'text-[#646CFF]' },
+                                        { name: 'Tailwind', icon: SiTailwindcss, color: 'text-[#06B6D4]' },
+                                        { name: 'Cloudflare', icon: SiCloudflare, color: 'text-[#F38020]' },
+                                        { name: 'Node.js', icon: SiNodedotjs, color: 'text-[#339933]' }
+                                    ].map((skill) => (
                                         <div
-                                            key={skill}
-                                            className="bg-elegant-bg border border-elegant-border rounded-sm p-3 hover:border-elegant-text-muted transition-all cursor-default"
+                                            key={skill.name}
+                                            className="bg-elegant-bg border border-elegant-border rounded-sm p-3 hover:border-elegant-text-muted transition-all cursor-default flex items-center gap-3 group"
                                         >
-                                            <div className="text-xs text-elegant-text-secondary text-center">{skill}</div>
+                                            <skill.icon size={20} className={`${skill.color} opacity-80 group-hover:opacity-100 transition-opacity`} />
+                                            <div className="text-xs text-elegant-text-secondary">{skill.name}</div>
                                         </div>
                                     ))}
                                 </div>
@@ -139,8 +148,8 @@ export const About: React.FC<AboutProps> = ({ onExit, onNavigate }) => {
                 {/* Footer */}
                 <footer className="border-t border-elegant-border bg-elegant-bg py-2 mt-auto shrink-0">
                     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-                        <p className="text-xs text-elegant-text-muted text-center font-mono">
-                            neosphere v2.0
+                        <p className="text-sm font-bold text-elegant-text-muted text-center font-mono">
+                            &copy; Neosphere v2.0
                         </p>
                     </div>
                 </footer>

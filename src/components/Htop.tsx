@@ -1,155 +1,264 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 interface HtopProps {
     onExit: () => void;
 }
 
-export const Htop: React.FC<HtopProps> = ({ onExit }) => {
-    const [cpu, setCpu] = useState<number[]>([10, 20, 15, 30]);
-    const [mem, setMem] = useState(25);
-    const [swp, setSwp] = useState(5);
-    const [tasks, setTasks] = useState(112);
-    const [uptime, setUptime] = useState(0);
+interface Process {
+    pid: number;
+    user: string;
+    pri: number;
+    ni: number;
+    virt: string;
+    res: string;
+    shr: string;
+    s: 'R' | 'S' | 'D' | 'Z' | 'T';
+    cpu: number;
+    mem: number;
+    time: string;
+    cmd: string;
+}
 
-    // Mock processes
-    const [processes, setProcesses] = useState([
-        { pid: 1452, user: 'root', pri: 20, ni: 0, virt: '245M', res: '12M', shr: '4M', s: 'S', cpu: 1.2, mem: 0.5, time: '1:45.02', cmd: '/usr/bin/dockerd' },
-        { pid: 1489, user: 'neo', pri: 20, ni: 0, virt: '890M', res: '230M', shr: '85M', s: 'R', cpu: 4.5, mem: 4.2, time: '12:30.45', cmd: 'node server.js' },
-        { pid: 2201, user: 'neo', pri: 20, ni: 0, virt: '1.2G', res: '340M', shr: '110M', s: 'S', cpu: 0.8, mem: 6.1, time: '4:15.12', cmd: 'chrome --no-sandbox' },
-        { pid: 3012, user: 'www', pri: 20, ni: 0, virt: '400M', res: '50M', shr: '12M', s: 'S', cpu: 0.0, mem: 1.1, time: '0:00.15', cmd: 'nginx: worker process' },
-        { pid: 4921, user: 'root', pri: 20, ni: 0, virt: '120M', res: '4M', shr: '2M', s: 'S', cpu: 0.1, mem: 0.1, time: '5 days', cmd: 'systemd --system' },
-        { pid: 5102, user: 'neo', pri: 20, ni: 0, virt: '55M', res: '18M', shr: '5M', s: 'R', cpu: 2.1, mem: 0.4, time: '0:12.33', cmd: 'htop' },
-        { pid: 6612, user: 'root', pri: -20, ni: 0, virt: '0', res: '0', shr: '0', s: 'S', cpu: 0.0, mem: 0.0, time: '0:00.00', cmd: '[kworker/u16:0]' },
+export const Htop: React.FC<HtopProps> = ({ onExit }) => {
+    const [cpu, setCpu] = useState<number[][]>([
+        [15, 10, 5, 2], // CPU 0: [user, system, nice, iowait]
+        [20, 8, 3, 1],  // CPU 1
+        [12, 6, 2, 1],  // CPU 2
+        [18, 7, 4, 2],  // CPU 3
+    ]);
+    const [mem, setMem] = useState({ used: 154, total: 416 }); // in MB
+    const [swp] = useState({ used: 101, total: 416 }); // in MB
+    const [tasks] = useState({ total: 63, threads: 109, running: 1 });
+    const [uptime, setUptime] = useState(45 * 24 * 3600 + 10 * 3600 + 38 * 60 + 51); // 45 days
+    const [selectedIndex, setSelectedIndex] = useState(0);
+    const scrollRef = useRef<HTMLDivElement>(null);
+
+    // Generate realistic process list
+    const [processes] = useState<Process[]>([
+        { pid: 1948254, user: 'x', pri: 20, ni: 0, virt: '8104', res: '4200', shr: '2856', s: 'R', cpu: 3.2, mem: 1.0, time: '0:00.26', cmd: 'htop' },
+        { pid: 1, user: 'root', pri: 20, ni: 0, virt: '25252', res: '8276', shr: '5360', s: 'S', cpu: 0.0, mem: 1.9, time: '28:31.02', cmd: '/sbin/init splash' },
+        { pid: 300, user: 'root', pri: 20, ni: 0, virt: '29136', res: '3400', shr: '2764', s: 'S', cpu: 0.0, mem: 0.8, time: '8:43.91', cmd: '/usr/lib/systemd/systemd-journald' },
+        { pid: 351, user: 'systemd-ti', pri: 20, ni: 0, virt: '92228', res: '1300', shr: '1144', s: 'S', cpu: 0.0, mem: 0.3, time: '0:16.35', cmd: '/usr/lib/systemd/systemd-timesyncd' },
+        { pid: 378, user: 'root', pri: 20, ni: 0, virt: '35752', res: '1440', shr: '1348', s: 'S', cpu: 0.0, mem: 0.3, time: '0:10.55', cmd: '/usr/lib/systemd/systemd-udevd' },
+        { pid: 383, user: 'systemd-ti', pri: 20, ni: 0, virt: '92228', res: '1300', shr: '0', s: 'S', cpu: 0.0, mem: 0.3, time: '0:00.01', cmd: '/usr/lib/systemd/systemd-timesyncd' },
+        { pid: 510, user: 'rpc', pri: 20, ni: 0, virt: '6840', res: '332', shr: '296', s: 'S', cpu: 0.0, mem: 0.1, time: '0:08.28', cmd: '/usr/sbin/rpcbind -f -w' },
+        { pid: 519, user: 'root', pri: 20, ni: 0, virt: '5008', res: '240', shr: '236', s: 'S', cpu: 0.0, mem: 0.1, time: '0:00.01', cmd: '/usr/sbin/blkmapd' },
+        { pid: 568, user: 'root', pri: 20, ni: 0, virt: '302M', res: '3860', shr: '3248', s: 'S', cpu: 0.0, mem: 0.9, time: '0:00.96', cmd: '/usr/libexec/accounts-daemon' },
+        { pid: 570, user: 'avahi', pri: 20, ni: 0, virt: '5920', res: '1328', shr: '1032', s: 'S', cpu: 0.0, mem: 0.3, time: '5:38.85', cmd: 'avahi-daemon: running [xs.local]' },
+        { pid: 571, user: 'root', pri: 20, ni: 0, virt: '13000', res: '392', shr: '388', s: 'S', cpu: 0.0, mem: 0.1, time: '0:00.25', cmd: '/usr/libexec/bluetooth/bluetoothd' },
+        { pid: 572, user: 'root', pri: 20, ni: 0, virt: '6980', res: '800', shr: '704', s: 'S', cpu: 0.0, mem: 0.2, time: '0:42.53', cmd: '/usr/sbin/cron -f' },
+        { pid: 574, user: 'messagebus', pri: 20, ni: 0, virt: '9748', res: '2736', shr: '1364', s: 'S', cpu: 0.0, mem: 0.6, time: '27:16.03', cmd: '/usr/bin/dbus-daemon --system --address=systemd: --nofork --nopidfile --systemd-activation' },
+        { pid: 579, user: 'polkitd', pri: 20, ni: 0, virt: '302M', res: '3944', shr: '3064', s: 'S', cpu: 0.0, mem: 0.9, time: '0:01.88', cmd: '/usr/lib/polkit-1/polkitd --no-debug --log-level=notice' },
+        { pid: 580, user: 'avahi', pri: 20, ni: 0, virt: '5656', res: '236', shr: '232', s: 'S', cpu: 0.0, mem: 0.1, time: '0:00.00', cmd: 'avahi-daemon: chroot helper' },
+        { pid: 584, user: 'root', pri: 20, ni: 0, virt: '18864', res: '4988', shr: '4540', s: 'S', cpu: 1.2, mem: 1.2, time: '3:45.06', cmd: '/usr/lib/systemd/systemd-logind' },
+        { pid: 585, user: 'root', pri: 20, ni: 0, virt: '399M', res: '3520', shr: '2932', s: 'S', cpu: 0.0, mem: 0.8, time: '0:03.15', cmd: '/usr/libexec/udisks2/udisksd' },
+        { pid: 621, user: 'root', pri: 20, ni: 0, virt: '302M', res: '3860', shr: '0', s: 'S', cpu: 0.0, mem: 0.9, time: '0:00.00', cmd: '/usr/libexec/accounts-daemon' },
+        { pid: 622, user: 'root', pri: 20, ni: 0, virt: '302M', res: '3860', shr: '0', s: 'S', cpu: 0.0, mem: 0.9, time: '0:00.09', cmd: '/usr/libexec/accounts-daemon' },
+        { pid: 641, user: 'root', pri: 20, ni: 0, virt: '399M', res: '3520', shr: '0', s: 'S', cpu: 0.0, mem: 0.8, time: '1:41.54', cmd: '/usr/libexec/udisks2/udisksd' },
+        { pid: 642, user: 'root', pri: 20, ni: 0, virt: '399M', res: '3520', shr: '0', s: 'S', cpu: 0.0, mem: 0.8, time: '0:01.52', cmd: '/usr/libexec/udisks2/udisksd' },
+        { pid: 648, user: 'polkitd', pri: 20, ni: 0, virt: '302M', res: '3944', shr: '0', s: 'S', cpu: 0.0, mem: 0.9, time: '2:51.35', cmd: '/usr/lib/polkit-1/polkitd --no-debug --log-level=notice' },
+        { pid: 649, user: 'polkitd', pri: 20, ni: 0, virt: '302M', res: '3944', shr: '0', s: 'S', cpu: 0.0, mem: 0.9, time: '0:00.00', cmd: '/usr/lib/polkit-1/polkitd --no-debug --log-level=notice' },
+        { pid: 650, user: 'root', pri: 20, ni: 0, virt: '399M', res: '3520', shr: '0', s: 'S', cpu: 0.0, mem: 0.8, time: '0:00.14', cmd: '/usr/libexec/udisks2/udisksd' },
+        { pid: 651, user: 'root', pri: 20, ni: 0, virt: '302M', res: '3860', shr: '0', s: 'S', cpu: 0.0, mem: 0.9, time: '0:00.45', cmd: '/usr/libexec/accounts-daemon' },
+        { pid: 652, user: 'polkitd', pri: 20, ni: 0, virt: '302M', res: '3944', shr: '0', s: 'S', cpu: 0.0, mem: 0.9, time: '0:01.44', cmd: '/usr/lib/polkit-1/polkitd --no-debug --log-level=notice' },
+        { pid: 654, user: 'root', pri: 20, ni: 0, virt: '333M', res: '3424', shr: '2232', s: 'S', cpu: 0.0, mem: 0.8, time: '13:17.37', cmd: '/usr/sbin/NetworkManager --no-daemon' },
+        { pid: 690, user: 'root', pri: 20, ni: 0, virt: '316M', res: '2528', shr: '0', s: 'S', cpu: 0.0, mem: 0.6, time: '0:00.00', cmd: '/usr/sbin/ModemManager' },
+        { pid: 692, user: 'root', pri: 20, ni: 0, virt: '316M', res: '2528', shr: '0', s: 'S', cpu: 0.0, mem: 0.6, time: '0:00.00', cmd: '/usr/sbin/ModemManager' },
     ]);
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === 'q' || (e.key === 'c' && e.ctrlKey)) {
+            if (e.key === 'q' || e.key === 'Q' || (e.key === 'c' && e.ctrlKey)) {
                 onExit();
+            } else if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                setSelectedIndex(prev => Math.min(processes.length - 1, prev + 1));
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                setSelectedIndex(prev => Math.max(0, prev - 1));
             }
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [onExit]);
+    }, [onExit, processes.length]);
+
+    // Auto-scroll to keep selected item visible
+    useEffect(() => {
+        if (scrollRef.current) {
+            const selectedElement = scrollRef.current.children[selectedIndex] as HTMLElement;
+            if (selectedElement) {
+                selectedElement.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            }
+        }
+    }, [selectedIndex]);
 
     useEffect(() => {
         const interval = setInterval(() => {
-            // Update CPU bars
-            setCpu(prev => prev.map(() => Math.floor(Math.random() * 60) + 5));
-            // Update Mem/Swp slightly
-            setMem(prev => Math.min(100, Math.max(10, prev + (Math.random() * 4 - 2))));
-            setSwp(prev => Math.min(50, Math.max(0, prev + (Math.random() * 2 - 1))));
+            // Update CPU bars with realistic variations
+            setCpu(prev => prev.map(core => [
+                Math.max(0, Math.min(100, core[0] + (Math.random() * 10 - 5))), // user
+                Math.max(0, Math.min(30, core[1] + (Math.random() * 4 - 2))),   // system
+                Math.max(0, Math.min(10, core[2] + (Math.random() * 2 - 1))),   // nice
+                Math.max(0, Math.min(5, core[3] + (Math.random() * 2 - 1))),    // iowait
+            ]));
+
+            // Update memory slightly
+            setMem(prev => ({
+                ...prev,
+                used: Math.max(100, Math.min(prev.total - 10, prev.used + (Math.random() * 4 - 2)))
+            }));
+
             setUptime(prev => prev + 1);
-            setTasks(prev => Math.max(50, prev + Math.floor(Math.random() * 3 - 1)));
-
-            // Randomize processes usage
-            setProcesses(prev => prev.map(p => ({
-                ...p,
-                cpu: p.cmd === 'htop' ? (Math.random() * 2 + 1).toFixed(1) : (Math.random() * 5).toFixed(1),
-                mem: parseFloat((Math.random() * 2 + (p.user === 'neo' ? 2 : 0)).toFixed(1))
-            })) as any); // simplifying types for speed
-
         }, 1000);
+
         return () => clearInterval(interval);
     }, []);
 
-    const ProgressBar = ({ label, percent, color }: { label: string, percent: number, color: string }) => (
-        <div className="flex items-center text-xs font-mono">
-            <span className="w-8 text-cyan-400 font-bold">{label}</span>
-            <div className="flex items-center flex-1 mx-2">
-                <div className="flex-1 bg-gray-700 h-3 relative">
-                    <div
-                        className={`absolute top-0 left-0 h-full ${color}`}
-                        style={{ width: `${percent}%` }}
-                    />
+    const MultiColorBar = ({ label, segments, showMem }: {
+        label: string;
+        segments: number[];
+        showMem?: { used: number; total: number };
+    }) => {
+        const colors = ['bg-green-500', 'bg-red-500', 'bg-yellow-500', 'bg-blue-500', 'bg-magenta-500', 'bg-cyan-500'];
+        const sum = segments.reduce((a, b) => a + b, 0);
+        const barWidth = showMem ? (showMem.used / showMem.total * 100) : sum;
+
+        return (
+            <div className="flex items-center font-mono text-xs leading-tight">
+                <span className={`w-6 ${label.includes('Mem') || label.includes('Swp') ? 'text-cyan-400' : 'text-white'} font-bold`}>
+                    {label}
+                </span>
+                <span className="text-gray-500 mx-1">[</span>
+                <div className="flex-1 flex items-center">
+                    <div className="flex w-full h-3 relative">
+                        {segments.map((seg, i) => {
+                            const width = showMem ? (seg / showMem.total * 100) : seg;
+                            return seg > 0 ? (
+                                <div
+                                    key={i}
+                                    className={`h-full ${colors[i % colors.length]}`}
+                                    style={{ width: `${width}%` }}
+                                />
+                            ) : null;
+                        })}
+                    </div>
                 </div>
+                <span className="text-gray-500 ml-1">]</span>
+                {showMem ? (
+                    <span className="ml-2 text-gray-400 w-24 text-right">
+                        {showMem.used.toFixed(0)}M/{showMem.total.toFixed(0)}M
+                    </span>
+                ) : (
+                    <span className="ml-2 text-gray-400 w-12 text-right">{barWidth.toFixed(1)}%</span>
+                )}
             </div>
-            <span className="w-12 text-right">{percent.toFixed(1)}%</span>
-        </div>
-    );
+        );
+    };
 
     const formatUptime = (sec: number) => {
-        const h = Math.floor(sec / 3600);
-        const m = Math.floor((sec % 3600) / 60);
-        const s = sec % 60;
-        return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-    }
+        const days = Math.floor(sec / 86400);
+        const hours = Math.floor((sec % 86400) / 3600);
+        const mins = Math.floor((sec % 3600) / 60);
+        const secs = sec % 60;
+        return `${days} days, ${hours}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    };
+
+    const loadAvg = [0.84, 0.45, 1.12];
 
     return (
-        <div className="w-full h-full bg-black text-gray-300 font-mono text-xs select-none p-1">
+        <div className="w-full h-full bg-black text-gray-300 font-mono text-xs select-none overflow-hidden flex flex-col p-2">
             {/* Header Section */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 mb-2">
-                <div className="space-y-1">
-                    {cpu.map((c, i) => (
-                        <ProgressBar key={i} label={`${i + 1}`} percent={c} color="bg-green-500" />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 mb-2 flex-shrink-0">
+                <div className="space-y-0">
+                    {cpu.map((core, i) => (
+                        <MultiColorBar
+                            key={i}
+                            label={`${i}`}
+                            segments={core}
+                        />
                     ))}
-                    <ProgressBar label="Mem" percent={mem} color="bg-green-500" />
-                    <ProgressBar label="Swp" percent={swp} color="bg-red-500" />
+                    <MultiColorBar label="Mem" segments={[mem.used]} showMem={mem} />
+                    <MultiColorBar label="Swp" segments={[swp.used]} showMem={swp} />
                 </div>
-                <div className="space-y-1 text-xs">
-                    <div className="flex justify-between">
-                        <span>Tasks: <span className="text-white font-bold">{tasks}</span>, <span className="text-white font-bold">21</span> thr; <span className="text-white font-bold">1</span> running</span>
+                <div className="space-y-0 text-xs flex flex-col justify-center">
+                    <div className="text-gray-400">
+                        Tasks: <span className="text-cyan-400 font-bold">{tasks.total}</span>,{' '}
+                        <span className="text-green-400 font-bold">{tasks.threads}</span> thr;{' '}
+                        <span className="text-green-400 font-bold">{tasks.running}</span> running
                     </div>
-                    <div className="flex justify-between">
-                        <span>Load average: <span className="text-white font-bold">0.84 0.45 1.12</span></span>
+                    <div className="text-gray-400">
+                        Load average: <span className="text-cyan-400 font-bold">{loadAvg.join(' ')}</span>
                     </div>
-                    <div className="flex justify-between">
-                        <span>Uptime: <span className="text-white font-bold">{formatUptime(uptime)}</span></span>
+                    <div className="text-gray-400">
+                        Uptime: <span className="text-cyan-400 font-bold">{formatUptime(uptime)}</span>
                     </div>
                 </div>
+            </div>
+
+            {/* Table Header */}
+            <div className="bg-gray-900 text-white font-bold flex px-1 py-0.5 flex-shrink-0 border-t border-b border-gray-700">
+                <span className="w-16">PID</span>
+                <span className="w-20">USER</span>
+                <span className="w-10 text-right">PRI</span>
+                <span className="w-10 text-right">NI</span>
+                <span className="w-14 text-right">VIRT</span>
+                <span className="w-14 text-right">RES</span>
+                <span className="w-14 text-right">SHR</span>
+                <span className="w-8">S</span>
+                <span className="w-12 text-right">CPU%</span>
+                <span className="w-12 text-right">MEM%</span>
+                <span className="w-20">TIME+</span>
+                <span className="flex-1">Command</span>
             </div>
 
             {/* Process List */}
-            <div className="w-full mt-2">
-                {/* Table Header */}
-                <div className="flex bg-gray-800 text-black font-bold px-1 mb-1">
-                    <span className="w-12">PID</span>
-                    <span className="w-12">USER</span>
-                    <span className="w-10">PRI</span>
-                    <span className="w-10">NI</span>
-                    <span className="w-12">VIRT</span>
-                    <span className="w-12">RES</span>
-                    <span className="w-12">SHR</span>
-                    <span className="w-8">S</span>
-                    <span className="w-12">CPU%</span>
-                    <span className="w-12">MEM%</span>
-                    <span className="w-20">TIME+</span>
-                    <span className="flex-1">Command</span>
-                </div>
+            <div ref={scrollRef} className="flex-1 overflow-y-auto space-y-0">
+                {processes.map((p, idx) => {
+                    const isHighlighted = idx === selectedIndex;
+                    const isRunning = p.s === 'R';
+                    const userColor = p.user === 'root' ? 'text-red-400' :
+                        p.user.includes('systemd') ? 'text-blue-400' :
+                            p.user === 'x' ? 'text-cyan-400' : 'text-yellow-400';
 
-                {/* Table Body */}
-                <div className="space-y-0.5">
-                    {processes.map((p) => (
-                        <div key={p.pid} className={`flex px-1 ${p.cmd === 'htop' ? 'bg-cyan-900 text-white' : ''} hover:bg-gray-800`}>
-                            <span className="w-12 text-cyan-400">{p.pid}</span>
-                            <span className="w-12">{p.user}</span>
-                            <span className="w-10">{p.pri}</span>
-                            <span className="w-10">{p.ni}</span>
-                            <span className="w-12">{p.virt}</span>
-                            <span className="w-12">{p.res}</span>
-                            <span className="w-12">{p.shr}</span>
-                            <span className="w-8">{p.s}</span>
-                            <span className="w-12">{p.cpu}</span>
-                            <span className="w-12">{p.mem}</span>
+                    return (
+                        <div
+                            key={p.pid}
+                            className={`flex px-1 py-0 ${isHighlighted ? 'bg-cyan-900 text-white' : ''} hover:bg-gray-900 cursor-pointer`}
+                        >
+                            <span className={`w-16 ${isHighlighted ? 'text-white' : 'text-green-400'}`}>{p.pid}</span>
+                            <span className={`w-20 ${isHighlighted ? 'text-white' : userColor}`}>{p.user}</span>
+                            <span className="w-10 text-right">{p.pri}</span>
+                            <span className="w-10 text-right">{p.ni}</span>
+                            <span className="w-14 text-right">{p.virt}</span>
+                            <span className="w-14 text-right">{p.res}</span>
+                            <span className="w-14 text-right">{p.shr}</span>
+                            <span className={`w-8 ${isRunning ? 'text-green-400 font-bold' : ''}`}>{p.s}</span>
+                            <span className={`w-12 text-right ${isRunning && p.cpu > 1 ? 'text-green-400' : ''}`}>
+                                {p.cpu.toFixed(1)}
+                            </span>
+                            <span className="w-12 text-right">{p.mem.toFixed(1)}</span>
                             <span className="w-20">{p.time}</span>
-                            <span className="flex-1 text-green-400">{p.cmd}</span>
+                            <span className={`flex-1 truncate ${isHighlighted ? 'text-white' : 'text-white'}`}>{p.cmd}</span>
                         </div>
-                    ))}
-                </div>
+                    );
+                })}
             </div>
 
             {/* Footer */}
-            <div className="mt-4 flex gap-2 text-black font-bold">
-                <span className="bg-gray-300 px-1">F1Help</span>
-                <span className="bg-gray-300 px-1">F2Setup</span>
-                <span className="bg-gray-300 px-1">F3Search</span>
-                <span className="bg-gray-300 px-1">F4Filter</span>
-                <span className="bg-gray-300 px-1">F5Tree</span>
-                <span className="bg-gray-300 px-1">F6Sort</span>
-                <span className="bg-gray-300 px-1">F7Nice</span>
-                <span className="bg-gray-300 px-1">F8Nice+</span>
-                <span className="bg-gray-300 px-1">F9Kill</span>
-                <span className="bg-gray-300 px-1">F10Quit</span>
+            <div className="mt-2 flex gap-1 flex-wrap flex-shrink-0 border-t border-gray-800 pt-1">
+                <span className="bg-gray-700 text-white px-1.5 py-0.5 text-xs">F1Help</span>
+                <span className="bg-gray-700 text-white px-1.5 py-0.5 text-xs">F2Setup</span>
+                <span className="bg-gray-700 text-white px-1.5 py-0.5 text-xs">F3Search</span>
+                <span className="bg-gray-700 text-white px-1.5 py-0.5 text-xs">F4Filter</span>
+                <span className="bg-gray-700 text-white px-1.5 py-0.5 text-xs">F5Tree</span>
+                <span className="bg-gray-700 text-white px-1.5 py-0.5 text-xs">F6Sort</span>
+                <span className="bg-gray-700 text-white px-1.5 py-0.5 text-xs">F7Nice-</span>
+                <span className="bg-gray-700 text-white px-1.5 py-0.5 text-xs">F8Nice+</span>
+                <span className="bg-gray-700 text-white px-1.5 py-0.5 text-xs">F9Kill</span>
+                <span className="bg-gray-700 text-white px-1.5 py-0.5 text-xs">F10Quit</span>
+                <span className="ml-auto bg-cyan-900 text-cyan-200 px-2 py-0.5 text-xs font-bold animate-pulse">
+                    Press 'Q' to quit
+                </span>
             </div>
         </div>
     );

@@ -44,7 +44,7 @@ export const About: React.FC<AboutProps> = ({ onExit, onNavigate }) => {
                                     <div className="w-24 h-24 lg:w-32 lg:h-32 rounded-full bg-elegant-bg border border-elegant-border p-1 mb-4 lg:mb-6 grayscale">
                                         <div className="w-full h-full rounded-full bg-elegant-bg flex items-center justify-center overflow-hidden">
                                             <img
-                                                src="/avatars/me.jpg"
+                                                src="/media/avatars/me.jpg"
                                                 alt="Profile"
                                                 className="w-full h-full object-cover"
                                                 onError={(e) => {

@@ -12,22 +12,22 @@ const ALBUMS = [
     {
         title: 'Neon Nights',
         count: 5,
-        cover: '/gallery/neon_cover.jpg',
-        photos: Array.from({ length: 5 }, (_, i) => `/gallery/neon_${i + 1}.jpg`),
+        cover: '/media/gallery/neon_cover.jpg',
+        photos: Array.from({ length: 5 }, (_, i) => `/media/gallery/neon_${i + 1}.jpg`),
         category: 'Urban',
     },
     {
         title: 'Cyber Dreams',
         count: 4,
-        cover: '/gallery/cyber_cover.jpg',
-        photos: Array.from({ length: 4 }, (_, i) => `/gallery/cyber_${i + 1}.jpg`),
+        cover: '/media/gallery/cyber_cover.jpg',
+        photos: Array.from({ length: 4 }, (_, i) => `/media/gallery/cyber_${i + 1}.jpg`),
         category: 'Digital',
     },
     {
         title: 'Matrix Code',
         count: 6,
-        cover: '/gallery/matrix_cover.jpg',
-        photos: Array.from({ length: 6 }, (_, i) => `/gallery/matrix_${i + 1}.jpg`),
+        cover: '/media/gallery/matrix_cover.jpg',
+        photos: Array.from({ length: 6 }, (_, i) => `/media/gallery/matrix_${i + 1}.jpg`),
         category: 'Abstract',
     },
 ];

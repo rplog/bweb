@@ -1,0 +1,41 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
+@import "tailwindcss";
+
+:root {
+  --term-color: #00ff00;
+  --term-bg: #0a0a0a;
+  --term-font: 'JetBrains Mono', 'Consolas', 'Monaco', 'Andale Mono', 'Ubuntu Mono', monospace;
+  --term-prompt: #bd93f9;
+  --term-error: #ff5555;
+  --term-link: #8be9fd;
+  --term-dim: #6272a4;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--term-bg);
+  color: var(--term-color);
+  font-family: var(--term-font);
+  font-size: 18px;
+  line-height: 1.6;
+  overflow: hidden;
+  /* Prevent body scroll, handle in Terminal */
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--term-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--term-dim);
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--term-color);
+}

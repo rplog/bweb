@@ -55,59 +55,97 @@ export const commands: Record<string, Command> = {
             return node.content || '';
         }
     },
-    neofetch: {
-        description: 'Display system information',
+    fastfetch: {
+        description: 'Display system information (fast)',
         execute: () => {
+            // Calculate uptime
+            const uptimeSec = Math.floor(performance.now() / 1000);
+            const days = Math.floor(uptimeSec / 86400);
+            const hours = Math.floor((uptimeSec % 86400) / 3600);
+            const mins = Math.floor((uptimeSec % 3600) / 60);
+            const uptimeStr = `${days} days, ${hours} hours, ${mins} mins`;
+
+            // Calculate memory (simulated)
+            const memUsed = 4.2;
+            const memTotal = 16.0;
+            const memPercent = Math.round((memUsed / memTotal) * 100);
+
             return (
-                <div className="flex gap-4 text-[#00ff00] font-mono whitespace-pre text-sm">
-                    <div className="hidden sm:block text-cyan-500">
-                        {`       .
-      .::
-     .::::
-    .:::::
-   .::::::
-  .:::::::.
- :::::::::.
-.:::::::::
-::::::::::
-':::::::::
- ':::::::.
-  '::::::
-   ':::::
-    '::::
-     '::
-      '`}
-                    </div>
-                    <div className="flex flex-col justify-center">
-                        <div><span className="text-cyan-500">neo@neosphere</span></div>
-                        <div>-----------------</div>
-                        <div><span className="text-cyan-500">OS</span>: Neosphere OS v2.0</div>
-                        <div><span className="text-cyan-500">Host</span>: Cloudflare Pages</div>
-                        <div><span className="text-cyan-500">Kernel</span>: 5.4.0-matrix-generic</div>
-                        <div><span className="text-cyan-500">Uptime</span>: Forever</div>
-                        <div><span className="text-cyan-500">Packages</span>: 1337 (npm)</div>
-                        <div><span className="text-cyan-500">Shell</span>: React-Term v1.0</div>
-                        <div><span className="text-cyan-500">Resolution</span>: 1920x1080</div>
-                        <div><span className="text-cyan-500">DE</span>: Glassmorphism</div>
-                        <div><span className="text-cyan-500">WM</span>: Tiling</div>
-                        <div><span className="text-cyan-500">Theme</span>: Matrix Dark</div>
-                        <div><span className="text-cyan-500">Terminal</span>: WebRender</div>
-                        <div><span className="text-cyan-500">CPU</span>: Virtual Core x8</div>
-                        <div><span className="text-cyan-500">GPU</span>: WebGL Renderer</div>
-                        <div><span className="text-cyan-500">Memory</span>: 640KB / 16GB</div>
-                        <div className="mt-2 flex gap-1">
-                            <div className="w-3 h-3 bg-black"></div>
-                            <div className="w-3 h-3 bg-red-500"></div>
-                            <div className="w-3 h-3 bg-green-500"></div>
-                            <div className="w-3 h-3 bg-yellow-500"></div>
-                            <div className="w-3 h-3 bg-blue-500"></div>
-                            <div className="w-3 h-3 bg-purple-500"></div>
-                            <div className="w-3 h-3 bg-cyan-500"></div>
-                            <div className="w-3 h-3 bg-white"></div>
+                <div className="flex gap-6 font-mono text-sm leading-relaxed">
+                    {/* Ubuntu ASCII Art */}
+                    <div className="hidden md:block text-orange-500 whitespace-pre select-none flex-shrink-0" style={{ fontSize: '10px', lineHeight: '1.1' }}>
+{`         .,,:clooo:  .:looooo:.
+     .;looooooooc .oooooooooo'
+   .,looooool:,''   :ooooooooooc
+  ;looool;:.      'oooooooooo,
+ ;clool'           .cooooooc.  ,,
+   ...               .....   ,:oo,
+  :clol:,.                 .looooo'
+.:oooooooo,               'oooool
+'ooooooooooo.              loooo.
+'ooooooooool               coooo.
+ ,looooooooc.             .loooo.
+  .,,,, .                ;oooooc
+       ...             ,ooool.
+      .cooooc.      '  ,cooo.
+        ;ooooo:.     :ooooooc.  :l.
+         .coooooc,.. cooooooooo.
+           .:ooooooolc:. .oooooooooo'
+              '!:looooo:  ,ooooooooc
+                  .. ;::c'  .:loooo:`}</div>
+
+                    {/* System Information */}
+                    <div className="flex flex-col justify-center space-y-0.5 text-white flex-1 min-w-0">
+                        <div className="mb-1">
+                            <span className="text-orange-500 font-bold">neo@neosphere</span>
+                        </div>
+                        <div className="text-orange-500 mb-1">{'─'.repeat(17)}</div>
+
+                        <div><span className="text-orange-500 font-bold">OS:</span> <span className="text-gray-300">Neosphere OS v2.0 LTS x86_64</span></div>
+                        <div><span className="text-orange-500 font-bold">Host:</span> <span className="text-gray-300">Cloudflare Pages (Virtual)</span></div>
+                        <div><span className="text-orange-500 font-bold">Kernel:</span> <span className="text-gray-300">Linux 6.8.0-matrix-generic</span></div>
+                        <div><span className="text-orange-500 font-bold">Uptime:</span> <span className="text-gray-300">{uptimeStr}</span></div>
+                        <div><span className="text-orange-500 font-bold">Packages:</span> <span className="text-gray-300">1337 (npm), 42 (cargo)</span></div>
+                        <div><span className="text-orange-500 font-bold">Shell:</span> <span className="text-gray-300">react-bash 1.0.0</span></div>
+                        <div><span className="text-orange-500 font-bold">Terminal:</span> <span className="text-gray-300">/dev/web/0</span></div>
+                        <div><span className="text-orange-500 font-bold">CPU:</span> <span className="text-gray-300">8 x Virtual Core @ 3.40 GHz</span></div>
+                        <div><span className="text-orange-500 font-bold">GPU:</span> <span className="text-gray-300">WebGL 2.0 Renderer</span></div>
+                        <div><span className="text-orange-500 font-bold">Memory:</span> <span className="text-gray-300">{memUsed.toFixed(2)} GiB / {memTotal.toFixed(2)} GiB ({memPercent}%)</span></div>
+                        <div><span className="text-orange-500 font-bold">Disk (/):</span> <span className="text-gray-300">Virtual Storage</span></div>
+                        <div><span className="text-orange-500 font-bold">Local IP:</span> <span className="text-gray-300">127.0.0.1</span></div>
+                        <div><span className="text-orange-500 font-bold">Locale:</span> <span className="text-gray-300">en_US.UTF-8</span></div>
+
+                        {/* Color Palette */}
+                        <div className="mt-3 flex gap-1.5">
+                            <div className="w-8 h-4 bg-gray-700"></div>
+                            <div className="w-8 h-4 bg-red-500"></div>
+                            <div className="w-8 h-4 bg-green-500"></div>
+                            <div className="w-8 h-4 bg-yellow-500"></div>
+                            <div className="w-8 h-4 bg-blue-500"></div>
+                            <div className="w-8 h-4 bg-purple-500"></div>
+                            <div className="w-8 h-4 bg-cyan-500"></div>
+                            <div className="w-8 h-4 bg-gray-300"></div>
+                        </div>
+                        <div className="flex gap-1.5">
+                            <div className="w-8 h-4 bg-gray-500"></div>
+                            <div className="w-8 h-4 bg-red-400"></div>
+                            <div className="w-8 h-4 bg-green-400"></div>
+                            <div className="w-8 h-4 bg-yellow-400"></div>
+                            <div className="w-8 h-4 bg-blue-400"></div>
+                            <div className="w-8 h-4 bg-purple-400"></div>
+                            <div className="w-8 h-4 bg-cyan-400"></div>
+                            <div className="w-8 h-4 bg-white"></div>
                         </div>
                     </div>
                 </div>
             );
+        }
+    },
+    neofetch: {
+        description: 'Display system information (alias for fastfetch)',
+        execute: (_args, context) => {
+            // Just call fastfetch
+            return commands.fastfetch.execute([], context);
         }
     },
     htop: {

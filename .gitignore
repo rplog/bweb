@@ -22,3 +22,19 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Cloudflare Wrangler
+.wrangler/
+.dev.vars
+.env
+.env.*
+!.env.example
+
+# Vite cache
+.vite/
+
+# Temp
+temp_init_dir/
+
+# OS
+Thumbs.db

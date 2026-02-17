@@ -53,7 +53,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
                                         }
                                         setIsOpen(false);
                                     }}
-                                    className={`w-full text-left px-4 py-2 text-xs hover:bg-white/10 transition-colors flex items-center justify-between ${page.toLowerCase() === currentPath ? 'text-elegant-accent' : 'text-elegant-text-secondary'
+                                    className={`w-full text-left px-4 py-2 text-sm font-medium hover:bg-white/10 transition-colors flex items-center justify-between ${page.toLowerCase() === currentPath ? 'text-elegant-accent' : 'text-elegant-text-secondary'
                                         }`}
                                 >
                                     {page.toLowerCase()}
@@ -66,7 +66,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
                                     onNavigate('Terminal');
                                     setIsOpen(false);
                                 }}
-                                className="w-full text-left px-4 py-2 text-xs hover:bg-white/10 transition-colors text-elegant-text-muted hover:text-white flex items-center gap-2"
+                                className="w-full text-left px-4 py-2 text-sm font-medium hover:bg-white/10 transition-colors text-elegant-text-muted hover:text-white flex items-center gap-2"
                             >
                                 <Terminal size={12} />
                                 terminal

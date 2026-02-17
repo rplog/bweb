@@ -21,6 +21,77 @@ export const commands: Record<string, Command> = {
             return `Available commands: ${commandList}`;
         },
     },
+    login: {
+        description: 'Login as admin',
+        usage: 'login <password>',
+        execute: async (args) => {
+            if (args.length === 0) return 'Usage: login <password>';
+            const password = args[0];
+
+            try {
+                const res = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password })
+                });
+
+                if (!res.ok) {
+                    const data = await res.json();
+                    return `Error: ${data.error || 'Login failed'}`;
+                }
+
+                const data = await res.json();
+                localStorage.setItem('admin_token', data.token);
+                return 'Logged in successfully. Use "inbox" to view messages.';
+            } catch (e: any) {
+                return `Error: ${e.message}`;
+            }
+        }
+    },
+    inbox: {
+        description: 'View contact messages (Admin only)',
+        execute: async () => {
+            const token = localStorage.getItem('admin_token');
+            if (!token) return 'Error: You must be logged in. Use "login <password>" first.';
+
+            try {
+                const res = await fetch('/api/contact/inbox', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (res.status === 401) {
+                    localStorage.removeItem('admin_token');
+                    return 'Error: Session expired or unauthorized. Please login again.';
+                }
+
+                if (!res.ok) throw new Error('Failed to fetch inbox');
+
+                const messages = await res.json();
+
+                if (messages.length === 0) return 'Inbox is empty.';
+
+                return (
+                    <div className="flex flex-col gap-4 font-mono text-sm">
+                        <div className="text-elegant-accent font-bold mb-2">Inbox ({messages.length})</div>
+                        {messages.map((msg: any) => (
+                            <div key={msg.id} className="bg-white/5 p-3 rounded border border-white/10">
+                                <div className="flex justify-between items-start mb-2">
+                                    <div className="flex flex-col">
+                                        <span className="text-elegant-text-primary font-bold">{msg.name}</span>
+                                        <span className="text-elegant-text-muted text-xs">{msg.email}</span>
+                                    </div>
+                                    <span className="text-elegant-text-muted text-xs">{new Date(msg.timestamp).toLocaleString()}</span>
+                                </div>
+                                <div className="text-elegant-text-secondary whitespace-pre-wrap">{msg.message}</div>
+                            </div>
+                        ))}
+                    </div>
+                );
+            } catch (e: any) {
+                return `Error: ${e.message}`;
+            }
+        }
+    },
     whoami: {
         description: 'Print current user',
         execute: () => 'neo',

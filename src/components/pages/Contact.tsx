@@ -16,10 +16,29 @@ export const Contact: React.FC<ContactProps> = ({ onExit, onNavigate }) => {
         else if (onNavigate) onNavigate(dest);
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        alert(`Message sent!\nName: ${formData.name}\nEmail: ${formData.email}\nMessage: ${formData.message}`);
-        setFormData({ name: '', email: '', message: '' });
+        setStatus('loading');
+
+        try {
+            const res = await fetch('/api/contact', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData),
+            });
+
+            if (!res.ok) throw new Error('Failed to send message');
+
+            setStatus('success');
+            setFormData({ name: '', email: '', message: '' });
+            setTimeout(() => setStatus('idle'), 3000);
+        } catch (error) {
+            console.error(error);
+            setStatus('error');
+            setTimeout(() => setStatus('idle'), 3000);
+        }
     };
 
     return (
@@ -104,10 +123,16 @@ export const Contact: React.FC<ContactProps> = ({ onExit, onNavigate }) => {
 
                             <button
                                 type="submit"
-                                className="w-full bg-elegant-accent hover:bg-elegant-accent-hover text-elegant-bg font-bold py-2.5 px-6 rounded-sm transition-all duration-300 flex items-center justify-center gap-2 border border-transparent text-sm"
+                                disabled={status === 'loading' || status === 'success'}
+                                className={`w-full font-bold py-2.5 px-6 rounded-sm transition-all duration-300 flex items-center justify-center gap-2 border border-transparent text-sm ${status === 'success'
+                                        ? 'bg-green-500 text-white hover:bg-green-600'
+                                        : status === 'error'
+                                            ? 'bg-red-500 text-white hover:bg-red-600'
+                                            : 'bg-elegant-accent hover:bg-elegant-accent-hover text-elegant-bg'
+                                    }`}
                             >
-                                <Send size={16} />
-                                Send Message
+                                <Send size={16} className={status === 'loading' ? 'animate-pulse' : ''} />
+                                {status === 'loading' ? 'Sending...' : status === 'success' ? 'Message Sent!' : status === 'error' ? 'Failed to Send' : 'Send Message'}
                             </button>
                         </form>
                     </div>

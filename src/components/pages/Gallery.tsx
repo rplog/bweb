@@ -133,7 +133,7 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
         setActiveAlbum(album);
         setActivePhoto(null);
         const slug = album.title.toLowerCase();
-        window.history.pushState({}, '', `/ gallery / ${slug} `);
+        window.history.pushState({}, '', `/gallery/${slug}`);
     };
 
     const closeAlbum = () => {
@@ -275,7 +275,7 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
         setActivePhoto(null);
         if (activeAlbum) {
             const slug = activeAlbum.title.toLowerCase();
-            window.history.pushState({}, '', `/ gallery / ${slug} `);
+            window.history.pushState({}, '', `/gallery/${slug}`);
         }
     };
 
@@ -348,12 +348,6 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
 
     const handleDelete = async (key: string, isAlbum = false) => {
         // Use custom confirm logic? For now standard confirm is okay or user wanted "matches site design".
-        // I'll make a custom confirm using the Prompt logic (but simple yes/no).
-        // Actually I'll stick to standard confirm for speed unless specifically asked for *all* prompts.
-        // User said "Add a commom custom prompt... use that for all the prompts".
-        // So I should replace confirm too.
-        // I'll reuse showPrompt but maybe just a boolean prompt?
-        // I'll just use window.confirm for now to save complexity, user focused on "input" prompts.
         if (!confirm(`Are you sure you want to delete this ${isAlbum ? 'album' : 'photo'}?`)) return;
 
         try {
@@ -367,34 +361,81 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
             });
 
             if (!res.ok) throw new Error('Delete failed');
-            window.location.reload();
+
+            // Update State without Reload
+            if (isAlbum) {
+                setAlbums(prev => prev.filter(a => a.title !== key));
+                if (activeAlbum?.title === key) closeAlbum();
+            } else {
+                // Delete Photo
+                setAlbums(prev => prev.map(a => {
+                    if (a.title === activeAlbum?.title) {
+                        return {
+                            ...a,
+                            count: a.count - 1,
+                            photos: a.photos.filter(p => p.key !== key),
+                            cover: a.cover.filter(url => !url.includes(key)) // Approximate check
+                        };
+                    }
+                    return a;
+                }));
+                // Also update activeAlbum state if it's the current one
+                if (activeAlbum) {
+                    setActiveAlbum(prev => prev ? {
+                        ...prev,
+                        count: prev.count - 1,
+                        photos: prev.photos.filter(p => p.key !== key)
+                    } : null);
+                }
+                if (activePhoto?.key === key) closePhoto();
+            }
+
         } catch (err: any) {
             showAlert(err.message, 'error');
         }
     };
 
-    const handleUpdateCaption = async () => {
-        if (!activePhoto || editCaption === null) return;
+    const handleUpdateCaption = () => {
+        if (!activePhoto) return;
 
-        try {
-            const res = await fetch('/api/gallery', {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
-                },
-                body: JSON.stringify({
-                    action: 'update-caption',
-                    key: activePhoto.key,
-                    caption: editCaption
-                })
-            });
-            if (!res.ok) throw new Error('Update failed');
+        showPrompt('Update Caption', activePhoto.caption, async (newCaption) => {
+            // Optimistic Update
+            const prevCaption = activePhoto.caption;
+            setActivePhoto({ ...activePhoto, caption: newCaption });
 
-            window.location.reload();
-        } catch (err: any) {
-            showAlert(err.message, 'error');
-        }
+            try {
+                const res = await fetch('/api/gallery', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
+                    },
+                    body: JSON.stringify({
+                        action: 'update-caption',
+                        key: activePhoto.key,
+                        caption: newCaption
+                    })
+                });
+
+                if (!res.ok) throw new Error('Update failed');
+
+                // Update local albums state
+                setAlbums(prev => prev.map(a => {
+                    if (a.title === activeAlbum?.title) {
+                        return {
+                            ...a,
+                            photos: a.photos.map(p => p.key === activePhoto.key ? { ...p, caption: newCaption } : p)
+                        };
+                    }
+                    return a;
+                }));
+
+            } catch (err: any) {
+                // Revert
+                setActivePhoto({ ...activePhoto, caption: prevCaption });
+                showAlert(err.message, 'error');
+            }
+        });
     };
 
     const handleRenameAlbum = (oldName: string) => {
@@ -411,7 +452,17 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                 });
 
                 if (!res.ok) throw new Error('Rename failed');
-                window.location.reload();
+
+                // Refetch albums to get correct new keys/urls
+                const data = await fetch('/api/gallery').then(r => r.json());
+                setAlbums(data);
+                // If we were inside the album, we should navigate to the new one or close it
+                if (activeAlbum?.title === oldName) {
+                    const newAlbum = data.find((a: any) => a.title === newName);
+                    if (newAlbum) openAlbum(newAlbum);
+                    else closeAlbum();
+                }
+
             } catch (err: any) {
                 showAlert(err.message, 'error');
             }
@@ -433,7 +484,50 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                 });
 
                 if (!res.ok) throw new Error('Rename failed');
-                window.location.reload();
+
+                // Construct new key/url locally
+                // Backend returns { success: true, newKey }
+                const { newKey } = await res.json() as any;
+
+                // Update State
+                setAlbums(prev => prev.map(a => {
+                    if (a.title === activeAlbum?.title) {
+                        return {
+                            ...a,
+                            photos: a.photos.map(p => p.key === key ? {
+                                ...p,
+                                key: newKey,
+                                url: `/api/gallery/${newKey}`
+                            } : p)
+                        };
+                    }
+                    return a;
+                }));
+
+                if (activeAlbum) {
+                    setActiveAlbum(prev => prev ? {
+                        ...prev,
+                        photos: prev.photos.map(p => p.key === key ? {
+                            ...p,
+                            key: newKey,
+                            url: `/api/gallery/${newKey}`
+                        } : p)
+                    } : null);
+                }
+
+                if (activePhoto?.key === key) {
+                    setActivePhoto(prev => prev ? {
+                        ...prev,
+                        key: newKey,
+                        url: `/api/gallery/${newKey}`
+                    } : null);
+                    // Update URL without reload
+                    if (activeAlbum) {
+                        const slug = activeAlbum.title.toLowerCase();
+                        window.history.replaceState({}, '', `/gallery/${slug}/${newName}`);
+                    }
+                }
+
             } catch (err: any) {
                 showAlert(err.message, 'error');
             }
@@ -683,12 +777,13 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                             />
 
                             {/* Caption Overlay */}
-                            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent p-8 text-center">
-                                {/* If editing, handled by Admin Overlay, otherwise show text */}
-                                {(!isAdmin || editCaption === null) && activePhoto.caption && (
-                                    <p className="text-white/90 font-medium text-lg drop-shadow-md">
-                                        {activePhoto.caption}
-                                    </p>
+                            <div className="absolute bottom-8 left-0 right-0 flex justify-center pointer-events-none z-30">
+                                {activePhoto.caption && (
+                                    <div className="bg-black/30 backdrop-blur-md border border-white/10 rounded-full px-6 py-3 max-w-[80vw]">
+                                        <p className="text-white/90 font-medium text-sm sm:text-base drop-shadow-md text-center truncate">
+                                            {activePhoto.caption}
+                                        </p>
+                                    </div>
                                 )}
                             </div>
 
@@ -889,44 +984,16 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                     </div>
                 )}
 
-                {/* Lightbox Edit Overlay */}
+                {/* Lightbox Edit Button (Bottom Right) */}
                 {activePhoto && isAdmin && (
-                    <div className="absolute top-20 left-1/2 -translate-x-1/2 z-50">
-                        {editCaption !== null ? (
-                            <div className="flex items-center gap-2 bg-elegant-card border border-elegant-border p-3 rounded-lg shadow-xl animate-fade-in">
-                                <input
-                                    type="text"
-                                    value={editCaption}
-                                    onChange={(e) => setEditCaption(e.target.value)}
-                                    className="bg-elegant-bg border border-elegant-border rounded px-3 py-1 text-elegant-text-primary focus:border-elegant-accent outline-none text-sm w-64"
-                                    placeholder="Enter caption..."
-                                    autoFocus
-                                    onKeyDown={(e) => e.key === 'Enter' && handleUpdateCaption()}
-                                />
-                                <button
-                                    onClick={handleUpdateCaption}
-                                    className="p-2 bg-elegant-accent text-white rounded hover:bg-elegant-accent/90 transition-colors"
-                                    title="Save Caption"
-                                >
-                                    <Save size={16} />
-                                </button>
-                                <button
-                                    onClick={() => setEditCaption(null)}
-                                    className="p-2 text-elegant-text-muted hover:text-white transition-colors"
-                                    title="Cancel"
-                                >
-                                    <X size={16} />
-                                </button>
-                            </div>
-                        ) : (
-                            <button
-                                onClick={() => setEditCaption(activePhoto.caption || '')}
-                                className="absolute top-4 left-4 p-3 bg-black/50 hover:bg-elegant-accent text-white rounded-full transition-all backdrop-blur-sm"
-                                title="Edit Caption"
-                            >
-                                <Edit2 size={20} />
-                            </button>
-                        )}
+                    <div className="absolute bottom-6 right-6 z-50">
+                        <button
+                            onClick={handleUpdateCaption}
+                            className="p-3 bg-elegant-card/80 border border-elegant-border backdrop-blur-md text-elegant-text-primary rounded-full hover:bg-elegant-accent hover:text-white transition-all shadow-lg"
+                            title="Edit Caption"
+                        >
+                            <Edit2 size={20} />
+                        </button>
                     </div>
                 )}
 

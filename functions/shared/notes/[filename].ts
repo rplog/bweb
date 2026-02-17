@@ -427,64 +427,55 @@ export const onRequestGet = async (context: any) => {
             toggleBtn.textContent = isDiffView ? "View File Content" : "View Diff";
 
             if (isDiffView) {
-                // Determine Old and New
-                // Edit stores 'previous_content'. 
-                // So this edit represents the transition: edit.previous_content -> (Next State)
-                const oldText = edit.previous_content || "";
-                
-                // The 'New' text is the 'previous_content' of the NEXT edit (newer), 
-                // OR result is 'latestContent' if this is the newest edit
-                const newText = (index === 0) ? latestContent : edits[index - 1].previous_content;
+                try {
+                    var oldText = (edit.previous_content != null) ? String(edit.previous_content) : "";
+                    var newText = (index === 0) ? latestContent : ((edits[index - 1].previous_content != null) ? String(edits[index - 1].previous_content) : "");
 
-                if (window.Diff) {
-                    // Normalize newlines to avoid spurious diffs
-                    const normOld = oldText.replace(/\r\n/g, '\n');
-                    const normNew = newText.replace(/\r\n/g, '\n');
-                    const diff = window.Diff.diffLines(normOld, normNew);
-                    
-                    let addedCount = 0;
-                    let removedCount = 0;
-                    let oldLineNum = 1;
-                    let newLineNum = 1;
-                    let linesHtml = '';
-                    
-                    diff.forEach(part => {
-                        // Split the part value into individual lines
-                        const lines = part.value.replace(/\n$/, '').split('\n');
+                    if (window.Diff) {
+                        var normOld = oldText.replace(/\\r\\n/g, '\\n');
+                        var normNew = newText.replace(/\\r\\n/g, '\\n');
+                        var diff = window.Diff.diffLines(normOld, normNew);
                         
-                        lines.forEach(line => {
-                            const escaped = escapeHtml(line);
-                            if (part.added) {
-                                addedCount++;
-                                linesHtml += \`<div class="diff-line added"><span class="diff-line-num">\${newLineNum}</span><span class="diff-line-prefix">+</span><span class="diff-line-content">\${escaped}</span></div>\`;
-                                newLineNum++;
-                            } else if (part.removed) {
-                                removedCount++;
-                                linesHtml += \`<div class="diff-line removed"><span class="diff-line-num">\${oldLineNum}</span><span class="diff-line-prefix">-</span><span class="diff-line-content">\${escaped}</span></div>\`;
-                                oldLineNum++;
-                            } else {
-                                linesHtml += \`<div class="diff-line context"><span class="diff-line-num">\${newLineNum}</span><span class="diff-line-prefix"> </span><span class="diff-line-content">\${escaped}</span></div>\`;
-                                oldLineNum++;
-                                newLineNum++;
+                        var addedCount = 0;
+                        var removedCount = 0;
+                        var oldLineNum = 1;
+                        var newLineNum = 1;
+                        var linesHtml = '';
+                        
+                        diff.forEach(function(part) {
+                            var val = part.value || '';
+                            var lines = val.replace(/\\n$/, '').split('\\n');
+                            
+                            for (var li = 0; li < lines.length; li++) {
+                                var escaped = escapeHtml(lines[li]);
+                                if (part.added) {
+                                    addedCount++;
+                                    linesHtml += '<div class="diff-line added"><span class="diff-line-num">' + newLineNum + '</span><span class="diff-line-prefix">+</span><span class="diff-line-content">' + escaped + '</span></div>';
+                                    newLineNum++;
+                                } else if (part.removed) {
+                                    removedCount++;
+                                    linesHtml += '<div class="diff-line removed"><span class="diff-line-num">' + oldLineNum + '</span><span class="diff-line-prefix">-</span><span class="diff-line-content">' + escaped + '</span></div>';
+                                    oldLineNum++;
+                                } else {
+                                    linesHtml += '<div class="diff-line context"><span class="diff-line-num">' + newLineNum + '</span><span class="diff-line-prefix"> </span><span class="diff-line-content">' + escaped + '</span></div>';
+                                    oldLineNum++;
+                                    newLineNum++;
+                                }
                             }
                         });
-                    });
-                    
-                    const statsHtml = \`<div class="diff-stats"><span class="added-count">+\${addedCount}</span> additions, <span class="removed-count">-\${removedCount}</span> deletions</div>\`;
-                    contentEl.innerHTML = \`<div class="diff-container">\${statsHtml}\${linesHtml}</div>\`;
-                } else {
-                    contentEl.textContent = "Diff library not loaded. Refresh page.";
+                        
+                        var statsHtml = '<div class="diff-stats"><span class="added-count">+' + addedCount + '</span> additions, <span class="removed-count">-' + removedCount + '</span> deletions</div>';
+                        contentEl.innerHTML = '<div class="diff-container">' + statsHtml + linesHtml + '</div>';
+                    } else {
+                        contentEl.textContent = "Diff library not loaded. Refresh page.";
+                    }
+                } catch (err) {
+                    console.error('Diff rendering error:', err);
+                    contentEl.innerHTML = escapeHtml(edit.previous_content || "(Error rendering diff)");
                 }
             } else {
-                 // View content of the specific version?
-                 // Wait, clicking "Commit 2" usually implies "Show me what Commit 2 looked like" 
-                 // OR "Show me what changed".
-                 // "View File Content" -> Show result content? (Next State) 
-                 // OR Show Previous content?
-                 // Logic: If I select a commit, I want to see the resulting file state.
-                 // The resulting state of 'Edit 2' is 'NewText' from calculation above.
-                 const newText = (index === 0) ? latestContent : edits[index - 1].previous_content;
-                 contentEl.innerHTML = escapeHtml(newText);
+                var newText2 = (index === 0) ? latestContent : ((edits[index - 1].previous_content != null) ? edits[index - 1].previous_content : "");
+                contentEl.innerHTML = escapeHtml(newText2);
             }
         }
 
@@ -498,7 +489,7 @@ export const onRequestGet = async (context: any) => {
         function restoreLatest() {
             contentEl.innerHTML = escapeHtml(latestContent);
             banner.style.display = 'none';
-            document.querySelectorAll('.git-entry').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.git-entry').forEach(function(el) { el.classList.remove('active'); });
             currentViewedEdit = null;
         }
         
@@ -506,29 +497,27 @@ export const onRequestGet = async (context: any) => {
         window.restoreLatest = restoreLatest;
 
         if (editList) {
-            edits.forEach(edit => {
-                const el = document.createElement('div');
+            edits.forEach(function(edit) {
+                var el = document.createElement('div');
                 el.className = 'git-entry';
                 el.id = 'entry-' + edit.id;
                 
-                const hash = edit.id.substring(0, 7);
-                const dateStr = formatGitDate(edit.created_at, writerTimezone);
+                var hash = edit.id.substring(0, 7);
+                var dateStr = formatGitDate(edit.created_at, writerTimezone);
                 
-                let authorDisplay = edit.author_name ? escapeHtml(edit.author_name) : \`\${edit.ip} (\${edit.city})\`;
-                let msgDisplay = edit.commit_msg ? escapeHtml(edit.commit_msg) : 'Update';
+                var authorDisplay = edit.author_name ? escapeHtml(edit.author_name) : (edit.ip + ' (' + edit.city + ')');
+                var msgDisplay = edit.commit_msg ? escapeHtml(edit.commit_msg) : 'Update';
                 
                 if (!edit.commit_msg && !edit.author_name) {
                      msgDisplay = 'msg from ' + authorDisplay;
                      authorDisplay = ''; 
                 }
 
-                el.innerHTML = \`
-                    <div>
-                        <span class="commit-hash" onclick="viewVersion('\${edit.id}')">\${hash}</span>
-                        <span class="commit-author">\${authorDisplay} \${authorDisplay && msgDisplay ? ': ' : ''} \${msgDisplay}</span>
-                    </div>
-                    <span class="commit-date">Date:   \${dateStr}</span>
-                \`;
+                el.innerHTML = '<div>'
+                    + '<span class="commit-hash" onclick="viewVersion(' + "'" + edit.id + "'" + ')">' + hash + '</span>'
+                    + '<span class="commit-author">' + authorDisplay + (authorDisplay && msgDisplay ? ': ' : ' ') + msgDisplay + '</span>'
+                    + '</div>'
+                    + '<span class="commit-date">Date:   ' + dateStr + '</span>';
                 editList.appendChild(el);
             });
         }

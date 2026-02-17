@@ -1,8 +1,17 @@
 import { SignJWT } from 'jose';
+import { checkRateLimit } from '../../utils/rateLimit';
 
-export const onRequestPost: PagesFunction<{ ADMIN_PASSWORD: string, JWT_SECRET: string }> = async (context) => {
+export const onRequestPost: PagesFunction<{ ADMIN_PASSWORD: string, JWT_SECRET: string, DB: D1Database, RATE_LIMITER: KVNamespace }> = async (context) => {
     try {
         const { request, env } = context;
+        const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+
+        // Rate Limit: 5 attempts per minute per IP
+        const allowed = await checkRateLimit(env, `login:${ip}`, 5, 60);
+        if (!allowed) {
+            return new Response(JSON.stringify({ error: 'Too many login attempts. Please try again later.' }), { status: 429, headers: { 'Content-Type': 'application/json' } });
+        }
+
         const { password } = await request.json() as { password: string };
 
         if (!password) {

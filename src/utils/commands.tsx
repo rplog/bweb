@@ -198,15 +198,15 @@ export const commands: Record<string, Command> = {
                         <div className="text-elegant-accent font-bold mb-2">Inbox ({messages.length})</div>
                         {messages.map((msg: any) => (
                             <div key={msg.id} className="bg-white/5 p-3 rounded border border-white/10 group relative">
-                                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity text-xs text-elegant-text-muted">
-                                    ID: {msg.id}
-                                </div>
                                 <div className="flex justify-between items-start mb-2">
                                     <div className="flex flex-col">
                                         <span className="text-elegant-text-primary font-bold">{msg.name}</span>
                                         <span className="text-elegant-text-muted text-xs">{msg.email}</span>
                                     </div>
-                                    <span className="text-elegant-text-muted text-xs">{new Date(msg.timestamp).toLocaleString()}</span>
+                                    <div className="flex flex-col items-end">
+                                        <span className="text-elegant-text-muted text-xs">{new Date(msg.timestamp).toLocaleString()}</span>
+                                        <span className="text-elegant-text-muted text-xs opacity-0 group-hover:opacity-100 transition-opacity">ID: {msg.id}</span>
+                                    </div>
                                 </div>
                                 <div className="text-elegant-text-secondary whitespace-pre-wrap">{msg.message}</div>
                             </div>

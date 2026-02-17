@@ -1,7 +1,9 @@
 import { WorkerMailer } from 'worker-mailer';
+import { checkRateLimit } from "../../utils/rateLimit";
 
 export const onRequestPost: PagesFunction<{
     DB: D1Database,
+    RATE_LIMITER: KVNamespace,
     TELEGRAM_BOT_TOKEN: string,
     TELEGRAM_CHAT_ID: string,
     SMTP_HOST: string,
@@ -12,8 +14,18 @@ export const onRequestPost: PagesFunction<{
 }> = async (context) => {
     try {
         const { request, env } = context;
-        const formData = await request.json() as { name: string, email: string, message: string };
-        const { name, email, message } = formData;
+        const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+
+        // Rate Limit: 3 messages per hour per IP
+        const allowed = await checkRateLimit(env, `contact:${ip}`, 3, 3600);
+        if (!allowed) {
+            return new Response(JSON.stringify({ error: 'Rate limit exceeded. Please wait before sending another message.' }), { status: 429, headers: { 'Content-Type': 'application/json' } });
+        }
+
+        const formData = await request.formData();
+        const name = formData.get('name') as string;
+        const email = formData.get('email') as string;
+        const message = formData.get('message') as string;
 
         if (!name || !email || !message) {
             return new Response(JSON.stringify({ error: 'Missing required fields' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
@@ -21,7 +33,6 @@ export const onRequestPost: PagesFunction<{
 
         // 1. Save to D1
         const insertQuery = `INSERT INTO messages (name, email, message, ip, user_agent) VALUES (?, ?, ?, ?, ?)`;
-        const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
         const userAgent = request.headers.get('User-Agent') || 'unknown';
 
         await env.DB.prepare(insertQuery).bind(name, email, message, ip, userAgent).run();

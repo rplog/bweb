@@ -11,3 +11,8 @@ bucket_name = "neosphere-assets"
 binding = "DB"
 database_name = "neosphere-db"
 database_id = "4ec14f0d-7ce9-4ae7-8469-3074b38fe915"
+
+[[kv_namespaces]]
+binding = "RATE_LIMITER"
+id = "19cedcf4b7c3426d806e9a282a20a0a0"
+preview_id = "19cedcf4b7c3426d806e9a282a20a0a0"

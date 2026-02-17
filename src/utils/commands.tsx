@@ -96,11 +96,44 @@ export const commands: Record<string, Command> = {
         description: 'Configure notification channels (Admin only)',
         usage: 'alerts [telegram|email|both|off]',
         execute: async (args) => {
+            const mode = args[0]?.toLowerCase();
+
+            if (mode === '-h' || mode === '--help' || mode === 'help') {
+                return (
+                    <div className="flex flex-col gap-2 text-sm max-w-lg">
+                        <div className="text-elegant-accent font-bold text-base mb-1">Alerts Configuration</div>
+                        <div className="text-elegant-text-secondary mb-2">
+                            Manage which channels receive notifications when a user submits the contact form.
+                        </div>
+
+                        <div className="flex flex-col gap-1">
+                            <div className="text-elegant-text-primary font-bold border-b border-white/10 pb-1 mb-1">Available Modes</div>
+                            <div className="grid grid-cols-[100px_1fr] gap-x-4 gap-y-1">
+                                <span className="text-elegant-accent font-mono">telegram</span>
+                                <span className="text-elegant-text-muted">Send notifications via Telegram Bot only.</span>
+
+                                <span className="text-elegant-accent font-mono">email</span>
+                                <span className="text-elegant-text-muted">Send emails via SMTP only.</span>
+
+                                <span className="text-elegant-accent font-mono">both</span>
+                                <span className="text-elegant-text-muted">Send to both Telegram and Email.</span>
+
+                                <span className="text-elegant-accent font-mono">off</span>
+                                <span className="text-elegant-text-muted">Disable all notifications (messages still saved).</span>
+                            </div>
+                        </div>
+
+                        <div className="mt-2 text-xs text-elegant-text-muted">
+                            <span className="font-bold">Note:</span> Requires admin login. Changes apply immediately.
+                        </div>
+                    </div>
+                );
+            }
+
             const token = localStorage.getItem('admin_token');
             if (!token) return 'Error: You must be logged in. Use "login <password>" first.';
 
             const validModes = ['telegram', 'email', 'both', 'off'];
-            const mode = args[0]?.toLowerCase();
 
             // GET current setting
             if (!mode) {

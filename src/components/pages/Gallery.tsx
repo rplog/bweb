@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { optimizeImage } from '../../utils/imageOptimizer';
 import { Spotlight } from '../Spotlight';
 import { PageHeader } from '../PageHeader';
-import { Maximize2, ArrowLeft, X, ChevronLeft, ChevronRight, Hand, Loader2, Upload, Trash2, Edit2, Plus, Save, FileEdit, FolderPlus } from 'lucide-react';
+import { Maximize2, ArrowLeft, X, ChevronLeft, ChevronRight, Hand, Loader2, Upload, Trash2, Edit2, Plus, FileEdit, FolderPlus } from 'lucide-react';
 
 interface Photo {
     url: string;
@@ -37,7 +37,6 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
     const [uploadCaption, setUploadCaption] = useState('');
     const [uploadAlbumName, setUploadAlbumName] = useState('');
     const [isProcessing, setIsProcessing] = useState(false);
-    const [editCaption, setEditCaption] = useState<string | null>(null); // For lightbox editing
 
     // Custom Prompts/Alerts State
     const [promptConfig, setPromptConfig] = useState<{

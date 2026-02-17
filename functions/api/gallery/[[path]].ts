@@ -33,66 +33,81 @@ async function handleGet(context: EventContext<Env, any, any>) {
 
     // 1. List Root / Albums
     if (!pathParams || pathParams.length === 0) {
-        const listing = await env.neosphere_assets.list({
-            include: ['customMetadata']
-        } as any);
-
         const albums: Record<string, any> = {};
 
-        for (const object of listing.objects) {
-            // Skip root files if any (we basically enforced folders, but just in case)
-            if (!object.key.includes('/')) continue;
+        // Paginated R2 list to handle >1000 objects
+        let truncated = true;
+        let cursor: string | undefined = undefined;
 
-            const lastSlash = object.key.lastIndexOf('/');
-            const albumPath = object.key.substring(0, lastSlash);
-            const filename = object.key.substring(lastSlash + 1);
+        while (truncated) {
+            const listing: any = await env.neosphere_assets.list({
+                include: ['customMetadata'],
+                cursor
+            } as any);
 
-            if (albumPath === 'assets') continue;
-            if (filename === '.meta') {
-                // Ensure album exists first
+            for (const object of listing.objects) {
+                if (!object.key.includes('/')) continue;
+
+                const lastSlash = object.key.lastIndexOf('/');
+                const albumPath = object.key.substring(0, lastSlash);
+                const filename = object.key.substring(lastSlash + 1);
+
+                if (albumPath === 'assets') continue;
+                if (filename === '.meta') {
+                    if (!albums[albumPath]) {
+                        albums[albumPath] = { title: albumPath, count: 0, cover: [], photos: [], category: 'Gallery' };
+                    }
+                    albums[albumPath].category = object.customMetadata?.category || 'Gallery';
+                    continue;
+                }
+
+                if (!filename.match(/\.(jpg|jpeg|png|webp|gif)$/i)) continue;
+
                 if (!albums[albumPath]) {
                     albums[albumPath] = { title: albumPath, count: 0, cover: [], photos: [], category: 'Gallery' };
                 }
-                albums[albumPath].category = object.customMetadata?.category || 'Gallery';
-                continue;
-            }
 
-            if (!filename.match(/\.(jpg|jpeg|png|webp|gif)$/i)) continue;
+                const url = `/api/gallery/${object.key}`;
+                albums[albumPath].photos.push({
+                    url,
+                    key: object.key,
+                    caption: object.customMetadata?.caption || '',
+                    filename
+                });
+                albums[albumPath].count++;
 
-            // Register this album
-            if (!albums[albumPath]) {
-                albums[albumPath] = { title: albumPath, count: 0, cover: [], photos: [], category: 'Gallery' };
-            }
-
-            // Add photo to this album
-            const url = `/api/gallery/${object.key}`;
-            albums[albumPath].photos.push({
-                url,
-                key: object.key,
-                caption: object.customMetadata?.caption || '',
-                filename
-            });
-            albums[albumPath].count++;
-
-            // Ensure parent albums exist (for navigation)
-            let parent = albumPath;
-            while (parent.includes('/')) {
-                parent = parent.substring(0, parent.lastIndexOf('/'));
-                if (!albums[parent]) {
-                    albums[parent] = { title: parent, count: 0, cover: [], photos: [], category: 'Gallery' };
+                // Ensure parent albums exist (for navigation)
+                let parent = albumPath;
+                while (parent.includes('/')) {
+                    parent = parent.substring(0, parent.lastIndexOf('/'));
+                    if (!albums[parent]) {
+                        albums[parent] = { title: parent, count: 0, cover: [], photos: [], category: 'Gallery' };
+                    }
                 }
+            }
+
+            truncated = listing.truncated;
+            cursor = listing.cursor;
+        }
+
+        // Generate covers — inherit from sub-albums if album has no direct photos
+        const albumList = Object.values(albums) as any[];
+        for (const album of albumList) {
+            if (album.photos.length > 0) {
+                album.cover = album.photos.slice(0, 4).map((p: any) => p.url);
+            } else {
+                // Inherit covers from first sub-album that has photos
+                const prefix = album.title + '/';
+                const subWithPhotos = albumList.find(
+                    (sub: any) => sub.title.startsWith(prefix) && sub.photos.length > 0
+                );
+                album.cover = subWithPhotos
+                    ? subWithPhotos.photos.slice(0, 4).map((p: any) => p.url)
+                    : [];
             }
         }
 
-        // Generate covers
-        Object.values(albums).forEach((album: any) => {
-            // Sort photos by filename or upload time (implicitly roughly sorted by key usually)
-            // If album has no photos (just sub-albums), cover is empty for now.
-            // Future improvement: pick cover from sub-albums.
-            album.cover = album.photos.slice(0, 4).map((p: any) => p.url);
-        });
-
-        return new Response(JSON.stringify(Object.values(albums)), {
+        return new Response(JSON.stringify(albumList), {
             headers: { 'Content-Type': 'application/json' }
         });
     }
@@ -127,9 +142,9 @@ async function handlePost(context: any) {
 
         if (!file || !album) throw new Error('Missing file or album');
 
-        // Allow slashes for nested albums
-        const safeAlbum = album.replace(/[^a-zA-Z0-9 _\-\/]/g, '').trim();
-        if (!safeAlbum) throw new Error('Invalid album name');
+        // Allow slashes for nested albums, block path traversal
+        const safeAlbum = album.replace(/[^a-zA-Z0-9 _\-\/]/g, '').replace(/\/+/g, '/').replace(/^\/|\/$/g, '').trim();
+        if (!safeAlbum || safeAlbum.includes('..')) throw new Error('Invalid album name');
 
         const fileName = file.name.replace(/[^a-zA-Z0-9 ._-]/g, '');
         const key = `${safeAlbum}/${fileName}`;
@@ -178,12 +193,15 @@ async function handlePut(context: any) {
     if (action === 'rename-photo') {
         if (!key || !newName) throw new Error('Missing params');
 
+        const safeName = newName.replace(/[^a-zA-Z0-9 ._-]/g, '');
+        if (!safeName || safeName.includes('..')) throw new Error('Invalid file name');
+
         const object = await env.neosphere_assets.get(key);
         if (!object) throw new Error('Object not found');
 
         const parts = key.split('/');
-        const album = parts[0];
-        const newKey = `${album}/${newName}`;
+        const album = parts.slice(0, -1).join('/');
+        const newKey = `${album}/${safeName}`;
 
         await env.neosphere_assets.put(newKey, object.body, {
             customMetadata: object.customMetadata,
@@ -197,27 +215,31 @@ async function handlePut(context: any) {
 
     if (action === 'rename-album') {
         const { oldName } = body;
-        // Allow slashes for moving/nesting
-        const safeNewName = newName.replace(/[^a-zA-Z0-9 _\-\/]/g, '');
+        const safeNewName = newName.replace(/[^a-zA-Z0-9 _\-\/]/g, '').replace(/\/+/g, '/').replace(/^\/|\/$/g, '');
+        if (!safeNewName || safeNewName.includes('..')) throw new Error('Invalid album name');
 
-        const list: any = await env.neosphere_assets.list({ prefix: oldName + '/' });
-        const promises = [];
+        const oldDepth = oldName.split('/').length;
+        let truncated = true;
+        let cursor: string | undefined = undefined;
 
-        for (const obj of list.objects) {
-            const filename = obj.key.split('/').slice(1).join('/');
-            const newKey = `${safeNewName}/${filename}`;
+        while (truncated) {
+            const list: any = await env.neosphere_assets.list({ prefix: oldName + '/', cursor });
 
-            promises.push(async () => {
+            for (const obj of list.objects) {
+                const remainder = obj.key.split('/').slice(oldDepth).join('/');
+                const newKey = `${safeNewName}/${remainder}`;
+
                 const o = await env.neosphere_assets.get(obj.key);
                 await env.neosphere_assets.put(newKey, o.body, {
                     customMetadata: o.customMetadata,
                     httpMetadata: o.httpMetadata
                 });
                 await env.neosphere_assets.delete(obj.key);
-            });
-        }
+            }
 
-        for (const p of promises) await p();
+            truncated = list.truncated;
+            cursor = list.cursor;
+        }
 
         return new Response(JSON.stringify({ success: true }), { headers: { 'Content-Type': 'application/json' } });
     }

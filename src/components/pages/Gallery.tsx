@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { optimizeImage } from '../../utils/imageOptimizer';
 import { Spotlight } from '../Spotlight';
 import { PageHeader } from '../PageHeader';
@@ -42,6 +42,94 @@ const Tooltip: React.FC<{ text: string; children: React.ReactNode; position?: 't
     );
 };
 
+// Resolve a URL path like /gallery/Travel/Japan/photo.jpg into { album, photoFilename }
+const resolveNestedPath = (parts: string[], albums: Album[]): { album: Album | null; photoFilename: string | null } => {
+    // Try progressively longer album paths: "Travel", "Travel/Japan", "Travel/Japan/Tokyo", etc.
+    for (let i = parts.length; i >= 1; i--) {
+        const candidate = parts.slice(0, i).map(p => decodeURIComponent(p)).join('/');
+        const album = albums.find(a => a.title.toLowerCase() === candidate.toLowerCase());
+        if (album) {
+            const remainder = parts.slice(i);
+            const photoFilename = remainder.length > 0 ? remainder.map(p => decodeURIComponent(p)).join('/') : null;
+            return { album, photoFilename };
+        }
+    }
+    return { album: null, photoFilename: null };
+};
+
+// Extracted album card component to eliminate duplication
+const AlbumCard: React.FC<{
+    album: Album;
+    displayTitle: string;
+    isAdmin: boolean;
+    onOpen: (album: Album) => void;
+    onEditAlbum: (album: Album) => void;
+    onDelete: (title: string, isAlbum?: boolean) => void;
+}> = ({ album, displayTitle, isAdmin, onOpen, onEditAlbum, onDelete }) => (
+    <div
+        className="group relative bg-elegant-card border border-elegant-border rounded-sm overflow-hidden hover:border-elegant-text-muted transition-all duration-300 cursor-pointer"
+        onClick={() => onOpen(album)}
+    >
+        <div className="aspect-video bg-black relative overflow-hidden grid grid-cols-2 grid-rows-2">
+            {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="relative w-full h-full overflow-hidden border-r border-b border-black/10 last:border-0">
+                    {album.cover[i] ? (
+                        <img
+                            src={optimizeImage(album.cover[i], { width: 400, height: 400, fit: 'cover', quality: 80 })}
+                            alt={`${album.title} cover ${i + 1}`}
+                            loading="lazy"
+                            decoding="async"
+                            className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-100 grayscale group-hover:grayscale-0"
+                            onError={(e) => { e.currentTarget.style.opacity = '0'; }}
+                        />
+                    ) : (
+                        <div className="w-full h-full bg-elegant-bg/50" />
+                    )}
+                </div>
+            ))}
+            <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-all duration-300 pointer-events-none" />
+            <div className="absolute top-3 right-3 pointer-events-none">
+                <span className="px-3 py-1 bg-black/80 border border-elegant-border rounded text-xs text-elegant-text-secondary backdrop-blur-sm">
+                    {album.count} items
+                </span>
+            </div>
+        </div>
+        <div className="p-5 flex justify-between items-start">
+            <div className="min-w-0 flex-1">
+                <h3 className="text-lg font-bold text-elegant-text-primary mb-1 group-hover:text-elegant-accent transition-colors truncate">
+                    {displayTitle}
+                </h3>
+                <p
+                    className={`text-sm text-elegant-text-muted truncate ${isAdmin ? 'cursor-pointer hover:text-elegant-accent transition-colors' : ''}`}
+                    onClick={(e) => { if (isAdmin) { e.stopPropagation(); onEditAlbum(album); } }}
+                >
+                    {album.category}{isAdmin && <Edit2 size={10} className="inline ml-1.5 opacity-0 group-hover:opacity-50" />}
+                </p>
+            </div>
+            {isAdmin && (
+                <div className="flex gap-1 ml-2 flex-shrink-0">
+                    <Tooltip text="Edit Album">
+                        <button
+                            onClick={(e) => { e.stopPropagation(); onEditAlbum(album); }}
+                            className="text-elegant-text-muted hover:text-elegant-accent p-1.5 rounded hover:bg-white/5 transition-all"
+                        >
+                            <FileEdit size={15} />
+                        </button>
+                    </Tooltip>
+                    <Tooltip text="Delete Album">
+                        <button
+                            onClick={(e) => { e.stopPropagation(); onDelete(album.title); }}
+                            className="text-elegant-text-muted hover:text-red-400 p-1.5 rounded hover:bg-white/5 transition-all"
+                        >
+                            <Trash2 size={15} />
+                        </button>
+                    </Tooltip>
+                </div>
+            )}
+        </div>
+    </div>
+);
+
 export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
     const [albums, setAlbums] = useState<Album[]>([]);
     const [activeAlbumTitle, setActiveAlbumTitle] = useState<string | null>(null);
@@ -83,6 +171,11 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
         type: 'error' | 'success' | 'info';
     } | null>(null);
 
+    const [editAlbumConfig, setEditAlbumConfig] = useState<{
+        album: Album;
+        onConfirm: (newName: string, newCategory: string) => void;
+    } | null>(null);
+
     const [confirmConfig, setConfirmConfig] = useState<{
         isOpen: boolean;
         title: string;
@@ -118,16 +211,12 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
 
                 const path = window.location.pathname;
                 if (path.startsWith('/gallery/')) {
-                    const parts = path.split('/').slice(2);
-                    if (parts.length >= 1 && parts[0]) {
-                        const slug = decodeURIComponent(parts[0]);
-                        const album = data.find((a: Album) =>
-                            a.title.toLowerCase() === slug.toLowerCase()
-                        );
+                    const parts = path.split('/').slice(2).filter(Boolean);
+                    if (parts.length >= 1) {
+                        const { album, photoFilename } = resolveNestedPath(parts, data);
                         if (album) {
                             setActiveAlbumTitle(album.title);
-                            if (parts.length >= 2) {
-                                const photoFilename = decodeURIComponent(parts.slice(1).join('/'));
+                            if (photoFilename) {
                                 const foundPhoto = album.photos.find(p => p.key.toLowerCase().endsWith(photoFilename.toLowerCase()));
                                 if (foundPhoto) {
                                     setActivePhotoKey(foundPhoto.key);
@@ -164,27 +253,40 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                 setActiveAlbumTitle(null);
                 setActivePhotoKey(null);
             } else if (path.startsWith('/gallery/')) {
-                const parts = path.split('/').slice(2);
-                if (parts.length <= 1) {
+                const parts = path.split('/').slice(2).filter(Boolean);
+                const { album, photoFilename } = resolveNestedPath(parts, albums);
+                if (album) {
+                    setActiveAlbumTitle(album.title);
+                    if (photoFilename) {
+                        const foundPhoto = album.photos.find(p => p.key.toLowerCase().endsWith(photoFilename.toLowerCase()));
+                        setActivePhotoKey(foundPhoto ? foundPhoto.key : null);
+                    } else {
+                        setActivePhotoKey(null);
+                    }
+                } else {
+                    setActiveAlbumTitle(null);
                     setActivePhotoKey(null);
                 }
             }
         };
         window.addEventListener('popstate', handlePopState);
         return () => window.removeEventListener('popstate', handlePopState);
-    }, []);
+    }, [albums]);
 
     const handleNavigate = (dest: string) => {
         if (dest === 'Terminal') onExit();
         else if (onNavigate) onNavigate(dest);
     };
 
+    const encodeAlbumPath = useCallback((title: string) => {
+        return title.split('/').map(s => encodeURIComponent(s)).join('/');
+    }, []);
+
     const openAlbum = useCallback((album: Album) => {
         setActiveAlbumTitle(album.title);
         setActivePhotoKey(null);
-        const slug = encodeURIComponent(album.title);
-        window.history.pushState({}, '', `/gallery/${slug}`);
-    }, []);
+        window.history.pushState({}, '', `/gallery/${encodeAlbumPath(album.title)}`);
+    }, [encodeAlbumPath]);
 
     const closeAlbum = useCallback(() => {
         setActiveAlbumTitle(null);
@@ -204,11 +306,10 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
 
     const closePhoto = useCallback(() => {
         setActivePhotoKey(null);
-        if (activeAlbum) {
-            const slug = encodeURIComponent(activeAlbum.title);
-            window.history.pushState({}, '', `/gallery/${slug}`);
+        if (activeAlbumTitle) {
+            window.history.pushState({}, '', `/gallery/${encodeAlbumPath(activeAlbumTitle)}`);
         }
-    }, [activeAlbum]);
+    }, [activeAlbumTitle, encodeAlbumPath]);
 
     const handleNext = useCallback((e?: React.MouseEvent) => {
         e?.stopPropagation();
@@ -475,45 +576,70 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
         });
     };
 
-    const handleUpdateCategory = (albumTitle: string, currentCategory: string) => {
-        showPrompt('Edit Subtitle', currentCategory, async (newCategory) => {
-            if (!newCategory || newCategory === currentCategory) return;
-            try {
-                const res = await fetch('/api/gallery', {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('admin_token')}` },
-                    body: JSON.stringify({ action: 'update-category', album: albumTitle, category: newCategory })
-                });
-                if (!res.ok) throw new Error('Update failed');
-                setAlbums(prev => prev.map(a => a.title === albumTitle ? { ...a, category: newCategory } : a));
-            } catch (err: any) {
-                showAlert(err.message, 'error');
-            }
-        });
-    };
 
-    const handleRenameAlbum = (oldName: string) => {
-        showPrompt('Rename Album', oldName, async (newName) => {
-            if (!newName || newName === oldName) return;
-            try {
-                const res = await fetch('/api/gallery', {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('admin_token')}` },
-                    body: JSON.stringify({ action: 'rename-album', oldName, newName })
-                });
-                if (!res.ok) {
-                    const resBody = await res.json() as any;
-                    throw new Error(resBody.error || 'Rename failed');
+
+    const handleEditAlbum = (album: Album) => {
+        setEditAlbumConfig({
+            album,
+            onConfirm: async (newName, newCategory) => {
+                if (!newName) return;
+
+                // 1. Rename Album if changed
+                const oldName = album.title;
+                const oldSimpleName = oldName.split('/').pop() || '';
+                let currentName = oldName;
+
+                if (newName !== oldSimpleName) {
+                    try {
+                        const parentPath = oldName.includes('/') ? oldName.substring(0, oldName.lastIndexOf('/') + 1) : '';
+                        const fullNewName = parentPath + newName;
+
+                        const res = await fetch('/api/gallery', {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('admin_token')}` },
+                            body: JSON.stringify({ action: 'rename-album', oldName, newName: fullNewName })
+                        });
+
+                        if (!res.ok) {
+                            const resBody = await res.json() as any;
+                            throw new Error(resBody.error || 'Rename failed');
+                        }
+
+                        currentName = fullNewName;
+
+                        // Optimistic update for rename (partial, full reload comes after category update)
+                    } catch (err: any) {
+                        showAlert(err.message, 'error');
+                        return; // Stop if rename fails
+                    }
                 }
-                const data = await fetch('/api/gallery').then(r => r.json());
-                setAlbums(data);
-                if (activeAlbumTitle === oldName) {
-                    const newAlbum = data.find((a: any) => a.title === newName);
-                    if (newAlbum) openAlbum(newAlbum);
-                    else closeAlbum();
+
+                // 2. Update Category if changed
+                if (newCategory !== album.category) {
+                    try {
+                        const res = await fetch('/api/gallery', {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('admin_token')}` },
+                            body: JSON.stringify({ action: 'update-category', album: currentName, category: newCategory })
+                        });
+                        if (!res.ok) throw new Error('Update category failed');
+                    } catch (err: any) {
+                        showAlert(err.message, 'error');
+                    }
                 }
-            } catch (err: any) {
-                showAlert(err.message, 'error');
+
+                // Refresh data
+                fetch('/api/gallery')
+                    .then(res => res.json())
+                    .then(data => {
+                        setAlbums(data);
+                        if (activeAlbumTitle === oldName && currentName !== oldName) {
+                            // Determine navigation if current album was renamed
+                            const newAlbum = data.find((a: any) => a.title === currentName);
+                            if (newAlbum) openAlbum(newAlbum);
+                            else closeAlbum();
+                        }
+                    });
             }
         });
     };
@@ -539,8 +665,8 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                 }));
                 if (activePhotoKey === key) {
                     setActivePhotoKey(newKey);
-                    if (activeAlbum) {
-                        window.history.replaceState({}, '', `/gallery/${encodeURIComponent(activeAlbum.title)}/${encodeURIComponent(newName)}`);
+                    if (activeAlbumTitle) {
+                        window.history.replaceState({}, '', `/gallery/${encodeAlbumPath(activeAlbumTitle)}/${encodeURIComponent(newName)}`);
                     }
                 }
             } catch (err: any) {
@@ -548,6 +674,26 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
             }
         });
     };
+
+    const subAlbums = useMemo(() => {
+        if (!activeAlbum) return [];
+        const prefix = activeAlbum.title + '/';
+        const depth = activeAlbum.title.split('/').length + 1;
+        return albums.filter(a => a.title.startsWith(prefix) && a.title.split('/').length === depth);
+    }, [albums, activeAlbum]);
+
+    const breadcrumbSegments = useMemo(() => {
+        if (!activeAlbum) return [];
+        return activeAlbum.title.split('/');
+    }, [activeAlbum]);
+
+    const navigateToBreadcrumb = useCallback((segmentIndex: number) => {
+        const targetPath = breadcrumbSegments.slice(0, segmentIndex + 1).join('/');
+        const targetAlbum = albums.find(a => a.title === targetPath);
+        if (targetAlbum) {
+            openAlbum(targetAlbum);
+        }
+    }, [breadcrumbSegments, albums, openAlbum]);
 
     return (
         <div className="h-full w-full bg-elegant-bg text-elegant-text-secondary font-mono selection:bg-elegant-accent/20 overflow-y-auto">
@@ -557,22 +703,26 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
 
                 <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
                     {/* Breadcrumbs */}
-                    <div className="mb-8 text-base font-semibold text-elegant-text-muted flex items-center gap-2">
+                    <div className="mb-8 text-base font-semibold text-elegant-text-muted flex items-center gap-2 flex-wrap">
                         <button onClick={() => onExit()} className="hover:text-elegant-text-primary transition-colors hover:underline decoration-elegant-text-muted underline-offset-4">~</button>
                         <span>/</span>
                         <span
                             className={activeAlbum ? "hover:text-elegant-text-primary transition-colors cursor-pointer hover:underline decoration-elegant-text-muted underline-offset-4" : "text-elegant-text-primary font-bold"}
-                            onClick={() => { if (activePhoto) closePhoto(); else if (activeAlbum) closeAlbum(); }}
+                            onClick={() => { if (activeAlbum) closeAlbum(); }}
                         >gallery</span>
-                        {activeAlbum && (
-                            <>
-                                <span>/</span>
-                                <span
-                                    className={activePhoto ? "hover:text-elegant-text-primary transition-colors cursor-pointer hover:underline decoration-elegant-text-muted underline-offset-4" : "text-elegant-accent font-bold"}
-                                    onClick={() => activePhoto && closePhoto()}
-                                >{activeAlbum.title.toLowerCase()}</span>
-                            </>
-                        )}
+                        {activeAlbum && breadcrumbSegments.map((segment, idx) => {
+                            const isLast = idx === breadcrumbSegments.length - 1 && !activePhoto;
+                            const isClickable = !isLast;
+                            return (
+                                <React.Fragment key={idx}>
+                                    <span>/</span>
+                                    <span
+                                        className={isLast ? "text-elegant-accent font-bold" : "hover:text-elegant-text-primary transition-colors cursor-pointer hover:underline decoration-elegant-text-muted underline-offset-4"}
+                                        onClick={() => { if (isClickable) { if (activePhoto) { closePhoto(); } else { navigateToBreadcrumb(idx); } } }}
+                                    >{segment.toLowerCase()}</span>
+                                </React.Fragment>
+                            );
+                        })}
                         {activePhoto && (
                             <>
                                 <span>/</span>
@@ -593,69 +743,15 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                             /* ---- Album Grid ---- */
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                                 {albums.filter(a => !a.title.includes('/')).map((album) => (
-                                    <div
+                                    <AlbumCard
                                         key={album.title}
-                                        className="group relative bg-elegant-card border border-elegant-border rounded-sm overflow-hidden hover:border-elegant-text-muted transition-all duration-300 cursor-pointer"
-                                        onClick={() => openAlbum(album)}
-                                    >
-                                        <div className="aspect-video bg-black relative overflow-hidden grid grid-cols-2 grid-rows-2">
-                                            {Array.from({ length: 4 }).map((_, i) => (
-                                                <div key={i} className="relative w-full h-full overflow-hidden border-r border-b border-black/10 last:border-0">
-                                                    {album.cover[i] ? (
-                                                        <img
-                                                            src={optimizeImage(album.cover[i], { width: 400, height: 400, fit: 'cover', quality: 80 })}
-                                                            alt={`${album.title} cover ${i + 1}`}
-                                                            loading="lazy"
-                                                            decoding="async"
-                                                            className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-100 grayscale group-hover:grayscale-0"
-                                                            onError={(e) => { e.currentTarget.style.opacity = '0'; }}
-                                                        />
-                                                    ) : (
-                                                        <div className="w-full h-full bg-elegant-bg/50" />
-                                                    )}
-                                                </div>
-                                            ))}
-                                            <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-all duration-300 pointer-events-none" />
-                                            <div className="absolute top-3 right-3 pointer-events-none">
-                                                <span className="px-3 py-1 bg-black/80 border border-elegant-border rounded text-xs text-elegant-text-secondary backdrop-blur-sm">
-                                                    {album.count} items
-                                                </span>
-                                            </div>
-                                        </div>
-                                        <div className="p-5 flex justify-between items-start">
-                                            <div className="min-w-0 flex-1">
-                                                <h3 className="text-lg font-bold text-elegant-text-primary mb-1 group-hover:text-elegant-accent transition-colors">
-                                                    {album.title}
-                                                </h3>
-                                                <p
-                                                    className={`text-sm text-elegant-text-muted truncate ${isAdmin ? 'cursor-pointer hover:text-elegant-accent transition-colors' : ''}`}
-                                                    onClick={(e) => { if (isAdmin) { e.stopPropagation(); handleUpdateCategory(album.title, album.category); } }}
-                                                >
-                                                    {album.category}{isAdmin && <Edit2 size={10} className="inline ml-1.5 opacity-0 group-hover:opacity-50" />}
-                                                </p>
-                                            </div>
-                                            {isAdmin && (
-                                                <div className="flex gap-1 ml-2 flex-shrink-0">
-                                                    <Tooltip text="Rename">
-                                                        <button
-                                                            onClick={(e) => { e.stopPropagation(); handleRenameAlbum(album.title); }}
-                                                            className="text-elegant-text-muted hover:text-elegant-accent p-1.5 rounded hover:bg-white/5 transition-all"
-                                                        >
-                                                            <FileEdit size={15} />
-                                                        </button>
-                                                    </Tooltip>
-                                                    <Tooltip text="Delete">
-                                                        <button
-                                                            onClick={(e) => { e.stopPropagation(); handleDelete(album.title, true); }}
-                                                            className="text-red-500/70 hover:text-red-400 p-1.5 rounded hover:bg-red-500/5 transition-all"
-                                                        >
-                                                            <Trash2 size={15} />
-                                                        </button>
-                                                    </Tooltip>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
+                                        album={album}
+                                        displayTitle={album.title}
+                                        isAdmin={isAdmin}
+                                        onOpen={openAlbum}
+                                        onEditAlbum={handleEditAlbum}
+                                        onDelete={handleDelete}
+                                    />
                                 ))}
                             </div>
                         )
@@ -663,7 +759,18 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                         /* ---- Photo Grid ---- */
                         <>
                             <div className="mb-6 flex items-center gap-4">
-                                <button onClick={closeAlbum} className="text-elegant-text-muted hover:text-elegant-text-primary transition-colors flex items-center gap-2 text-sm">
+                                <button
+                                    onClick={() => {
+                                        // Navigate to parent album or gallery root
+                                        const parentPath = activeAlbum.title.includes('/')
+                                            ? activeAlbum.title.substring(0, activeAlbum.title.lastIndexOf('/'))
+                                            : null;
+                                        const parentAlbum = parentPath ? albums.find(a => a.title === parentPath) : null;
+                                        if (parentAlbum) openAlbum(parentAlbum);
+                                        else closeAlbum();
+                                    }}
+                                    className="text-elegant-text-muted hover:text-elegant-text-primary transition-colors flex items-center gap-2 text-sm"
+                                >
                                     <ArrowLeft size={16} /> Back
                                 </button>
                                 <span className="text-elegant-text-muted">|</span>
@@ -671,77 +778,21 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                             </div>
 
                             {/* Sub-Albums Grid */}
-                            {albums.some(a => a.title.startsWith(activeAlbum.title + '/') && a.title.split('/').length === activeAlbum.title.split('/').length + 1) && (
+                            {subAlbums.length > 0 && (
                                 <div className="mb-8">
                                     <h3 className="text-elegant-text-primary font-bold mb-4 flex items-center gap-2"><FolderPlus size={18} /> Sub-Albums</h3>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                                        {albums
-                                            .filter(a => a.title.startsWith(activeAlbum.title + '/') && a.title.split('/').length === activeAlbum.title.split('/').length + 1)
-                                            .map((album) => (
-                                                <div
-                                                    key={album.title}
-                                                    className="group relative bg-elegant-card border border-elegant-border rounded-sm overflow-hidden hover:border-elegant-text-muted transition-all duration-300 cursor-pointer"
-                                                    onClick={() => openAlbum(album)}
-                                                >
-                                                    <div className="aspect-video bg-black relative overflow-hidden grid grid-cols-2 grid-rows-2">
-                                                        {Array.from({ length: 4 }).map((_, i) => (
-                                                            <div key={i} className="relative w-full h-full overflow-hidden border-r border-b border-black/10 last:border-0">
-                                                                {album.cover[i] ? (
-                                                                    <img
-                                                                        src={optimizeImage(album.cover[i], { width: 400, height: 400, fit: 'cover', quality: 80 })}
-                                                                        alt={`${album.title} cover ${i + 1}`}
-                                                                        loading="lazy"
-                                                                        decoding="async"
-                                                                        className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-100 grayscale group-hover:grayscale-0"
-                                                                        onError={(e) => { e.currentTarget.style.opacity = '0'; }}
-                                                                    />
-                                                                ) : (
-                                                                    <div className="w-full h-full bg-elegant-bg/50" />
-                                                                )}
-                                                            </div>
-                                                        ))}
-                                                        <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-all duration-300 pointer-events-none" />
-                                                        <div className="absolute top-3 right-3 pointer-events-none">
-                                                            <span className="px-3 py-1 bg-black/80 border border-elegant-border rounded text-xs text-elegant-text-secondary backdrop-blur-sm">
-                                                                {album.count} items
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                    <div className="p-5 flex justify-between items-start">
-                                                        <div className="min-w-0 flex-1">
-                                                            <h3 className="text-lg font-bold text-elegant-text-primary mb-1 group-hover:text-elegant-accent transition-colors truncate">
-                                                                {album.title.split('/').pop()}
-                                                            </h3>
-                                                            <p
-                                                                className={`text-sm text-elegant-text-muted truncate ${isAdmin ? 'cursor-pointer hover:text-elegant-accent transition-colors' : ''}`}
-                                                                onClick={(e) => { if (isAdmin) { e.stopPropagation(); handleUpdateCategory(album.title, album.category); } }}
-                                                            >
-                                                                {album.category}{isAdmin && <Edit2 size={10} className="inline ml-1.5 opacity-0 group-hover:opacity-50" />}
-                                                            </p>
-                                                        </div>
-                                                        {isAdmin && (
-                                                            <div className="flex gap-1 ml-2 flex-shrink-0">
-                                                                <Tooltip text="Rename">
-                                                                    <button
-                                                                        onClick={(e) => { e.stopPropagation(); handleRenameAlbum(album.title); }}
-                                                                        className="text-elegant-text-muted hover:text-elegant-accent p-1.5 rounded hover:bg-white/5 transition-all"
-                                                                    >
-                                                                        <FileEdit size={15} />
-                                                                    </button>
-                                                                </Tooltip>
-                                                                <Tooltip text="Delete">
-                                                                    <button
-                                                                        onClick={(e) => { e.stopPropagation(); handleDelete(album.title, true); }}
-                                                                        className="text-red-500/70 hover:text-red-400 p-1.5 rounded hover:bg-red-500/5 transition-all"
-                                                                    >
-                                                                        <Trash2 size={15} />
-                                                                    </button>
-                                                                </Tooltip>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            ))}
+                                        {subAlbums.map((album) => (
+                                            <AlbumCard
+                                                key={album.title}
+                                                album={album}
+                                                displayTitle={album.title.split('/').pop() || album.title}
+                                                isAdmin={isAdmin}
+                                                onOpen={openAlbum}
+                                                onEditAlbum={handleEditAlbum}
+                                                onDelete={handleDelete}
+                                            />
+                                        ))}
                                     </div>
                                 </div>
                             )}
@@ -955,6 +1006,50 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                                     onClick={(e) => { const input = e.currentTarget.parentElement?.previousElementSibling as HTMLInputElement; promptConfig.onConfirm(input.value); setPromptConfig(null); }}
                                     className="px-4 py-2 bg-elegant-accent text-white rounded hover:bg-elegant-accent/90"
                                 >Confirm</button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Edit Album Modal */}
+                {editAlbumConfig && (
+                    <div className="fixed inset-0 z-[60] bg-black/80 flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
+                        <div className="bg-elegant-card border border-elegant-border p-5 rounded-lg max-w-sm w-full shadow-2xl">
+                            <h3 className="text-lg font-bold text-elegant-text-primary mb-4">Edit Album</h3>
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-xs font-medium text-elegant-text-muted mb-1">Album Name</label>
+                                    <input
+                                        autoFocus
+                                        defaultValue={editAlbumConfig.album.title.split('/').pop()}
+                                        className="w-full bg-elegant-bg border border-elegant-border rounded p-2 text-elegant-text-primary focus:border-elegant-accent outline-none"
+                                        id="edit-album-name"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-medium text-elegant-text-muted mb-1">Category / Subtitle</label>
+                                    <input
+                                        defaultValue={editAlbumConfig.album.category}
+                                        className="w-full bg-elegant-bg border border-elegant-border rounded p-2 text-elegant-text-primary focus:border-elegant-accent outline-none"
+                                        id="edit-album-category"
+                                    />
+                                </div>
+                            </div>
+                            <div className="flex justify-end gap-2 mt-6">
+                                <button onClick={() => setEditAlbumConfig(null)} className="px-4 py-2 text-elegant-text-muted hover:text-elegant-text-primary text-sm font-medium">Cancel</button>
+                                <button
+                                    onClick={() => {
+                                        const nameInput = document.getElementById('edit-album-name') as HTMLInputElement;
+                                        const catInput = document.getElementById('edit-album-category') as HTMLInputElement;
+                                        if (nameInput && catInput) {
+                                            editAlbumConfig.onConfirm(nameInput.value, catInput.value);
+                                            setEditAlbumConfig(null);
+                                        }
+                                    }}
+                                    className="px-4 py-2 bg-elegant-accent text-white rounded hover:bg-elegant-accent/90 text-sm font-medium"
+                                >
+                                    Save Changes
+                                </button>
                             </div>
                         </div>
                     </div>

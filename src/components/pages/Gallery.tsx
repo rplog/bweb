@@ -115,7 +115,7 @@ const AlbumCard: React.FC<{
                     </Tooltip>
                     <Tooltip text="Delete Album">
                         <button
-                            onClick={(e) => { e.stopPropagation(); onDelete(album.title); }}
+                            onClick={(e) => { e.stopPropagation(); onDelete(album.title, true); }}
                             className="text-elegant-text-muted hover:text-red-400 p-1.5 rounded hover:bg-white/5 transition-all"
                         >
                             <Trash2 size={15} />
@@ -531,8 +531,8 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                     if (!res.ok) throw new Error('Delete failed');
 
                     if (isAlbum) {
-                        setAlbums(prev => prev.filter(a => a.title !== key));
-                        if (activeAlbumTitle === key) closeAlbum();
+                        setAlbums(prev => prev.filter(a => a.title !== key && !a.title.startsWith(key + '/')));
+                        if (activeAlbumTitle === key || activeAlbumTitle?.startsWith(key + '/')) closeAlbum();
                     } else {
                         setAlbums(prev => prev.map(a => {
                             if (a.title === activeAlbumTitle) {

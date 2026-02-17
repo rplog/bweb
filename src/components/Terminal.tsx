@@ -19,13 +19,13 @@ export const Terminal: React.FC = () => {
     const bottomRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<CommandInputHandle>(null);
     const lastItemRef = useRef<HTMLDivElement>(null);
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        // Scroll to the latest command's start to keep it visible, especially on mobile
-        if (lastItemRef.current) {
-            lastItemRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        } else {
-            bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+        // Scroll within the terminal container only — never trigger native browser scroll
+        const container = scrollContainerRef.current;
+        if (container) {
+            container.scrollTop = container.scrollHeight;
         }
     }, [history]);
 
@@ -78,6 +78,7 @@ export const Terminal: React.FC = () => {
 
                 {/* Scrollable Terminal Content - scrollbar only in this area */}
                 <div
+                    ref={scrollContainerRef}
                     className="flex-1 min-h-0 p-4 overflow-y-auto font-mono text-base"
                     onClick={handleContainerClick}
                 >

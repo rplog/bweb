@@ -388,7 +388,7 @@ export const commands: Record<string, Command> = {
                             }
 
                             if (targetIsVisitor) {
-                                const res = await fetch('/api/notes', {
+                                let res = await fetch('/api/notes', {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },
                                     body: JSON.stringify({
@@ -399,8 +399,20 @@ export const commands: Record<string, Command> = {
                                     })
                                 });
 
+                                if (res.status === 409) {
+                                    // File exists, try PUT (Update)
+                                    res = await fetch(`/api/notes/${cleanName}`, {
+                                        method: 'PUT',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({
+                                            content: newContent,
+                                            commit_msg: commitMsg,
+                                            author_name: authorName
+                                        })
+                                    });
+                                }
+
                                 if (!res.ok) {
-                                    if (res.status === 409) throw new Error('File exists (Overwrite not implemented in SaveAs)');
                                     throw new Error(await res.text());
                                 }
                             } else {

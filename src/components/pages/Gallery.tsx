@@ -53,6 +53,17 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
         type: 'error' | 'success' | 'info';
     } | null>(null);
 
+    const [confirmConfig, setConfirmConfig] = useState<{
+        isOpen: boolean;
+        title: string;
+        message: string;
+        onConfirm: () => void;
+    } | null>(null);
+
+    const showConfirm = (title: string, message: string, onConfirm: () => void) => {
+        setConfirmConfig({ isOpen: true, title, message, onConfirm });
+    };
+
     const showAlert = (message: string, type: 'error' | 'success' | 'info' = 'info') => {
         setAlertConfig({ isOpen: true, message, type });
         if (type === 'success') setTimeout(() => setAlertConfig(null), 2000);
@@ -89,7 +100,8 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                             setActiveAlbum(album);
                             if (parts.length >= 2) {
                                 const photoFilename = decodeURIComponent(parts.slice(1).join('/'));
-                                const foundPhoto = album.photos.find(p => p.key.endsWith(photoFilename));
+                                // Case insensitive match for filename
+                                const foundPhoto = album.photos.find(p => p.key.toLowerCase().endsWith(photoFilename.toLowerCase()));
                                 if (foundPhoto) {
                                     setActivePhoto(foundPhoto);
                                 }
@@ -99,9 +111,16 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                 }
             })
             .catch(err => {
-                console.error('Failed to load gallery:', err);
+                console.error("Failed to load gallery:", err);
                 setLoading(false);
             });
+    }, []);
+
+    // Swipe Hint Timer
+    const [showSwipeHint, setShowSwipeHint] = useState(true);
+    useEffect(() => {
+        const timer = setTimeout(() => setShowSwipeHint(false), 3000);
+        return () => clearTimeout(timer);
     }, []);
 
     // Browser back button support
@@ -210,21 +229,7 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
         if (isRightSwipe) handlePrev();
     };
 
-    // Swipe Hint Logic
-    const [showSwipeHint, setShowSwipeHint] = useState(false);
-    const hasShownHint = React.useRef(false);
 
-    useEffect(() => {
-        if (activePhoto && !hasShownHint.current) {
-            // Show hint only on touch devices (approximate check) or small screens
-            if (window.matchMedia('(pointer: coarse)').matches || window.innerWidth < 768) {
-                setShowSwipeHint(true);
-                hasShownHint.current = true; // Mark as shown
-                const timer = setTimeout(() => setShowSwipeHint(false), 2500);
-                return () => clearTimeout(timer);
-            }
-        }
-    }, [activePhoto]);
 
     // Preload Logic
     // Keep track of preloaded URLs to avoid duplicate requests
@@ -346,52 +351,55 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
     };
 
     const handleDelete = async (key: string, isAlbum = false) => {
-        // Use custom confirm logic? For now standard confirm is okay or user wanted "matches site design".
-        if (!confirm(`Are you sure you want to delete this ${isAlbum ? 'album' : 'photo'}?`)) return;
+        showConfirm(
+            isAlbum ? 'Delete Album' : 'Delete Photo',
+            `Are you sure you want to delete this ${isAlbum ? 'album' : 'photo'}? This action cannot be undone.`,
+            async () => {
+                try {
+                    const res = await fetch('/api/gallery', {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
+                        },
+                        body: JSON.stringify(isAlbum ? { album: key } : { key })
+                    });
 
-        try {
-            const res = await fetch('/api/gallery', {
-                method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
-                },
-                body: JSON.stringify(isAlbum ? { album: key } : { key })
-            });
+                    if (!res.ok) throw new Error('Delete failed');
 
-            if (!res.ok) throw new Error('Delete failed');
-
-            // Update State without Reload
-            if (isAlbum) {
-                setAlbums(prev => prev.filter(a => a.title !== key));
-                if (activeAlbum?.title === key) closeAlbum();
-            } else {
-                // Delete Photo
-                setAlbums(prev => prev.map(a => {
-                    if (a.title === activeAlbum?.title) {
-                        return {
-                            ...a,
-                            count: a.count - 1,
-                            photos: a.photos.filter(p => p.key !== key),
-                            cover: a.cover.filter(url => !url.includes(key)) // Approximate check
-                        };
+                    // Update State without Reload
+                    if (isAlbum) {
+                        setAlbums(prev => prev.filter(a => a.title !== key));
+                        if (activeAlbum?.title === key) closeAlbum();
+                    } else {
+                        // Delete Photo
+                        setAlbums(prev => prev.map(a => {
+                            if (a.title === activeAlbum?.title) {
+                                return {
+                                    ...a,
+                                    count: a.count - 1,
+                                    photos: a.photos.filter(p => p.key !== key),
+                                    cover: a.cover.filter(url => !url.includes(key)) // Approximate check
+                                };
+                            }
+                            return a;
+                        }));
+                        // Also update activeAlbum state if it's the current one
+                        if (activeAlbum) {
+                            setActiveAlbum(prev => prev ? {
+                                ...prev,
+                                count: prev.count - 1,
+                                photos: prev.photos.filter(p => p.key !== key)
+                            } : null);
+                        }
+                        if (activePhoto?.key === key) closePhoto();
                     }
-                    return a;
-                }));
-                // Also update activeAlbum state if it's the current one
-                if (activeAlbum) {
-                    setActiveAlbum(prev => prev ? {
-                        ...prev,
-                        count: prev.count - 1,
-                        photos: prev.photos.filter(p => p.key !== key)
-                    } : null);
-                }
-                if (activePhoto?.key === key) closePhoto();
-            }
 
-        } catch (err: any) {
-            showAlert(err.message, 'error');
-        }
+                } catch (err: any) {
+                    showAlert(err.message, 'error');
+                }
+            }
+        );
     };
 
     const handleUpdateCaption = () => {
@@ -735,7 +743,11 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                         onTouchEnd={onTouchEnd}
                     >
                         <div className="flex items-center justify-between p-4 flex-shrink-0 z-50">
-                            <span className="text-elegant-text-muted font-mono text-sm truncate max-w-[70%]">
+                            <span
+                                className={`text-elegant-text-primary font-mono text-sm truncate max-w-[70%] ${isAdmin ? 'cursor-pointer hover:text-elegant-accent hover:underline decoration-dashed underline-offset-4' : ''}`}
+                                onClick={() => isAdmin && handleRenamePhoto(activePhoto.key)}
+                                title={isAdmin ? "Click to Rename" : ""}
+                            >
                                 {decodeURIComponent(activePhoto.key.split('/').pop() || '')}
                             </span>
                             <button
@@ -815,6 +827,9 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                                             80% { opacity: 1; }
                                             100% { opacity: 0; }
                                         }
+                                        .animate-fade-out {
+                                            animation: fade-out 3s forwards;
+                                        }
                                     `}</style>
                                 </div>
                             )}
@@ -884,6 +899,33 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                                     className="px-4 py-2 bg-elegant-accent text-white rounded hover:bg-elegant-accent/90"
                                 >
                                     Confirm
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* 1.5 Confirm Modal */}
+                {confirmConfig && (
+                    <div className="fixed inset-0 z-[60] bg-black/80 flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
+                        <div className="bg-elegant-card border border-elegant-border p-6 rounded-lg max-w-sm w-full shadow-2xl">
+                            <h3 className="text-lg font-bold text-elegant-text-primary mb-2">{confirmConfig.title}</h3>
+                            <p className="text-elegant-text-muted mb-6">{confirmConfig.message}</p>
+                            <div className="flex justify-end gap-3">
+                                <button
+                                    onClick={() => setConfirmConfig(null)}
+                                    className="px-4 py-2 text-elegant-text-muted hover:text-elegant-text-primary"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        confirmConfig.onConfirm();
+                                        setConfirmConfig(null);
+                                    }}
+                                    className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
+                                >
+                                    Delete
                                 </button>
                             </div>
                         </div>

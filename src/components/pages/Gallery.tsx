@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { optimizeImage } from '../../utils/imageOptimizer';
 import { Spotlight } from '../Spotlight';
 import { PageHeader } from '../PageHeader';
-import { Maximize2, ArrowLeft, X, ChevronLeft, ChevronRight, Hand, Loader2, Trash2, Edit2, Plus, FileEdit, FolderPlus, ImagePlus } from 'lucide-react';
+import { Maximize2, ArrowLeft, X, ChevronLeft, ChevronRight, Hand, Loader2, Trash2, Edit2, Plus, FileEdit, FolderPlus, ImagePlus, ChevronDown } from 'lucide-react';
 
 interface Photo {
     url: string;
@@ -57,6 +57,8 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
     const [uploadFiles, setUploadFiles] = useState<File[]>([]);
     const [uploadCaption, setUploadCaption] = useState('');
     const [uploadAlbumName, setUploadAlbumName] = useState('');
+    const [isAlbumDropdownOpen, setIsAlbumDropdownOpen] = useState(false);
+    const albumDropdownRef = useRef<HTMLDivElement>(null);
     const [isProcessing, setIsProcessing] = useState(false);
     const [uploadProgress, setUploadProgress] = useState<{
         current: number;
@@ -281,8 +283,20 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
         setUploadFiles([]);
         setUploadCaption('');
         setUploadAlbumName('');
+        setIsAlbumDropdownOpen(false);
         setUploadProgress(null);
     };
+
+    // Close dropdown on click outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (albumDropdownRef.current && !albumDropdownRef.current.contains(event.target as Node)) {
+                setIsAlbumDropdownOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     // Process a single file: strip metadata via canvas, return blob
     const processImage = async (file: File): Promise<Blob> => {
@@ -688,32 +702,18 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                                             <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity hidden md:flex items-center justify-center gap-4">
                                                 <Maximize2 size={20} className="text-elegant-text-primary" />
                                                 {isAdmin && (
-                                                    <>
-                                                        <button
-                                                            onClick={(e) => { e.stopPropagation(); handleRenamePhoto(photo.key); }}
-                                                            className="p-2 bg-white/10 rounded-full hover:bg-white/20 text-white transition-colors"
-                                                        >
-                                                            <FileEdit size={16} />
-                                                        </button>
-                                                        <button
-                                                            onClick={(e) => { e.stopPropagation(); handleDelete(photo.key); }}
-                                                            className="p-2 bg-red-500/80 rounded-full hover:bg-red-500 text-white transition-colors"
-                                                        >
-                                                            <Trash2 size={16} />
-                                                        </button>
-                                                    </>
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); handleDelete(photo.key); }}
+                                                        className="p-2 bg-red-500/80 rounded-full hover:bg-red-500 text-white transition-colors"
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
                                                 )}
                                             </div>
 
-                                            {/* Mobile: always-visible admin actions */}
+                                            {/* Mobile: always-visible delete button */}
                                             {isAdmin && (
-                                                <div className="absolute top-2 right-2 flex gap-1.5 md:hidden z-10">
-                                                    <button
-                                                        onClick={(e) => { e.stopPropagation(); handleRenamePhoto(photo.key); }}
-                                                        className="p-1.5 bg-black/70 backdrop-blur-sm rounded-full text-white/80 active:bg-white/20 transition-colors"
-                                                    >
-                                                        <FileEdit size={13} />
-                                                    </button>
+                                                <div className="absolute top-2 right-2 md:hidden z-10">
                                                     <button
                                                         onClick={(e) => { e.stopPropagation(); handleDelete(photo.key); }}
                                                         className="p-1.5 bg-black/70 backdrop-blur-sm rounded-full text-red-400 active:bg-red-500/30 transition-colors"
@@ -740,7 +740,10 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                         onTouchEnd={onTouchEnd}
                     >
                         <div className="flex items-center justify-between p-4 flex-shrink-0 z-50">
-                            <span className="text-elegant-text-primary font-mono text-sm truncate max-w-[70%]">
+                            <span
+                                className={`text-elegant-text-primary font-mono text-sm truncate max-w-[70%] ${isAdmin ? 'cursor-pointer hover:text-elegant-accent hover:underline decoration-dashed underline-offset-4' : ''}`}
+                                onClick={(e) => { e.stopPropagation(); if (isAdmin) handleRenamePhoto(activePhoto.key); }}
+                            >
                                 {decodeURIComponent(activePhoto.key.split('/').pop() || '')}
                             </span>
                             <button onClick={closePhoto} className="p-2 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors">
@@ -890,11 +893,10 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                 {/* Toast */}
                 {alertConfig && (
                     <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[70]">
-                        <div className={`px-4 py-2 rounded border shadow-lg flex items-center gap-2 text-sm font-mono backdrop-blur-sm ${
-                            alertConfig.type === 'error' ? 'bg-red-500/10 border-red-500/40 text-red-400' :
-                            alertConfig.type === 'success' ? 'bg-elegant-accent/10 border-elegant-accent/40 text-elegant-accent' :
-                            'bg-elegant-card border-elegant-border text-elegant-text-primary'
-                        }`}>
+                        <div className={`px-4 py-2 rounded border shadow-lg flex items-center gap-2 text-sm font-mono backdrop-blur-sm ${alertConfig.type === 'error' ? 'bg-red-500/10 border-red-500/40 text-red-400' :
+                                alertConfig.type === 'success' ? 'bg-elegant-accent/10 border-elegant-accent/40 text-elegant-accent' :
+                                    'bg-elegant-card border-elegant-border text-elegant-text-primary'
+                            }`}>
                             <span>{alertConfig.message}</span>
                             <button onClick={() => setAlertConfig(null)} className="ml-1 opacity-60 hover:opacity-100 transition-opacity"><X size={12} /></button>
                         </div>
@@ -916,18 +918,55 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                             <form onSubmit={handleUpload} className="space-y-5">
                                 <div className="space-y-2">
                                     <label className="text-sm text-elegant-text-muted">Album Name</label>
-                                    <input
-                                        list="albums-list"
-                                        value={uploadAlbumName}
-                                        onChange={(e) => setUploadAlbumName(e.target.value)}
-                                        className="w-full bg-elegant-bg border border-elegant-border rounded p-3 text-elegant-text-primary focus:border-elegant-accent outline-none appearance-none"
-                                        placeholder="e.g. Summer 2024"
-                                        required
-                                        disabled={isProcessing}
-                                    />
-                                    <datalist id="albums-list">
-                                        {albums.map(a => <option key={a.title} value={a.title} />)}
-                                    </datalist>
+                                    <div className="relative" ref={albumDropdownRef}>
+                                        <div className="relative">
+                                            <input
+                                                value={uploadAlbumName}
+                                                onChange={(e) => {
+                                                    setUploadAlbumName(e.target.value);
+                                                    setIsAlbumDropdownOpen(true);
+                                                }}
+                                                onFocus={() => setIsAlbumDropdownOpen(true)}
+                                                className="w-full bg-elegant-bg border border-elegant-border rounded p-3 pr-10 text-elegant-text-primary focus:border-elegant-accent outline-none appearance-none"
+                                                placeholder="e.g. Summer 2024"
+                                                required
+                                                disabled={isProcessing}
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => setIsAlbumDropdownOpen(!isAlbumDropdownOpen)}
+                                                className="absolute right-3 top-1/2 -translate-y-1/2 text-elegant-text-muted hover:text-elegant-text-primary transition-colors"
+                                                disabled={isProcessing}
+                                            >
+                                                <ChevronDown size={16} className={`transition-transform duration-200 ${isAlbumDropdownOpen ? 'rotate-180' : ''}`} />
+                                            </button>
+                                        </div>
+
+                                        {isAlbumDropdownOpen && albums.length > 0 && (
+                                            <div className="absolute left-0 right-0 top-full mt-1 bg-elegant-card border border-elegant-border rounded-sm shadow-xl z-50 max-h-48 overflow-y-auto">
+                                                {albums
+                                                    .filter(a => !uploadAlbumName || a.title.toLowerCase().includes(uploadAlbumName.toLowerCase()))
+                                                    .map(a => (
+                                                        <button
+                                                            key={a.title}
+                                                            type="button"
+                                                            onClick={() => {
+                                                                setUploadAlbumName(a.title);
+                                                                setIsAlbumDropdownOpen(false);
+                                                            }}
+                                                            className="w-full text-left px-4 py-2 hover:bg-white/10 transition-colors text-elegant-text-secondary hover:text-elegant-text-primary text-sm"
+                                                        >
+                                                            {a.title}
+                                                        </button>
+                                                    ))}
+                                                {uploadAlbumName && !albums.some(a => a.title.toLowerCase() === uploadAlbumName.toLowerCase()) && (
+                                                    <div className="px-4 py-2 text-elegant-text-muted text-xs italic border-t border-elegant-border">
+                                                        Create new album "{uploadAlbumName}"
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
 
                                 <div className="space-y-2">

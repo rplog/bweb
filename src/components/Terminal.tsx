@@ -13,7 +13,8 @@ export const Terminal: React.FC = () => {
         inputHistory,
         activeComponent,
         isInputVisible,
-        handleTabCompletion
+        handleTabCompletion,
+        user
     } = useTerminal();
 
     const bottomRef = useRef<HTMLDivElement>(null);
@@ -74,7 +75,7 @@ export const Terminal: React.FC = () => {
                 {/* Top Bar - KDE / Linux Style - Always visible, never scrolls */}
                 <div className="w-full h-10 bg-elegant-card flex items-center px-4 justify-end border-b border-elegant-border flex-shrink-0 select-none relative z-20">
                     <div className="absolute left-1/2 transform -translate-x-1/2 text-gray-400 text-sm font-mono">
-                        neo@neosphere:~
+                        {user}@neosphere:~
                     </div>
                     <div className="flex gap-3 relative z-10">
                         <div className="p-1.5 hover:bg-white/10 rounded-full transition-colors cursor-pointer text-gray-500 hover:text-white" title="Minimize">
@@ -101,6 +102,7 @@ export const Terminal: React.FC = () => {
                             <CommandInput
                                 ref={inputRef}
                                 promptPath={getPromptPath()}
+                                user={user}
                                 onSubmit={execute}
                                 inputHistory={inputHistory}
                                 onTabComplete={handleTabCompletion} />

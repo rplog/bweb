@@ -79,7 +79,8 @@ export const commands: Record<string, Command> = {
     login: {
         description: 'Login as admin',
         usage: 'login <password>',
-        execute: async (args) => {
+        execute: async (args, { user, setUser }) => {
+            if (user === 'root') return 'Already logged in as root.';
             if (args.length === 0) return 'Usage: login <password>';
             const password = args[0];
 
@@ -97,16 +98,28 @@ export const commands: Record<string, Command> = {
 
                 const data = await res.json();
                 localStorage.setItem('admin_token', data.token);
-                return 'Logged in successfully as Admin.';
+                if (setUser) setUser('root');
+                return 'Logged in successfully as root.';
             } catch (e: any) {
                 return `Error: ${e.message}`;
             }
         }
     },
+    logout: {
+        description: 'Logout from admin session',
+        execute: (_args, { setUser }) => {
+            localStorage.removeItem('admin_token');
+            if (setUser) setUser('neo');
+            return 'Logged out successfully.';
+        }
+    },
     inbox: {
         description: 'View contact messages',
-        execute: async (args) => {
+        execute: async (args, { user }) => {
+            if (user !== 'root') return 'Error: You must be logged in. Use "login <password>" first.';
             const token = localStorage.getItem('admin_token');
+            // ... rest of the code is same as before but now we rely on user state + token for visual feedback
+            // actually we should still check token existence to be safe.
             if (!token) return 'Error: You must be logged in. Use "login <password>" first.';
 
             const arg = args[0]?.toLowerCase();
@@ -208,7 +221,8 @@ export const commands: Record<string, Command> = {
     alerts: {
         description: 'Configure notification channels (Admin only)',
         usage: 'alerts [telegram|email|both|off]',
-        execute: async (args) => {
+        execute: async (args, { user }) => {
+            if (user !== 'root') return 'Error: You must be logged in. Use "login <password>" first.';
             const mode = args[0]?.toLowerCase();
 
             if (mode === '-h' || mode === '--help' || mode === 'help') {
@@ -295,7 +309,7 @@ export const commands: Record<string, Command> = {
     },
     whoami: {
         description: 'Print current user',
-        execute: () => 'neo',
+        execute: (_args, { user }) => user,
     },
     pwd: {
         description: 'Print working directory',

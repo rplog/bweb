@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useImperativeHandle, forwardRef } f
 
 interface CommandInputProps {
     promptPath: string;
+    user: string;
     onSubmit: (command: string) => void;
     inputHistory: string[];
     onTabComplete?: (input: string) => string;
@@ -11,7 +12,7 @@ export interface CommandInputHandle {
     focus: () => void;
 }
 
-export const CommandInput = forwardRef<CommandInputHandle, CommandInputProps>(({ promptPath, onSubmit, inputHistory, onTabComplete }, ref) => {
+export const CommandInput = forwardRef<CommandInputHandle, CommandInputProps>(({ promptPath, user, onSubmit, inputHistory, onTabComplete }, ref) => {
     const [input, setInput] = useState('');
     const [historyIndex, setHistoryIndex] = useState(-1);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -71,7 +72,7 @@ export const CommandInput = forwardRef<CommandInputHandle, CommandInputProps>(({
 
     return (
         <div className="flex items-center w-full relative">
-            <span className="text-elegant-accent mr-2 whitespace-nowrap">neo@neosphere:{promptPath}$</span>
+            <span className="text-elegant-accent mr-2 whitespace-nowrap">{user}@neosphere:{promptPath}$</span>
             <div className="relative flex-grow">
                 {/* Syntax Highlight Layer */}
                 <div className="absolute inset-0 pointer-events-none whitespace-pre font-inherit" aria-hidden="true">

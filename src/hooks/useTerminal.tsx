@@ -61,6 +61,14 @@ export const useTerminal = () => {
             .catch(() => { /* silently fail, ls will still work via API fallback */ });
     }, [notesPreloaded]);
 
+    const [user, setUser] = useState('neo');
+
+    // Check login status on mount
+    useEffect(() => {
+        const token = localStorage.getItem('admin_token');
+        if (token) setUser('root');
+    }, []);
+
     const getPromptPath = useCallback(() => {
         const pathStr = '/' + currentPath.join('/');
         if (pathStr === '/home/neo') return '~';
@@ -149,7 +157,9 @@ export const useTerminal = () => {
                     setFullScreen: setFullScreenWithRoute,
                     setIsInputVisible,
                     fileSystem,
-                    setFileSystem
+                    setFileSystem,
+                    user,
+                    setUser
                 };
                 const result = await cmd.execute(args, context);
 
@@ -249,6 +259,7 @@ export const useTerminal = () => {
         isInputVisible,
         handleTabCompletion,
         fileSystem,
-        setFileSystem
+        setFileSystem,
+        user
     };
 };

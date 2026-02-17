@@ -101,6 +101,7 @@ export const onRequestGet = async (context: any) => {
             overflow-x: auto;
             color: ${colors.textPrimary};
             tab-size: 4;
+            word-break: break-word; /* Prevent content overflow */
         }
         
         /* Status Banner */
@@ -110,23 +111,14 @@ export const onRequestGet = async (context: any) => {
             padding: 8px 12px;
             font-size: 0.9em;
             font-weight: bold;
-            display: none; /* hidden by default */
+            display: none; 
             justify-content: space-between;
             align-items: center;
             border-radius: 4px 4px 0 0;
+            flex-wrap: wrap; 
+            gap: 10px;
         }
-        .status-banner button {
-            background: rgba(0,0,0,0.2);
-            border: none;
-            color: inherit;
-            cursor: pointer;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-family: inherit;
-            font-weight: bold;
-        }
-        .status-banner button:hover { background: rgba(0,0,0,0.4); }
-        
+
         /* Button */
         .btn {
             background: transparent;
@@ -141,6 +133,7 @@ export const onRequestGet = async (context: any) => {
             letter-spacing: 0.5px;
             transition: all 0.2s;
             border-radius: 2px;
+            flex-shrink: 0;
         }
         .btn:hover { 
             background: ${colors.accent}; 
@@ -198,9 +191,13 @@ export const onRequestGet = async (context: any) => {
             cursor: pointer; 
             text-decoration: underline;
             text-underline-offset: 4px;
+            display: inline-block; 
         }
         .commit-hash:hover { color: ${colors.accentHover}; }
-        .commit-author { color: ${colors.textSecondary}; }
+        .commit-author { 
+            color: ${colors.textSecondary}; 
+            word-break: break-all; /* Force break specifically for long IPs */
+        }
         .commit-date { color: ${colors.textMuted}; font-size: 0.9em; display: block; margin-top: 4px; }
         
         .footer { 
@@ -213,6 +210,22 @@ export const onRequestGet = async (context: any) => {
         }
         a { color: ${colors.textSecondary}; text-decoration: none; transition: color 0.2s;}
         a:hover { color: ${colors.accent}; }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 600px) {
+            body { padding: 20px 15px; }
+            h1 { 
+                font-size: 1.2rem; 
+                flex-direction: column; 
+                align-items: flex-start;
+                gap: 10px;
+            }
+            h1 .btn { align-self: flex-start; }
+            .content { padding: 15px; font-size: 0.9rem; }
+            .meta { gap: 10px; font-size: 0.8em; }
+            .git-entry { padding-left: 15px; }
+            .commit-hash { margin-bottom: 2px; }
+        }
     </style>
 </head>
 <body>

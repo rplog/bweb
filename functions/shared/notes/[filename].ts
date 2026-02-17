@@ -106,21 +106,71 @@ export const onRequestGet = async (context: any) => {
         }
         
         /* Diff Styles */
-        .diff-added {
-            background-color: rgba(46, 160, 67, 0.15);
-            color: #b7f0c1;
-            display: block;
-        }
-        .diff-removed {
-            background-color: rgba(248, 81, 73, 0.15);
-            color: #ffdce0;
-            display: block;
-            text-decoration: line-through; /* Optional preference */
+        .diff-container {
+            font-size: 0.9rem;
         }
         .diff-line {
-            display: block;
-            width: 100%; 
+            display: flex;
+            font-family: 'JetBrains Mono', monospace;
+            line-height: 1.5;
+            min-height: 1.5em;
         }
+        .diff-line-num {
+            width: 45px;
+            min-width: 45px;
+            text-align: right;
+            padding: 0 8px;
+            color: ${colors.textMuted};
+            user-select: none;
+            flex-shrink: 0;
+            font-size: 0.85em;
+        }
+        .diff-line-prefix {
+            width: 20px;
+            min-width: 20px;
+            text-align: center;
+            user-select: none;
+            flex-shrink: 0;
+            font-weight: bold;
+        }
+        .diff-line-content {
+            flex: 1;
+            white-space: pre-wrap;
+            word-break: break-word;
+            padding-right: 8px;
+        }
+        .diff-line.added {
+            background-color: rgba(46, 160, 67, 0.15);
+        }
+        .diff-line.added .diff-line-prefix {
+            color: #3fb950;
+        }
+        .diff-line.added .diff-line-content {
+            color: #aff5b4;
+        }
+        .diff-line.removed {
+            background-color: rgba(248, 81, 73, 0.15);
+        }
+        .diff-line.removed .diff-line-prefix {
+            color: #f85149;
+        }
+        .diff-line.removed .diff-line-content {
+            color: #ffdce0;
+        }
+        .diff-line.context {
+            background: transparent;
+        }
+        .diff-line.context .diff-line-content {
+            color: ${colors.textSecondary};
+        }
+        .diff-stats {
+            padding: 8px 16px;
+            font-size: 0.85em;
+            color: ${colors.textSecondary};
+            border-bottom: 1px solid ${colors.border};
+        }
+        .diff-stats .added-count { color: #3fb950; font-weight: bold; }
+        .diff-stats .removed-count { color: #f85149; font-weight: bold; }
         
         /* Status Banner */
         .status-banner {
@@ -387,22 +437,41 @@ export const onRequestGet = async (context: any) => {
                 const newText = (index === 0) ? latestContent : edits[index - 1].previous_content;
 
                 if (window.Diff) {
-                    const diff = window.Diff.diffLines(oldText, newText);
-                    let html = '';
+                    // Normalize newlines to avoid spurious diffs
+                    const normOld = oldText.replace(/\r\n/g, '\n');
+                    const normNew = newText.replace(/\r\n/g, '\n');
+                    const diff = window.Diff.diffLines(normOld, normNew);
+                    
+                    let addedCount = 0;
+                    let removedCount = 0;
+                    let oldLineNum = 1;
+                    let newLineNum = 1;
+                    let linesHtml = '';
+                    
                     diff.forEach(part => {
-                        const colorClass = part.added ? 'diff-added' :
-                                           part.removed ? 'diff-removed' : 'diff-line';
-                        const prefix = part.added ? '+ ' : part.removed ? '- ' : '  ';
+                        // Split the part value into individual lines
+                        const lines = part.value.replace(/\n$/, '').split('\n');
                         
-                        // Split by newline to ensure proper block formatting
-                        // escapeHtml is crucial here
-                        const escaped = escapeHtml(part.value);
-                        // We wrap the whole block? No, each line usually. 
-                        // But diffLines gives blocks.
-                        // Let's just wrap the block for simplicity but style it carefully
-                        html += \`<span class="\${colorClass}">\${escaped}</span>\`;
+                        lines.forEach(line => {
+                            const escaped = escapeHtml(line);
+                            if (part.added) {
+                                addedCount++;
+                                linesHtml += \`<div class="diff-line added"><span class="diff-line-num">\${newLineNum}</span><span class="diff-line-prefix">+</span><span class="diff-line-content">\${escaped}</span></div>\`;
+                                newLineNum++;
+                            } else if (part.removed) {
+                                removedCount++;
+                                linesHtml += \`<div class="diff-line removed"><span class="diff-line-num">\${oldLineNum}</span><span class="diff-line-prefix">-</span><span class="diff-line-content">\${escaped}</span></div>\`;
+                                oldLineNum++;
+                            } else {
+                                linesHtml += \`<div class="diff-line context"><span class="diff-line-num">\${newLineNum}</span><span class="diff-line-prefix"> </span><span class="diff-line-content">\${escaped}</span></div>\`;
+                                oldLineNum++;
+                                newLineNum++;
+                            }
+                        });
                     });
-                    contentEl.innerHTML = html;
+                    
+                    const statsHtml = \`<div class="diff-stats"><span class="added-count">+\${addedCount}</span> additions, <span class="removed-count">-\${removedCount}</span> deletions</div>\`;
+                    contentEl.innerHTML = \`<div class="diff-container">\${statsHtml}\${linesHtml}</div>\`;
                 } else {
                     contentEl.textContent = "Diff library not loaded. Refresh page.";
                 }

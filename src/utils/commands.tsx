@@ -13,6 +13,40 @@ export interface Command {
     execute: (args: string[], context: any) => string | React.ReactNode | Promise<string | React.ReactNode>;
 }
 
+// Helper component for inbox message item
+const InboxMessageItem = ({ msg }: { msg: any }) => {
+    const [copied, setCopied] = React.useState(false);
+
+    const handleCopyId = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        navigator.clipboard.writeText(msg.id.toString());
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
+
+    return (
+        <div className="bg-white/5 p-3 rounded border border-white/10 group relative hover:bg-white/10 transition-colors">
+            <div className="flex justify-between items-start mb-2">
+                <div className="flex flex-col">
+                    <span className="text-elegant-text-primary font-bold">{msg.name}</span>
+                    <span className="text-elegant-text-muted text-xs">{msg.email}</span>
+                </div>
+                <div className="flex flex-col items-end">
+                    <span className="text-elegant-text-muted text-xs">{new Date(msg.timestamp).toLocaleString()}</span>
+                    <button
+                        onClick={handleCopyId}
+                        className={`text-xs transition-all duration-200 flex items-center gap-1 ${copied ? 'text-green-400 opacity-100' : 'text-elegant-text-muted opacity-0 group-hover:opacity-100 hover:text-elegant-accent'}`}
+                        title="Click to copy ID"
+                    >
+                        {copied ? 'Copied!' : `ID: ${msg.id}`}
+                    </button>
+                </div>
+            </div>
+            <div className="text-elegant-text-secondary whitespace-pre-wrap">{msg.message}</div>
+        </div>
+    );
+};
+
 export const commands: Record<string, Command> = {
     help: {
         description: 'List all available commands',
@@ -195,22 +229,17 @@ export const commands: Record<string, Command> = {
 
                 return (
                     <div className="flex flex-col gap-4 font-mono text-sm">
-                        <div className="text-elegant-accent font-bold mb-2">Inbox ({messages.length})</div>
-                        {messages.map((msg: any) => (
-                            <div key={msg.id} className="bg-white/5 p-3 rounded border border-white/10 group relative">
-                                <div className="flex justify-between items-start mb-2">
-                                    <div className="flex flex-col">
-                                        <span className="text-elegant-text-primary font-bold">{msg.name}</span>
-                                        <span className="text-elegant-text-muted text-xs">{msg.email}</span>
-                                    </div>
-                                    <div className="flex flex-col items-end">
-                                        <span className="text-elegant-text-muted text-xs">{new Date(msg.timestamp).toLocaleString()}</span>
-                                        <span className="text-elegant-text-muted text-xs opacity-0 group-hover:opacity-100 transition-opacity">ID: {msg.id}</span>
-                                    </div>
-                                </div>
-                                <div className="text-elegant-text-secondary whitespace-pre-wrap">{msg.message}</div>
-                            </div>
-                        ))}
+
+
+                        // ... inside inbox execute ...
+                        return (
+                        <div className="flex flex-col gap-4 font-mono text-sm">
+                            <div className="text-elegant-accent font-bold mb-2">Inbox ({messages.length})</div>
+                            {messages.map((msg: any) => (
+                                <InboxMessageItem key={msg.id} msg={msg} />
+                            ))}
+                        </div>
+                        );
                     </div>
                 );
             } catch (e: any) {

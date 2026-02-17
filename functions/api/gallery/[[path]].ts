@@ -9,12 +9,10 @@ interface Env {
 export const onRequest: PagesFunction<Env> = async (context) => {
     const { request, env } = context;
 
-    // Dispatch based on Method
     if (request.method === 'GET') {
         return handleGet(context);
     }
 
-    // Auth check for mutation
     if (!await verifyAuth(request, env)) {
         return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { 'Content-Type': 'application/json' } });
     }
@@ -31,113 +29,52 @@ export const onRequest: PagesFunction<Env> = async (context) => {
 
 async function handleGet(context: EventContext<Env, any, any>) {
     const { request, env, params } = context;
-    const pathParams = params.path; // [] or ['Album', 'file.jpg']
+    const pathParams = params.path;
 
     // 1. List Root / Albums
     if (!pathParams || pathParams.length === 0) {
         const listing = await env.neosphere_assets.list({
-            include: ['customMetadata'] // Fetch captions
+            include: ['customMetadata']
         } as any);
 
         const albums: Record<string, any> = {};
 
         for (const object of listing.objects) {
             const parts = object.key.split('/');
-            if (parts.length < 2) continue; // Ignore root files
+            if (parts.length < 2) continue;
 
             const albumName = parts[0];
-            if (albumName === 'assets') continue; // Skip assets folder
+            if (albumName === 'assets') continue;
 
             const filename = parts.slice(1).join('/');
 
             if (!albums[albumName]) {
-                albums[albumName] = {
-                    title: albumName,
-                    count: 0,
-                    cover: [],
-                    photos: [],
-                    category: 'Gallery'
-                };
+                albums[albumName] = { title: albumName, count: 0, cover: [], photos: [], category: 'Gallery' };
             }
 
-            if (filename.match(/\.(jpg|jpeg|png|webp|gif)$/i)) {
-                const url = `/api/gallery/${object.key}`;
-                albums[albumName].count++;
-                albums[albumName].photos.push({
-                    url,
-                    caption: object.customMetadata?.caption || '',
-                    key: object.key
-                });
-
-                // Add metadata if cover needed or for grid
-                // For now, simple list. We could inject caption into URL or side-channel?
-                // Frontend currently expects string[].
-                // We might need to change frontend to accept objects { url, caption }
-                // For backward compat, we keep photos as string[] for now, but maybe expose a separate endpoint for details?
-                // OR: Update frontend to handle objects.
-                // Let's stick to existing "Album" interface for now, but maybe we modify it to "GalleryItem"?
-                // User requirement: "add captions".
-                // I will update the response to include `items: { url, caption }[]`.
+            // Read album metadata from .meta file
+            if (filename === '.meta') {
+                albums[albumName].category = object.customMetadata?.category || 'Gallery';
+                continue;
             }
-        }
-
-        // Populate covers
-        Object.values(albums).forEach((album: any) => {
-            album.cover = album.photos.slice(0, 4);
-        });
-
-        // Current Frontend expects `photos: string[]`. I should probably update frontend to support objects.
-        // But to avoid breaking it immediately, I'll pass `items` as a new field and let frontend adopt it.
-        // Actually, I'll update frontend in next step.
-        // For now, let's return `photos` as strings and maybe `photoDetails` map?
-        // Or just change the API contract.
-
-        // Let's change the API contract. Frontend will break until I fix it. That's acceptable in "Agent Mode".
-        // New Interface: photos: { url: string, caption?: string, key: string }[]
-
-        const result = Object.values(albums).map((album: any) => {
-            // Map photos string[] to full objects if we had them.
-            // Re-iterating to associate metadata is inefficient here.
-            // Let's refactor the loop slightly.
-            return album;
-        });
-
-        // Better loop
-        const albumsV2: Record<string, any> = {};
-        for (const object of listing.objects) {
-            const parts = object.key.split('/');
-            if (parts.length < 2 || parts[0] === 'assets') continue;
-
-            const albumName = parts[0];
-            const filename = parts.slice(1).join('/');
 
             if (!filename.match(/\.(jpg|jpeg|png|webp|gif)$/i)) continue;
 
-            if (!albumsV2[albumName]) {
-                albumsV2[albumName] = { title: albumName, count: 0, cover: [], photos: [], category: 'Gallery' };
-            }
-
             const url = `/api/gallery/${object.key}`;
-            const item = {
+            albums[albumName].photos.push({
                 url,
                 key: object.key,
                 caption: object.customMetadata?.caption || '',
                 filename
-            };
-
-            albumsV2[albumName].photos.push(item); // Pushing object now
-            albumsV2[albumName].count++;
+            });
+            albums[albumName].count++;
         }
 
-        Object.values(albumsV2).forEach((album: any) => {
-            // Cover logic: use URLs
+        Object.values(albums).forEach((album: any) => {
             album.cover = album.photos.slice(0, 4).map((p: any) => p.url);
-
-            // Return full objects for frontend
-            // album.photos is already { url, caption, key }[] from lines 121-128
         });
 
-        return new Response(JSON.stringify(Object.values(albumsV2)), {
+        return new Response(JSON.stringify(Object.values(albums)), {
             headers: { 'Content-Type': 'application/json' }
         });
     }
@@ -153,7 +90,6 @@ async function handleGet(context: EventContext<Env, any, any>) {
     headers.set('etag', object.httpEtag);
     headers.set('Cache-Control', 'public, max-age=31536000, immutable');
 
-    // Pass custom metadata in headers? Useful for htmx/client info
     if (object.customMetadata?.caption) {
         headers.set('X-Custom-Caption', object.customMetadata.caption);
     }
@@ -166,15 +102,13 @@ async function handlePost(context: any) {
     const formData = await request.formData();
     const action = formData.get('action');
 
-    // Action: 'upload'
     if (action === 'upload') {
         const file = formData.get('file');
-        const album = formData.get('album'); // Folder name
+        const album = formData.get('album');
         const caption = formData.get('caption') || '';
 
         if (!file || !album) throw new Error('Missing file or album');
 
-        // Path safety
         const safeAlbum = album.replace(/[^a-zA-Z0-9 _-]/g, '').trim();
         if (!safeAlbum) throw new Error('Invalid album name');
 
@@ -188,12 +122,6 @@ async function handlePost(context: any) {
         return new Response(JSON.stringify({ success: true, key }), { headers: { 'Content-Type': 'application/json' } });
     }
 
-    // Action: 'create-album'
-    // R2 doesn't have folders. We can create a .keep file?
-    // Or just rely on upload to create it.
-    // Client side: "Create Album" -> asks for name -> "Upload photos". 
-    // Effectively we don't need explicit create album action on backend unless we store metadata for albums.
-
     return new Response(JSON.stringify({ error: 'Invalid action' }), { status: 400 });
 }
 
@@ -204,13 +132,6 @@ async function handlePut(context: any) {
 
     if (action === 'update-caption') {
         if (!key) throw new Error('Missing key');
-
-        // R2: Get -> Put with new metadata
-        // Since we can't easily COPY in workers without downloading, check size?
-        // Actually, for metadata update, we have to re-upload or copy.
-        // BUT: We can CopyObject to itself.
-        // Note: R2 bind doesn't expose `copy`. We must use `get` then `put` with body.
-        // Optimization: If generic object, `put` accepts `R2Object` body stream.
 
         const object = await env.neosphere_assets.get(key);
         if (!object) throw new Error('Object not found');
@@ -223,17 +144,27 @@ async function handlePut(context: any) {
         return new Response(JSON.stringify({ success: true }), { headers: { 'Content-Type': 'application/json' } });
     }
 
+    if (action === 'update-category') {
+        const { album, category } = body;
+        if (!album) throw new Error('Missing album');
+
+        const metaKey = `${album}/.meta`;
+        await env.neosphere_assets.put(metaKey, '', {
+            customMetadata: { category: category || 'Gallery' }
+        });
+
+        return new Response(JSON.stringify({ success: true }), { headers: { 'Content-Type': 'application/json' } });
+    }
+
     if (action === 'rename-photo') {
-        // Copy to new key, delete old
         if (!key || !newName) throw new Error('Missing params');
 
         const object = await env.neosphere_assets.get(key);
         if (!object) throw new Error('Object not found');
 
-        // Parts
         const parts = key.split('/');
         const album = parts[0];
-        const newKey = `${album}/${newName}`; // Keep in same album
+        const newKey = `${album}/${newName}`;
 
         await env.neosphere_assets.put(newKey, object.body, {
             customMetadata: object.customMetadata,
@@ -245,10 +176,7 @@ async function handlePut(context: any) {
         return new Response(JSON.stringify({ success: true, newKey }), { headers: { 'Content-Type': 'application/json' } });
     }
 
-    // Rename Album?
     if (action === 'rename-album') {
-        // Hard: List all, Copy all, Delete all.
-        // Allowable for small albums.
         const { oldName } = body;
         const safeNewName = newName.replace(/[^a-zA-Z0-9 _-]/g, '');
 
@@ -259,7 +187,6 @@ async function handlePut(context: any) {
             const filename = obj.key.split('/').slice(1).join('/');
             const newKey = `${safeNewName}/${filename}`;
 
-            // We need to fetch body to move
             promises.push(async () => {
                 const o = await env.neosphere_assets.get(obj.key);
                 await env.neosphere_assets.put(newKey, o.body, {
@@ -270,7 +197,6 @@ async function handlePut(context: any) {
             });
         }
 
-        // Run serially? Or parallel? Limit concurrency.
         for (const p of promises) await p();
 
         return new Response(JSON.stringify({ success: true }), { headers: { 'Content-Type': 'application/json' } });
@@ -284,15 +210,12 @@ async function handleDelete(context: any) {
     const body = await request.json();
     const { key, album } = body;
 
-    // Delete Single Photo
     if (key) {
         await env.neosphere_assets.delete(key);
         return new Response(JSON.stringify({ success: true }), { headers: { 'Content-Type': 'application/json' } });
     }
 
-    // Delete Album
     if (album) {
-        // List and delete all
         let truncated = true;
         let cursor = undefined;
 
@@ -300,7 +223,7 @@ async function handleDelete(context: any) {
             const list: any = await env.neosphere_assets.list({ prefix: album + '/', cursor });
             const keys = list.objects.map((o: any) => o.key);
             if (keys.length > 0) {
-                await env.neosphere_assets.delete(keys); // R2 supports batch delete? Yes, delete(keys: string[])
+                await env.neosphere_assets.delete(keys);
             }
             truncated = list.truncated;
             cursor = list.cursor;
@@ -310,4 +233,3 @@ async function handleDelete(context: any) {
 
     return new Response(JSON.stringify({ error: 'Missing key or album' }), { status: 400 });
 }
-

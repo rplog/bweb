@@ -17,7 +17,7 @@ export const onRequestPost: PagesFunction<{ DB: D1Database, TELEGRAM_BOT_TOKEN: 
 
         // 2. Send Telegram Notification
         if (env.TELEGRAM_BOT_TOKEN && env.TELEGRAM_CHAT_ID) {
-            const text = `📩 *New Message from* ${name}\n📧 ${email}\n\n${message}`;
+            const text = `*New Message from* ${name}\nEmail: ${email}\n\n${message}`;
             const telegramUrl = `https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/sendMessage`;
 
             // Fire and forget (don't await to speed up response, but catch errors)

@@ -19,18 +19,31 @@ export const onRequest: PagesFunction<Env> = async (context) => {
 
     try {
         // Parallel execution: Ping (HEAD request) and DNS lookup (DoH)
-        const [pingRes, dnsRes] = await Promise.all([
-            fetch(`https://${host}`, {
-                method: 'HEAD',
-                headers: { 'User-Agent': 'Neosphere-Ping/1.0' },
-                redirect: 'follow'
-            }),
-            fetch(`https://cloudflare-dns.com/dns-query?name=${host}&type=A`, {
-                headers: { 'Accept': 'application/dns-json' }
-            })
-        ]);
+        const dnsPromise = fetch(`https://cloudflare-dns.com/dns-query?name=${host}&type=A`, {
+            headers: { 'Accept': 'application/dns-json' }
+        });
 
-        status = pingRes.status;
+        const pingPromise = (async () => {
+            try {
+                const res = await fetch(`https://${host}`, {
+                    method: 'HEAD',
+                    headers: { 'User-Agent': 'Neosphere-Ping/1.0' },
+                    redirect: 'follow'
+                });
+                return res.status;
+            } catch {
+                // Fallback to HTTP
+                const res = await fetch(`http://${host}`, {
+                    method: 'HEAD',
+                    headers: { 'User-Agent': 'Neosphere-Ping/1.0' },
+                    redirect: 'follow'
+                });
+                return res.status;
+            }
+        })();
+
+        const [pingStatus, dnsRes] = await Promise.all([pingPromise, dnsPromise]);
+        status = pingStatus;
 
         if (dnsRes.ok) {
             const dnsData = await dnsRes.json() as any;
@@ -58,7 +71,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
         time: duration,
         status,
         ip: ip || 'unknown',
-        ttl: 50 + Math.floor(Math.random() * 20) // Simulated TTL variation
+        ttl: 64
     }), {
         headers: { 'Content-Type': 'application/json' }
     });

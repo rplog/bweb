@@ -27,14 +27,7 @@ export const Ping: React.FC<PingProps> = ({ host, onComplete, count }) => {
         return pattern.test(hostname);
     }, []);
 
-    const generateFakeIp = (hostname: string) => {
-        let hash = 0;
-        for (let i = 0; i < hostname.length; i++) {
-            hash = ((hash << 5) - hash) + hostname.charCodeAt(i);
-            hash |= 0;
-        }
-        return `172.217.${Math.abs(hash % 255)}.${Math.abs((hash >> 8) % 255)}`;
-    };
+
 
     const finalizePing = useCallback((cancelled: boolean = false) => {
         setIsRunning(false);
@@ -95,25 +88,16 @@ export const Ping: React.FC<PingProps> = ({ host, onComplete, count }) => {
 
                 if (!mounted) return;
 
-                // If backend is missing (local dev without wrangler), fallback to simulation
-                if (res.status === 404) {
-                    const time = (60 + Math.random() * 20).toFixed(1);
-                    rttsRef.current.push(parseFloat(time));
-
-                    let effectiveIp = ip;
-                    if (!effectiveIp) {
-                        effectiveIp = generateFakeIp(host);
-                        setIp(effectiveIp);
-                    }
-
-                    setLines(prev => [
-                        ...prev,
-                        `64 bytes from ${host} (${effectiveIp}): icmp_seq=${currentSeq} ttl=118 time=${time} ms`
-                    ]);
-                } else if (!res.ok) {
+                if (!res.ok) {
+                    if (res.status === 404) throw new Error('Ping service unavailable');
                     throw new Error(`HTTP ${res.status}`);
                 } else {
                     const data = await res.json();
+
+                    if (data.error) {
+                        throw new Error(data.error);
+                    }
+
                     const endTime = performance.now();
                     const actualTime = endTime - startTime;
 
@@ -125,16 +109,13 @@ export const Ping: React.FC<PingProps> = ({ host, onComplete, count }) => {
                             setIp(data.ip);
                             effectiveIp = data.ip;
                         }
-                    } else if (!effectiveIp) {
-                        effectiveIp = generateFakeIp(host); // Fallback if API fails to prompt IP
-                        setIp(effectiveIp);
                     }
 
                     rttsRef.current.push(parseFloat(time));
 
                     setLines(prev => [
                         ...prev,
-                        `64 bytes from ${host} (${effectiveIp}): icmp_seq=${currentSeq} ttl=${data.ttl || 118} time=${time} ms`
+                        `64 bytes from ${host} (${effectiveIp || 'unknown'}): icmp_seq=${currentSeq} ttl=${data.ttl || 64} time=${time} ms`
                     ]);
                 }
 

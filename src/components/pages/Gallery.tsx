@@ -145,6 +145,7 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
     const [isAlbumDropdownOpen, setIsAlbumDropdownOpen] = useState(false);
     const albumDropdownRef = useRef<HTMLDivElement>(null);
     const [isProcessing, setIsProcessing] = useState(false);
+    const [fabOpen, setFabOpen] = useState(false);
     const [uploadProgress, setUploadProgress] = useState<{
         current: number;
         total: number;
@@ -943,41 +944,70 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                     </div>
                 )}
 
-                {/* Admin FABs — tucked to the right edge, expand on hover */}
+                {/* Admin FABs */}
                 {isAdmin && !activePhoto && (
-                    <div className="fixed bottom-24 right-0 z-40 group/fab flex flex-col gap-4 translate-x-[calc(100%-16px)] hover:translate-x-0 transition-transform duration-300 pr-4">
-                        <Tooltip text="New Album" position="left">
+                    <>
+                        {/* Backdrop to close FAB on mobile */}
+                        {fabOpen && (
+                            <div className="fixed inset-0 z-30 md:hidden" onClick={() => setFabOpen(false)} />
+                        )}
+
+                        <div className="fixed bottom-24 right-0 z-40 flex flex-col items-end gap-3 pr-4">
+                            {/* Action buttons — mobile: toggle, desktop: tuck+hover */}
+                            <div className={`flex flex-col gap-3 transition-all duration-300 origin-bottom
+                                ${fabOpen ? 'scale-100 opacity-100' : 'scale-0 opacity-0 pointer-events-none'}
+                                md:group-hover/fab:scale-100 md:group-hover/fab:opacity-100 md:group-hover/fab:pointer-events-auto
+                            `}>
+                                <Tooltip text="New Album" position="left">
+                                    <button
+                                        onClick={() => {
+                                            setFabOpen(false);
+                                            showPrompt(
+                                                activeAlbumTitle ? `Create New Album in ${activeAlbumTitle.split('/').pop()}` : 'Create New Album',
+                                                '',
+                                                (name) => {
+                                                    if (name) {
+                                                        const finalName = activeAlbumTitle ? `${activeAlbumTitle}/${name}` : name;
+                                                        setUploadAlbumName(finalName);
+                                                        setShowUploadModal(true);
+                                                    }
+                                                }
+                                            );
+                                        }}
+                                        className="p-3.5 bg-elegant-card border border-elegant-border text-elegant-text-primary rounded-full shadow-lg transition-all duration-300 hover:bg-elegant-accent hover:text-white hover:border-elegant-accent active:scale-95"
+                                    >
+                                        <FolderPlus size={20} />
+                                    </button>
+                                </Tooltip>
+                                <Tooltip text="Upload Photos" position="left">
+                                    <button
+                                        onClick={() => {
+                                            setFabOpen(false);
+                                            if (activeAlbumTitle) setUploadAlbumName(activeAlbumTitle);
+                                            setShowUploadModal(true);
+                                        }}
+                                        className="p-3.5 bg-elegant-card border border-elegant-border text-elegant-text-primary rounded-full shadow-lg transition-all duration-300 hover:bg-elegant-accent hover:text-white hover:border-elegant-accent active:scale-95"
+                                    >
+                                        <ImagePlus size={20} />
+                                    </button>
+                                </Tooltip>
+                            </div>
+
+                            {/* Toggle button — visible on mobile, tuck trigger on desktop */}
                             <button
-                                onClick={() => {
-                                    showPrompt(
-                                        activeAlbumTitle ? `Create New Album in ${activeAlbumTitle.split('/').pop()}` : 'Create New Album',
-                                        '',
-                                        (name) => {
-                                            if (name) {
-                                                const finalName = activeAlbumTitle ? `${activeAlbumTitle}/${name}` : name;
-                                                setUploadAlbumName(finalName);
-                                                setShowUploadModal(true);
-                                            }
-                                        }
-                                    );
-                                }}
-                                className="p-4 bg-elegant-card border border-elegant-border text-elegant-text-primary rounded-full shadow-lg transition-all duration-300 hover:bg-elegant-accent hover:text-white hover:border-elegant-accent hover:scale-110 hover:shadow-elegant-accent/20 hover:shadow-xl active:scale-95"
-                            >
-                                <FolderPlus size={24} />
-                            </button>
-                        </Tooltip>
-                        <Tooltip text="Upload Photos" position="left">
-                            <button
-                                onClick={() => {
-                                    if (activeAlbumTitle) setUploadAlbumName(activeAlbumTitle);
-                                    setShowUploadModal(true);
-                                }}
-                                className="p-4 bg-elegant-card border border-elegant-border text-elegant-text-primary rounded-full shadow-lg transition-all duration-300 hover:bg-elegant-accent hover:text-white hover:border-elegant-accent hover:scale-110 hover:rotate-90 hover:shadow-elegant-accent/20 hover:shadow-xl active:scale-95"
+                                onClick={() => setFabOpen(prev => !prev)}
+                                className={`p-4 rounded-full shadow-lg transition-all duration-300 active:scale-95
+                                    ${fabOpen
+                                        ? 'bg-elegant-text-muted text-elegant-bg rotate-45'
+                                        : 'bg-elegant-accent text-white'
+                                    }
+                                    md:translate-x-[calc(100%+16px-16px)] md:hover:translate-x-0
+                                `}
                             >
                                 <Plus size={24} />
                             </button>
-                        </Tooltip>
-                    </div>
+                        </div>
+                    </>
                 )}
 
                 {/* --- CUSTOM MODALS --- */}

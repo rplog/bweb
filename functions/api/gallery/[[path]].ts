@@ -65,8 +65,8 @@ export const onRequest: PagesFunction<Env> = async (context) => {
     const headers = new Headers();
     object.writeHttpMetadata(headers);
     headers.set('etag', object.httpEtag);
-    // Cache for 1 day
-    headers.set('Cache-Control', 'public, max-age=86400');
+    // Cache for 1 year
+    headers.set('Cache-Control', 'public, max-age=31536000, immutable');
 
     return new Response(object.body, {
         headers,

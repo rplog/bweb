@@ -23,7 +23,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
             // Only include images
             if (filename.match(/\.(jpg|jpeg|png|webp|gif)$/i)) {
-                albums[albumName].push(`/media/${object.key}`);
+                albums[albumName].push(`/api/gallery/${object.key}`);
             }
         }
 

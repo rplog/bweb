@@ -19,7 +19,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
     // 1. Image file — serve raw from R2
     if (IMAGE_EXT.test(key)) {
         const object = await env.neosphere_assets.get(key);
-        if (!object) return new Response("Not Found", { status: 404 });
+        if (!object) return context.next();
 
         const headers = new Headers();
         object.writeHttpMetadata(headers);

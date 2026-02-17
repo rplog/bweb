@@ -14,7 +14,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
     const object = await context.env.neosphere_assets.get(key);
 
     if (object === null) {
-        return new Response("Not Found", { status: 404 });
+        return context.next();
     }
 
     const headers = new Headers();

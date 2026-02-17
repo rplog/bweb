@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { optimizeImage } from '../../utils/imageOptimizer';
 import { Spotlight } from '../Spotlight';
 import { PageHeader } from '../PageHeader';
 import { Maximize2, ArrowLeft, X, ChevronLeft, ChevronRight, Hand } from 'lucide-react';
@@ -248,8 +249,10 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                                             <div key={i} className="relative w-full h-full overflow-hidden border-r border-b border-black/10 last:border-0">
                                                 {album.cover[i] ? (
                                                     <img
-                                                        src={album.cover[i]}
+                                                        src={optimizeImage(album.cover[i], { width: 400, height: 400, fit: 'cover', quality: 80 })}
                                                         alt={`${album.title} cover ${i + 1}`}
+                                                        loading="lazy"
+                                                        decoding="async"
                                                         className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-100 grayscale group-hover:grayscale-0"
                                                         onError={(e) => {
                                                             e.currentTarget.style.opacity = '0';
@@ -301,8 +304,10 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                                         onClick={() => openPhoto(photo)}
                                     >
                                         <img
-                                            src={photo}
+                                            src={optimizeImage(photo, { width: 600, quality: 80 })}
                                             alt={`Photo ${i + 1}`}
+                                            loading="lazy"
+                                            decoding="async"
                                             className="w-full h-auto object-contain group-hover:scale-[1.02] transition-transform duration-300"
                                             onError={(e) => {
                                                 e.currentTarget.style.display = 'none';
@@ -369,9 +374,10 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                             </button>
 
                             <img
-                                src={activePhoto}
+                                src={optimizeImage(activePhoto, { width: 1920, quality: 90 })}
                                 alt="Full view"
                                 className="max-w-full max-h-full object-contain relative z-0"
+                                decoding="async"
                                 onClick={(e) => e.stopPropagation()}
                             />
 

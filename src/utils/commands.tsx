@@ -407,7 +407,7 @@ export const commands: Record<string, Command> = {
                                 }
                             }
                         }}
-                        onSaveAs={async (newFilename, newContent) => {
+                        onSaveAs={async (newFilename, newContent, commitMsg) => {
                             let targetIsVisitor = false;
                             let cleanName = newFilename;
 
@@ -422,7 +422,7 @@ export const commands: Record<string, Command> = {
                                 const res = await fetch('/api/notes', {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ filename: cleanName, content: newContent })
+                                    body: JSON.stringify({ filename: cleanName, content: newContent, commit_msg: commitMsg })
                                 });
 
                                 if (!res.ok) {

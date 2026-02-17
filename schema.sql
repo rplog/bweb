@@ -21,5 +21,6 @@ CREATE TABLE note_edits (
   ip TEXT,
   city TEXT,
   created_at INTEGER,
+  commit_msg TEXT,
   FOREIGN KEY(note_id) REFERENCES notes(id)
 );

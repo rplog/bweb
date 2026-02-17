@@ -358,11 +358,12 @@ export const onRequestGet = async (context: any) => {
                 
                 const hash = edit.id.substring(0, 7);
                 const dateStr = formatGitDate(edit.created_at, writerTimezone);
+                const message = edit.commit_msg ? escapeHtml(edit.commit_msg) : \`msg from \${edit.ip} (\${edit.city})\`;
                 
                 el.innerHTML = \`
                     <div>
                         <span class="commit-hash" onclick="viewVersion('\${edit.id}')">\${hash}</span>
-                        <span class="commit-author">msg from \${edit.ip} (\${edit.city})</span>
+                        <span class="commit-author">\${message}</span>
                     </div>
                     <span class="commit-date">Date:   \${dateStr}</span>
                 \`;

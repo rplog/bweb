@@ -71,9 +71,9 @@ export const CommandInput = forwardRef<CommandInputHandle, CommandInputProps>(({
     };
 
     return (
-        <div className="flex items-center w-full relative">
-            <span className="text-elegant-accent mr-2 whitespace-nowrap">{user}@neosphere:{promptPath}$</span>
-            <div className="relative flex-grow">
+        <div className="flex flex-wrap items-center w-full relative">
+            <span className="text-elegant-accent mr-2 whitespace-nowrap shrink-0">{user}@neosphere:{promptPath}$</span>
+            <div className="relative flex-grow min-w-[120px]">
                 {/* Syntax Highlight Layer */}
                 <div className="absolute inset-0 pointer-events-none whitespace-pre font-inherit" aria-hidden="true">
                     {(() => {

@@ -49,7 +49,7 @@ export const About: React.FC<AboutProps> = ({ onExit, onNavigate }) => {
                                     >
                                         <div className="w-full h-full rounded-full bg-elegant-bg flex items-center justify-center overflow-hidden">
                                             <img
-                                                src="/api/gallery/assets/me.jpg"
+                                                src="/assets/me.jpg"
                                                 alt="Profile"
                                                 className="w-full h-full object-cover"
                                                 onError={(e) => {
@@ -175,7 +175,7 @@ export const About: React.FC<AboutProps> = ({ onExit, onNavigate }) => {
                             onClick={(e) => e.stopPropagation()}
                         >
                             <img
-                                src="/api/gallery/assets/me.jpg"
+                                src="/assets/me.jpg"
                                 alt="Bahauddin Alam"
                                 className="w-full h-full object-contain rounded-full md:rounded-lg shadow-2xl ring-4 ring-elegant-border/20"
                             />

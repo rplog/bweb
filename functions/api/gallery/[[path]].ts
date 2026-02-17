@@ -67,7 +67,7 @@ async function handleGet(context: EventContext<Env, any, any>) {
                     albums[albumPath] = { title: albumPath, count: 0, cover: [], photos: [], category: 'Gallery' };
                 }
 
-                const url = `/api/gallery/${object.key}`;
+                const url = `/gallery/${object.key}`;
                 albums[albumPath].photos.push({
                     url,
                     key: object.key,
@@ -112,22 +112,8 @@ async function handleGet(context: EventContext<Env, any, any>) {
         });
     }
 
-    // 2. Serve Image
-    const key = Array.isArray(pathParams) ? pathParams.join('/') : pathParams;
-    const object = await env.neosphere_assets.get(key);
-
-    if (object === null) return new Response("Not Found", { status: 404 });
-
-    const headers = new Headers();
-    object.writeHttpMetadata(headers);
-    headers.set('etag', object.httpEtag);
-    headers.set('Cache-Control', 'public, max-age=31536000, immutable');
-
-    if (object.customMetadata?.caption) {
-        headers.set('X-Custom-Caption', object.customMetadata.caption);
-    }
-
-    return new Response(object.body, { headers });
+    // 2. Images are now served via /gallery/... — return 404 for any path params here
+    return new Response("Not Found", { status: 404 });
 }
 
 async function handlePost(context: any) {

@@ -30,6 +30,30 @@ export const useTerminal = () => {
     const [isInputVisible, setIsInputVisible] = useState(true);
     const [fileSystem, setFileSystem] = useState(initialFileSystem);
     const [initialized, setInitialized] = useState(false);
+    const [notesPreloaded, setNotesPreloaded] = useState(false);
+
+    // Background preload: fetch last 100 notes and populate fileSystem
+    useEffect(() => {
+        if (notesPreloaded) return;
+        fetch('/api/notes')
+            .then(res => res.ok ? res.json() : Promise.reject())
+            .then((notes: any[]) => {
+                setFileSystem(prev => {
+                    const updated = JSON.parse(JSON.stringify(prev));
+                    const visitorsDir = updated.home?.children?.neo?.children?.visitors_notes;
+                    if (visitorsDir) {
+                        const children: { [key: string]: any } = {};
+                        notes.forEach((note: any) => {
+                            children[note.filename] = { type: 'file', content: '' };
+                        });
+                        visitorsDir.children = children;
+                    }
+                    return updated;
+                });
+                setNotesPreloaded(true);
+            })
+            .catch(() => { /* silently fail, ls will still work via API fallback */ });
+    }, [notesPreloaded]);
 
     const getPromptPath = useCallback(() => {
         const pathStr = '/' + currentPath.join('/');

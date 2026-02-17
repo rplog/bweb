@@ -1,8 +1,23 @@
 export const onRequestGet = async (context: any) => {
     try {
-        const { results } = await context.env.DB.prepare(
-            "SELECT filename, created_at, updated_at FROM notes ORDER BY updated_at DESC"
-        ).all();
+        const url = new URL(context.request.url);
+        const search = url.searchParams.get('search');
+
+        let results;
+        if (search) {
+            // Grep mode: search entire DB by filename pattern (no limit)
+            const { results: r } = await context.env.DB.prepare(
+                "SELECT filename, created_at, updated_at FROM notes WHERE filename LIKE ? ORDER BY updated_at DESC"
+            ).bind(`%${search}%`).all();
+            results = r;
+        } else {
+            // Default: return last 100 notes
+            const { results: r } = await context.env.DB.prepare(
+                "SELECT filename, created_at, updated_at FROM notes ORDER BY updated_at DESC LIMIT 100"
+            ).all();
+            results = r;
+        }
+
         return new Response(JSON.stringify(results), {
             headers: { "Content-Type": "application/json" },
         });

@@ -34,31 +34,6 @@ export const commands: Record<string, Command> = {
         execute: async (args, { currentPath, fileSystem }) => {
             const targetPath = args[0] || '.';
 
-            // Special handling for visitors_notes
-            const isVisitorsNotes = (path: string[]) => path[path.length - 1] === 'visitors_notes';
-            const targetIsVisitorsNotes = targetPath === 'visitors_notes' || targetPath.endsWith('/visitors_notes');
-
-            if (targetIsVisitorsNotes || (targetPath === '.' && isVisitorsNotes(currentPath))) {
-                try {
-                    const response = await fetch('/api/notes');
-                    if (!response.ok) throw new Error('Failed to fetch notes');
-                    const notes = await response.json();
-                    return (
-                        <div className="grid grid-cols-2 gap-2">
-                            {notes.map((note: any) => (
-                                <div key={note.filename} className="flex justify-between">
-                                    <span className="text-elegant-text-primary">{note.filename}</span>
-                                    <span className="text-elegant-text-muted text-xs">{new Date(note.updated_at).toLocaleDateString()}</span>
-                                </div>
-                            ))}
-                            {notes.length === 0 && <span className="text-elegant-text-muted">No notes found. Create one with nano!</span>}
-                        </div>
-                    );
-                } catch (e: any) {
-                    return `Error: ${e.message}`;
-                }
-            }
-
             const targetNode = resolvePath(fileSystem, currentPath, targetPath);
 
             if (!targetNode) {
@@ -482,6 +457,41 @@ export const commands: Record<string, Command> = {
                 return '';
             }
             return 'Fullscreen not supported';
+        }
+    },
+    grep: {
+        description: 'Search for notes by filename pattern',
+        usage: 'grep <pattern>',
+        execute: async (args) => {
+            if (args.length === 0) {
+                return 'Usage: grep <pattern>\nSearches all visitor notes by filename.';
+            }
+            const pattern = args[0];
+            try {
+                const response = await fetch(`/api/notes?search=${encodeURIComponent(pattern)}`);
+                if (!response.ok) throw new Error('Search failed');
+                const results = await response.json();
+                if (results.length === 0) {
+                    return <span className="text-elegant-text-muted">No notes matching "{pattern}"</span>;
+                }
+                return (
+                    <div>
+                        <div className="text-elegant-text-muted mb-2">
+                            Found {results.length} note{results.length !== 1 ? 's' : ''} matching "{pattern}":
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                            {results.map((note: any) => (
+                                <div key={note.filename} className="flex justify-between">
+                                    <span className="text-elegant-text-primary">{note.filename}</span>
+                                    <span className="text-elegant-text-muted text-xs">{new Date(note.updated_at).toLocaleDateString()}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                );
+            } catch (e: any) {
+                return `grep: error: ${e.message}`;
+            }
         }
     }
 };

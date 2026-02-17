@@ -348,10 +348,22 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                         </div>
 
                         <div className="flex-1 flex items-center justify-center p-4 min-h-0 relative group">
+                            {/* Tap Zones for Navigation */}
+                            <div
+                                className="absolute inset-y-0 left-0 w-1/4 z-10 cursor-pointer"
+                                onClick={(e) => { e.stopPropagation(); handlePrev(); }}
+                                title="Previous"
+                            />
+                            <div
+                                className="absolute inset-y-0 right-0 w-1/4 z-10 cursor-pointer"
+                                onClick={(e) => { e.stopPropagation(); handleNext(); }}
+                                title="Next"
+                            />
+
                             {/* Prev Button - Hidden on mobile, visible on hover desktop */}
                             <button
                                 onClick={handlePrev}
-                                className="absolute left-4 p-3 bg-black/50 hover:bg-white/20 text-white rounded-full transition-all opacity-0 group-hover:opacity-100 hidden md:flex"
+                                className="absolute left-4 p-3 bg-black/50 hover:bg-white/20 text-white rounded-full transition-all opacity-0 group-hover:opacity-100 hidden md:flex z-20"
                             >
                                 <ChevronLeft size={32} />
                             </button>
@@ -359,14 +371,14 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                             <img
                                 src={activePhoto}
                                 alt="Full view"
-                                className="max-w-full max-h-full object-contain"
+                                className="max-w-full max-h-full object-contain relative z-0"
                                 onClick={(e) => e.stopPropagation()}
                             />
 
                             {/* Next Button - Hidden on mobile, visible on hover desktop */}
                             <button
                                 onClick={handleNext}
-                                className="absolute right-4 p-3 bg-black/50 hover:bg-white/20 text-white rounded-full transition-all opacity-0 group-hover:opacity-100 hidden md:flex"
+                                className="absolute right-4 p-3 bg-black/50 hover:bg-white/20 text-white rounded-full transition-all opacity-0 group-hover:opacity-100 hidden md:flex z-20"
                             >
                                 <ChevronRight size={32} />
                             </button>

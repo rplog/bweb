@@ -57,11 +57,9 @@ export const Terminal: React.FC = () => {
             )}
 
             {/* Terminal Layer - Hidden but mounted when activeComponent exists */}
-            <div className={`h-full w-full overflow-y-auto ${activeComponent ? 'invisible' : ''}`}
-                onClick={handleContainerClick}
-            >
-                {/* Top Bar - KDE / Linux Style - Sticky so commands scroll behind it */}
-                <div className="sticky top-0 z-20 w-full h-10 bg-elegant-card flex items-center px-4 justify-end border-b border-elegant-border select-none">
+            <div className={`flex flex-col h-full w-full ${activeComponent ? 'invisible' : ''}`}>
+                {/* Top Bar - KDE / Linux Style - Always visible, never scrolls */}
+                <div className="w-full h-10 bg-elegant-card flex items-center px-4 justify-end border-b border-elegant-border flex-shrink-0 select-none relative z-20">
                     <div className="absolute left-1/2 transform -translate-x-1/2 text-gray-400 text-sm font-mono">
                         neo@neosphere:~
                     </div>
@@ -78,7 +76,11 @@ export const Terminal: React.FC = () => {
                     </div>
                 </div>
 
-                <div className="p-4 font-mono text-base">
+                {/* Scrollable Terminal Content - scrollbar only in this area */}
+                <div
+                    className="flex-1 min-h-0 p-4 overflow-y-auto font-mono text-base"
+                    onClick={handleContainerClick}
+                >
                     <div className="max-w-5xl mx-auto">
                         <OutputDisplay history={history} lastItemRef={lastItemRef} />
                         {isInputVisible && (

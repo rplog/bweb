@@ -24,16 +24,21 @@
   --term-dim: var(--color-elegant-text-muted);
 }
 
-body {
+html,
+body,
+#root {
+  height: 100%;
   margin: 0;
   padding: 0;
+}
+
+body {
   background-color: var(--term-bg);
   color: var(--term-color);
   font-family: var(--term-font);
   font-size: 18px;
   line-height: 1.6;
   overflow: hidden;
-  /* Prevent body scroll, handle in Terminal */
 }
 
 /* Scrollbar styles for desktop */

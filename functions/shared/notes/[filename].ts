@@ -359,7 +359,7 @@ export const onRequestGet = async (context: any) => {
 
         <div class="content-wrapper">
             <div id="history-banner" class="status-banner">
-                <span>Viewing diff for <span id="viewing-hash">...</span></span>
+                <span>Viewing diff for <button id="viewing-hash" onclick="copyViewedHash()">...</button></span>
                 <div>
                      <button onclick="viewFileContent()" id="toggle-view-btn" style="margin-right: 10px;">View Content</button>
                      <button onclick="restoreLatest()">Restore Latest</button>
@@ -575,6 +575,24 @@ export const onRequestGet = async (context: any) => {
                 console.error('Failed to copy: ', err);
             });
         }
+
+        function copyViewedHash() {
+            var btn = document.getElementById('viewing-hash');
+            if (!btn) return;
+            var hash = btn.textContent;
+            if (hash === 'COPIED') return;
+
+            navigator.clipboard.writeText(hash).then(function() {
+                var originalText = hash;
+                btn.textContent = 'COPIED';
+                setTimeout(function() { 
+                    if (btn.textContent === 'COPIED') {
+                        btn.textContent = originalText; 
+                    }
+                }, 1500);
+            });
+        }
+        window.copyViewedHash = copyViewedHash;
     </script>
 </body>
 </html>

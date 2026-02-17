@@ -40,37 +40,55 @@ async function handleGet(context: EventContext<Env, any, any>) {
         const albums: Record<string, any> = {};
 
         for (const object of listing.objects) {
-            const parts = object.key.split('/');
-            if (parts.length < 2) continue;
+            // Skip root files if any (we basically enforced folders, but just in case)
+            if (!object.key.includes('/')) continue;
 
-            const albumName = parts[0];
-            if (albumName === 'assets') continue;
+            const lastSlash = object.key.lastIndexOf('/');
+            const albumPath = object.key.substring(0, lastSlash);
+            const filename = object.key.substring(lastSlash + 1);
 
-            const filename = parts.slice(1).join('/');
-
-            if (!albums[albumName]) {
-                albums[albumName] = { title: albumName, count: 0, cover: [], photos: [], category: 'Gallery' };
-            }
-
-            // Read album metadata from .meta file
+            if (albumPath === 'assets') continue;
             if (filename === '.meta') {
-                albums[albumName].category = object.customMetadata?.category || 'Gallery';
+                // Ensure album exists first
+                if (!albums[albumPath]) {
+                    albums[albumPath] = { title: albumPath, count: 0, cover: [], photos: [], category: 'Gallery' };
+                }
+                albums[albumPath].category = object.customMetadata?.category || 'Gallery';
                 continue;
             }
 
             if (!filename.match(/\.(jpg|jpeg|png|webp|gif)$/i)) continue;
 
+            // Register this album
+            if (!albums[albumPath]) {
+                albums[albumPath] = { title: albumPath, count: 0, cover: [], photos: [], category: 'Gallery' };
+            }
+
+            // Add photo to this album
             const url = `/api/gallery/${object.key}`;
-            albums[albumName].photos.push({
+            albums[albumPath].photos.push({
                 url,
                 key: object.key,
                 caption: object.customMetadata?.caption || '',
                 filename
             });
-            albums[albumName].count++;
+            albums[albumPath].count++;
+
+            // Ensure parent albums exist (for navigation)
+            let parent = albumPath;
+            while (parent.includes('/')) {
+                parent = parent.substring(0, parent.lastIndexOf('/'));
+                if (!albums[parent]) {
+                    albums[parent] = { title: parent, count: 0, cover: [], photos: [], category: 'Gallery' };
+                }
+            }
         }
 
+        // Generate covers
         Object.values(albums).forEach((album: any) => {
+            // Sort photos by filename or upload time (implicitly roughly sorted by key usually)
+            // If album has no photos (just sub-albums), cover is empty for now.
+            // Future improvement: pick cover from sub-albums.
             album.cover = album.photos.slice(0, 4).map((p: any) => p.url);
         });
 
@@ -109,7 +127,8 @@ async function handlePost(context: any) {
 
         if (!file || !album) throw new Error('Missing file or album');
 
-        const safeAlbum = album.replace(/[^a-zA-Z0-9 _-]/g, '').trim();
+        // Allow slashes for nested albums
+        const safeAlbum = album.replace(/[^a-zA-Z0-9 _\-\/]/g, '').trim();
         if (!safeAlbum) throw new Error('Invalid album name');
 
         const fileName = file.name.replace(/[^a-zA-Z0-9 ._-]/g, '');
@@ -178,7 +197,8 @@ async function handlePut(context: any) {
 
     if (action === 'rename-album') {
         const { oldName } = body;
-        const safeNewName = newName.replace(/[^a-zA-Z0-9 _-]/g, '');
+        // Allow slashes for moving/nesting
+        const safeNewName = newName.replace(/[^a-zA-Z0-9 _\-\/]/g, '');
 
         const list: any = await env.neosphere_assets.list({ prefix: oldName + '/' });
         const promises = [];

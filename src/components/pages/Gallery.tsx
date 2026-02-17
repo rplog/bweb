@@ -592,7 +592,7 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                         ) : (
                             /* ---- Album Grid ---- */
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {albums.map((album) => (
+                                {albums.filter(a => !a.title.includes('/')).map((album) => (
                                     <div
                                         key={album.title}
                                         className="group relative bg-elegant-card border border-elegant-border rounded-sm overflow-hidden hover:border-elegant-text-muted transition-all duration-300 cursor-pointer"
@@ -669,6 +669,82 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                                 <span className="text-elegant-text-muted">|</span>
                                 <p className="text-elegant-text-muted text-sm">{activeAlbum.photos.length} photos</p>
                             </div>
+
+                            {/* Sub-Albums Grid */}
+                            {albums.some(a => a.title.startsWith(activeAlbum.title + '/') && a.title.split('/').length === activeAlbum.title.split('/').length + 1) && (
+                                <div className="mb-8">
+                                    <h3 className="text-elegant-text-primary font-bold mb-4 flex items-center gap-2"><FolderPlus size={18} /> Sub-Albums</h3>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                                        {albums
+                                            .filter(a => a.title.startsWith(activeAlbum.title + '/') && a.title.split('/').length === activeAlbum.title.split('/').length + 1)
+                                            .map((album) => (
+                                                <div
+                                                    key={album.title}
+                                                    className="group relative bg-elegant-card border border-elegant-border rounded-sm overflow-hidden hover:border-elegant-text-muted transition-all duration-300 cursor-pointer"
+                                                    onClick={() => openAlbum(album)}
+                                                >
+                                                    <div className="aspect-video bg-black relative overflow-hidden grid grid-cols-2 grid-rows-2">
+                                                        {Array.from({ length: 4 }).map((_, i) => (
+                                                            <div key={i} className="relative w-full h-full overflow-hidden border-r border-b border-black/10 last:border-0">
+                                                                {album.cover[i] ? (
+                                                                    <img
+                                                                        src={optimizeImage(album.cover[i], { width: 400, height: 400, fit: 'cover', quality: 80 })}
+                                                                        alt={`${album.title} cover ${i + 1}`}
+                                                                        loading="lazy"
+                                                                        decoding="async"
+                                                                        className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-100 grayscale group-hover:grayscale-0"
+                                                                        onError={(e) => { e.currentTarget.style.opacity = '0'; }}
+                                                                    />
+                                                                ) : (
+                                                                    <div className="w-full h-full bg-elegant-bg/50" />
+                                                                )}
+                                                            </div>
+                                                        ))}
+                                                        <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-all duration-300 pointer-events-none" />
+                                                        <div className="absolute top-3 right-3 pointer-events-none">
+                                                            <span className="px-3 py-1 bg-black/80 border border-elegant-border rounded text-xs text-elegant-text-secondary backdrop-blur-sm">
+                                                                {album.count} items
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="p-5 flex justify-between items-start">
+                                                        <div className="min-w-0 flex-1">
+                                                            <h3 className="text-lg font-bold text-elegant-text-primary mb-1 group-hover:text-elegant-accent transition-colors truncate">
+                                                                {album.title.split('/').pop()}
+                                                            </h3>
+                                                            <p
+                                                                className={`text-sm text-elegant-text-muted truncate ${isAdmin ? 'cursor-pointer hover:text-elegant-accent transition-colors' : ''}`}
+                                                                onClick={(e) => { if (isAdmin) { e.stopPropagation(); handleUpdateCategory(album.title, album.category); } }}
+                                                            >
+                                                                {album.category}{isAdmin && <Edit2 size={10} className="inline ml-1.5 opacity-0 group-hover:opacity-50" />}
+                                                            </p>
+                                                        </div>
+                                                        {isAdmin && (
+                                                            <div className="flex gap-1 ml-2 flex-shrink-0">
+                                                                <Tooltip text="Rename">
+                                                                    <button
+                                                                        onClick={(e) => { e.stopPropagation(); handleRenameAlbum(album.title); }}
+                                                                        className="text-elegant-text-muted hover:text-elegant-accent p-1.5 rounded hover:bg-white/5 transition-all"
+                                                                    >
+                                                                        <FileEdit size={15} />
+                                                                    </button>
+                                                                </Tooltip>
+                                                                <Tooltip text="Delete">
+                                                                    <button
+                                                                        onClick={(e) => { e.stopPropagation(); handleDelete(album.title, true); }}
+                                                                        className="text-red-500/70 hover:text-red-400 p-1.5 rounded hover:bg-red-500/5 transition-all"
+                                                                    >
+                                                                        <Trash2 size={15} />
+                                                                    </button>
+                                                                </Tooltip>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                    </div>
+                                </div>
+                            )}
                             {activeAlbum.photos.length === 0 ? (
                                 <div className="text-center py-20 text-elegant-text-muted">
                                     <p className="text-lg mb-2">This album is empty</p>
@@ -825,9 +901,17 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                         <Tooltip text="New Album" position="left">
                             <button
                                 onClick={() => {
-                                    showPrompt('Create New Album', '', (name) => {
-                                        if (name) { setUploadAlbumName(name); setShowUploadModal(true); }
-                                    });
+                                    showPrompt(
+                                        activeAlbumTitle ? `Create New Album in ${activeAlbumTitle.split('/').pop()}` : 'Create New Album',
+                                        '',
+                                        (name) => {
+                                            if (name) {
+                                                const finalName = activeAlbumTitle ? `${activeAlbumTitle}/${name}` : name;
+                                                setUploadAlbumName(finalName);
+                                                setShowUploadModal(true);
+                                            }
+                                        }
+                                    );
                                 }}
                                 className="p-4 bg-elegant-card border border-elegant-border text-elegant-text-primary rounded-full shadow-lg transition-all duration-300 hover:bg-elegant-accent hover:text-white hover:border-elegant-accent hover:scale-110 hover:shadow-elegant-accent/20 hover:shadow-xl active:scale-95"
                             >
@@ -836,7 +920,10 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                         </Tooltip>
                         <Tooltip text="Upload Photos" position="left">
                             <button
-                                onClick={() => setShowUploadModal(true)}
+                                onClick={() => {
+                                    if (activeAlbumTitle) setUploadAlbumName(activeAlbumTitle);
+                                    setShowUploadModal(true);
+                                }}
                                 className="p-4 bg-elegant-card border border-elegant-border text-elegant-text-primary rounded-full shadow-lg transition-all duration-300 hover:bg-elegant-accent hover:text-white hover:border-elegant-accent hover:scale-110 hover:rotate-90 hover:shadow-elegant-accent/20 hover:shadow-xl active:scale-95"
                             >
                                 <Plus size={24} />
@@ -894,8 +981,8 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                 {alertConfig && (
                     <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[70]">
                         <div className={`px-4 py-2 rounded border shadow-lg flex items-center gap-2 text-sm font-mono backdrop-blur-sm ${alertConfig.type === 'error' ? 'bg-red-500/10 border-red-500/40 text-red-400' :
-                                alertConfig.type === 'success' ? 'bg-elegant-accent/10 border-elegant-accent/40 text-elegant-accent' :
-                                    'bg-elegant-card border-elegant-border text-elegant-text-primary'
+                            alertConfig.type === 'success' ? 'bg-elegant-accent/10 border-elegant-accent/40 text-elegant-accent' :
+                                'bg-elegant-card border-elegant-border text-elegant-text-primary'
                             }`}>
                             <span>{alertConfig.message}</span>
                             <button onClick={() => setAlertConfig(null)} className="ml-1 opacity-60 hover:opacity-100 transition-opacity"><X size={12} /></button>

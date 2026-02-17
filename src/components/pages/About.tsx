@@ -56,8 +56,8 @@ export const About: React.FC<AboutProps> = ({ onExit, onNavigate }) => {
                                         </div>
                                     </div>
 
-                                    <h2 className="text-xl font-bold text-elegant-text-primary mb-2">Neo Anderson</h2>
-                                    <p className="text-elegant-text-muted text-sm mb-1">@neo</p>
+                                    <h2 className="text-xl font-bold text-elegant-text-primary mb-2">Bahauddin Alam</h2>
+                                    <p className="text-elegant-text-muted text-sm mb-1">@bahauddinalam</p>
                                     <p className="text-elegant-text-secondary mb-6 text-sm">Full Stack Developer</p>
 
                                     <div className="flex gap-3 mb-6 justify-center">

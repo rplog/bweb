@@ -208,7 +208,15 @@ export const Ping: React.FC<PingProps> = ({ host, onComplete, count }) => {
                 </>
             )}
             {isRunning && (
-                <div className="mt-2 text-elegant-text-muted text-xs">Press Ctrl+C to stop</div>
+                <button
+                    onClick={() => {
+                        if (abortControllerRef.current) abortControllerRef.current.abort();
+                        finalizePing(true);
+                    }}
+                    className="mt-2 px-3 py-1 text-xs text-elegant-text-muted border border-elegant-border rounded hover:bg-white/10 hover:text-elegant-text-primary active:bg-white/20 transition-colors cursor-pointer select-none"
+                >
+                    ⏹ Stop (Ctrl+C)
+                </button>
             )}
         </div>
     );

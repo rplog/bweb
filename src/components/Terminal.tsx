@@ -21,12 +21,25 @@ export const Terminal: React.FC = () => {
     const lastItemRef = useRef<HTMLDivElement>(null);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
 
+    // Auto-scroll on ANY content change (handles Ping, Htop, etc. internal updates)
     useEffect(() => {
-        // Scroll within the terminal container only — never trigger native browser scroll
         const container = scrollContainerRef.current;
-        if (container) {
-            container.scrollTop = container.scrollHeight;
-        }
+        if (!container) return;
+
+        const scrollToBottom = () => {
+            requestAnimationFrame(() => {
+                container.scrollTop = container.scrollHeight;
+            });
+        };
+
+        // Scroll immediately on history change
+        scrollToBottom();
+
+        // Also observe DOM mutations for components that update internally (e.g. Ping)
+        const observer = new MutationObserver(scrollToBottom);
+        observer.observe(container, { childList: true, subtree: true, characterData: true });
+
+        return () => observer.disconnect();
     }, [history]);
 
     // Refocus input when activeComponent closes (e.g. exiting htop/nano)

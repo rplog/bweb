@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Spotlight } from '../Spotlight';
 import { PageHeader } from '../PageHeader';
-import { Maximize2, ArrowLeft, X } from 'lucide-react';
+import { Maximize2, ArrowLeft, X, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface GalleryProps {
     onExit: () => void;
@@ -100,6 +100,60 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
             .replace('/api/gallery/', '/gallery/')
             .replace(/\/gallery\/([^/]+)/, (_, album) => `/gallery/${album.toLowerCase()}`);
         window.history.pushState({}, '', browserPath);
+    };
+
+    const handleNext = (e?: React.MouseEvent) => {
+        e?.stopPropagation();
+        if (!activeAlbum || !activePhoto) return;
+        const currentIndex = activeAlbum.photos.findIndex(p => p === activePhoto);
+        if (currentIndex === -1) return;
+        const nextIndex = (currentIndex + 1) % activeAlbum.photos.length;
+        openPhoto(activeAlbum.photos[nextIndex]);
+    };
+
+    const handlePrev = (e?: React.MouseEvent) => {
+        e?.stopPropagation();
+        if (!activeAlbum || !activePhoto) return;
+        const currentIndex = activeAlbum.photos.findIndex(p => p === activePhoto);
+        if (currentIndex === -1) return;
+        const prevIndex = (currentIndex - 1 + activeAlbum.photos.length) % activeAlbum.photos.length;
+        openPhoto(activeAlbum.photos[prevIndex]);
+    };
+
+    // Keyboard navigation
+    useEffect(() => {
+        if (!activePhoto) return;
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'ArrowRight') handleNext();
+            if (e.key === 'ArrowLeft') handlePrev();
+            if (e.key === 'Escape') closePhoto();
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [activePhoto, activeAlbum]);
+
+    // Swipe handlers
+    const [touchStart, setTouchStart] = useState<number | null>(null);
+    const [touchEnd, setTouchEnd] = useState<number | null>(null);
+
+    const minSwipeDistance = 50;
+
+    const onTouchStart = (e: React.TouchEvent) => {
+        setTouchEnd(null);
+        setTouchStart(e.targetTouches[0].clientX);
+    };
+
+    const onTouchMove = (e: React.TouchEvent) => {
+        setTouchEnd(e.targetTouches[0].clientX);
+    };
+
+    const onTouchEnd = () => {
+        if (!touchStart || !touchEnd) return;
+        const distance = touchStart - touchEnd;
+        const isLeftSwipe = distance > minSwipeDistance;
+        const isRightSwipe = distance < -minSwipeDistance;
+        if (isLeftSwipe) handleNext();
+        if (isRightSwipe) handlePrev();
     };
 
     const closePhoto = () => {
@@ -259,8 +313,11 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                     <div
                         className="fixed inset-0 z-50 bg-black/95 flex flex-col"
                         onClick={closePhoto}
+                        onTouchStart={onTouchStart}
+                        onTouchMove={onTouchMove}
+                        onTouchEnd={onTouchEnd}
                     >
-                        <div className="flex items-center justify-between p-4 flex-shrink-0">
+                        <div className="flex items-center justify-between p-4 flex-shrink-0 z-50">
                             <span className="text-elegant-text-muted font-mono text-sm truncate max-w-[70%]">
                                 {decodeURIComponent(activePhoto.split('/').pop() || '')}
                             </span>
@@ -271,13 +328,30 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                                 <X size={20} />
                             </button>
                         </div>
-                        <div className="flex-1 flex items-center justify-center p-4 min-h-0">
+
+                        <div className="flex-1 flex items-center justify-center p-4 min-h-0 relative group">
+                            {/* Prev Button - Hidden on mobile, visible on hover desktop */}
+                            <button
+                                onClick={handlePrev}
+                                className="absolute left-4 p-3 bg-black/50 hover:bg-white/20 text-white rounded-full transition-all opacity-0 group-hover:opacity-100 hidden md:flex"
+                            >
+                                <ChevronLeft size={32} />
+                            </button>
+
                             <img
                                 src={activePhoto}
                                 alt="Full view"
                                 className="max-w-full max-h-full object-contain"
                                 onClick={(e) => e.stopPropagation()}
                             />
+
+                            {/* Next Button - Hidden on mobile, visible on hover desktop */}
+                            <button
+                                onClick={handleNext}
+                                className="absolute right-4 p-3 bg-black/50 hover:bg-white/20 text-white rounded-full transition-all opacity-0 group-hover:opacity-100 hidden md:flex"
+                            >
+                                <ChevronRight size={32} />
+                            </button>
                         </div>
                     </div>
                 )}

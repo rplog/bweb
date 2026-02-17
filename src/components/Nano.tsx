@@ -3,12 +3,11 @@ import React, { useState, useRef, useEffect } from 'react';
 interface NanoProps {
     filename?: string;
     initialContent: string;
-    onSave: (content: string) => Promise<void> | void;
-    onSaveAs: (filename: string, content: string, commitMsg?: string) => Promise<void> | void;
+    onSaveAs: (filename: string, content: string, commitMsg?: string, authorName?: string) => Promise<void> | void;
     onExit: () => void;
 }
 
-export const Nano: React.FC<NanoProps> = ({ filename: initialFilename, initialContent, onSave, onSaveAs, onExit }) => {
+export const Nano: React.FC<NanoProps> = ({ filename: initialFilename, initialContent, onSaveAs, onExit }) => {
     const [content, setContent] = useState(initialContent);
     const [filename, setFilename] = useState(initialFilename);
     const [message, setMessage] = useState('');
@@ -16,6 +15,7 @@ export const Nano: React.FC<NanoProps> = ({ filename: initialFilename, initialCo
     const [savePromptValue, setSavePromptValue] = useState('');
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const promptInputRef = useRef<HTMLInputElement>(null);
+    const commitMsgRef = useRef<string>('');
 
     useEffect(() => {
         if (textareaRef.current && !isPromptingSave) {
@@ -30,19 +30,10 @@ export const Nano: React.FC<NanoProps> = ({ filename: initialFilename, initialCo
     }, [isPromptingSave]);
 
     const handleSave = async () => {
-        if (filename) {
-            try {
-                await onSave(content);
-                setMessage(`[ Wrote ${content.split('\n').length} lines ]`);
-            } catch (e: any) {
-                setMessage(`[ Error: ${e.message} ]`);
-            }
-            setTimeout(() => setMessage(''), 2000);
-        } else {
-            setIsPromptingSave(true);
-            setSavePromptValue('');
-            setMessage('File Name to Write: ');
-        }
+        // Always prompt, pre-filling current filename if available
+        setIsPromptingSave(true);
+        setSavePromptValue(filename || '');
+        setMessage('File Name to Write: ');
     };
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -75,14 +66,15 @@ export const Nano: React.FC<NanoProps> = ({ filename: initialFilename, initialCo
                 }
             } else if (message.startsWith('Commit Message (Optional):')) {
                 const commitMsg = savePromptValue.trim();
+                commitMsgRef.current = commitMsg;
+                setMessage('Author Name (Optional): ');
+                setSavePromptValue('');
+            } else if (message.startsWith('Author Name (Optional):')) {
+                const authorName = savePromptValue.trim();
+                const commitMsg = commitMsgRef.current;
+
                 try {
-                    // We need to pass commitMsg to onSaveAs. 
-                    // Since onSaveAs signature is fixed in props, we might need to cast or update the prop type.
-                    // For now, let's assume onSaveAs handles it or we pass it as a 3rd arg if we update the interface.
-                    // Wait, onSaveAs is defined in commands.tsx. We need to update that too.
-                    // Let's pass it as part of content? No. 
-                    // We should update the onSaveAs prop signature in NanoProps.
-                    await onSaveAs(filename!, content, commitMsg);
+                    await onSaveAs(filename!, content, commitMsg, authorName);
                     setIsPromptingSave(false);
                     setMessage(`[ Wrote ${content.split('\n').length} lines ]`);
                 } catch (e: any) {

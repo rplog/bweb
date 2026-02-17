@@ -358,12 +358,20 @@ export const onRequestGet = async (context: any) => {
                 
                 const hash = edit.id.substring(0, 7);
                 const dateStr = formatGitDate(edit.created_at, writerTimezone);
-                const message = edit.commit_msg ? escapeHtml(edit.commit_msg) : \`msg from \${edit.ip} (\${edit.city})\`;
                 
+                let authorDisplay = edit.author_name ? escapeHtml(edit.author_name) : \`\${edit.ip} (\${edit.city})\`;
+                let msgDisplay = edit.commit_msg ? escapeHtml(edit.commit_msg) : 'Update';
+                
+                // If it was the fallback generic message logic before:
+                if (!edit.commit_msg && !edit.author_name) {
+                     msgDisplay = 'msg from ' + authorDisplay;
+                     authorDisplay = ''; // Don't duplicate
+                }
+
                 el.innerHTML = \`
                     <div>
                         <span class="commit-hash" onclick="viewVersion('\${edit.id}')">\${hash}</span>
-                        <span class="commit-author">\${message}</span>
+                        <span class="commit-author">\${authorDisplay} \${authorDisplay && msgDisplay ? ': ' : ''} \${msgDisplay}</span>
                     </div>
                     <span class="commit-date">Date:   \${dateStr}</span>
                 \`;

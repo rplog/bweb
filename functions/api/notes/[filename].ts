@@ -23,7 +23,7 @@ export const onRequestPut = async (context: any) => {
     try {
         const { request, params, env } = context;
         const filename = params.filename;
-        const { content, commit_msg } = await request.json(); // Extract commit_msg
+        const { content, commit_msg, author_name } = await request.json(); // Extract commit_msg and author_name
 
         const now = Date.now();
         const ip = request.headers.get("CF-Connecting-IP") || "unknown";
@@ -36,8 +36,8 @@ export const onRequestPut = async (context: any) => {
         if (currentNote) {
             const editId = crypto.randomUUID();
             await env.DB.prepare(
-                "INSERT INTO note_edits (id, note_id, previous_content, ip, city, created_at, commit_msg) VALUES (?, ?, ?, ?, ?, ?, ?)"
-            ).bind(editId, currentNote.id, currentNote.content, ip, city, now, commit_msg || null).run();
+                "INSERT INTO note_edits (id, note_id, previous_content, ip, city, created_at, commit_msg, author_name) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+            ).bind(editId, currentNote.id, currentNote.content, ip, city, now, commit_msg || null, author_name || null).run();
         }
 
         const info = await env.DB.prepare(

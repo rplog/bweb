@@ -376,38 +376,7 @@ export const commands: Record<string, Command> = {
                     <Nano
                         filename={loadFilename}
                         initialContent={contentToEdit}
-                        onSave={async (newContent) => {
-                            if (!loadFilename) return;
-
-                            if (isVisitorNote(loadFilename)) {
-                                const cleanName = loadFilename.includes('visitors_notes/') ? loadFilename.split('visitors_notes/')[1] : loadFilename;
-                                // Try Create first
-                                let res = await fetch('/api/notes', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ filename: cleanName, content: newContent })
-                                });
-
-                                if (res.status === 409) {
-                                    // Exists, try Update
-                                    res = await fetch(`/api/notes/${cleanName}`, {
-                                        method: 'PUT',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({ content: newContent })
-                                    });
-                                }
-
-                                if (!res.ok) {
-                                    throw new Error(await res.text());
-                                }
-                            } else {
-                                if (setFileSystem) {
-                                    const newFS = writeFile(fileSystem, currentPath, loadFilename, newContent);
-                                    setFileSystem(newFS);
-                                }
-                            }
-                        }}
-                        onSaveAs={async (newFilename, newContent, commitMsg) => {
+                        onSaveAs={async (newFilename, newContent, commitMsg, authorName) => {
                             let targetIsVisitor = false;
                             let cleanName = newFilename;
 
@@ -422,7 +391,12 @@ export const commands: Record<string, Command> = {
                                 const res = await fetch('/api/notes', {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ filename: cleanName, content: newContent, commit_msg: commitMsg })
+                                    body: JSON.stringify({
+                                        filename: cleanName,
+                                        content: newContent,
+                                        commit_msg: commitMsg,
+                                        author_name: authorName
+                                    })
                                 });
 
                                 if (!res.ok) {

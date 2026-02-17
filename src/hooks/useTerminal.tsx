@@ -173,6 +173,8 @@ export const useTerminal = () => {
             const command = ROUTES[path];
             if (command) {
                 execute(command, true);
+            } else if (path.startsWith('/gallery')) {
+                execute('gallery', true);
             }
             // Auto-cd if ?dir= query parameter is present
             const params = new URLSearchParams(window.location.search);

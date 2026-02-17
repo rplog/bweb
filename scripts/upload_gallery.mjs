@@ -5,11 +5,11 @@ import { execSync } from 'child_process';
 const SHARE_DIR = './Share';
 const BUCKET_NAME = 'neosphere-assets';
 
-// Ensure ffmpeg is available
+// Ensure ImageMagick is available
 try {
-    execSync('ffmpeg -version', { stdio: 'ignore' });
+    execSync('magick --version', { stdio: 'ignore' });
 } catch (e) {
-    console.error('Error: ffmpeg is not installed or not in PATH.');
+    console.error('Error: ImageMagick (magick) is not installed or not in PATH.');
     process.exit(1);
 }
 
@@ -49,8 +49,8 @@ const processFile = (filePath) => {
         const newPath = filePath.replace(/\.heic$/i, '.jpg');
         console.log(`Converting ${path.basename(filePath)} to JPG...`);
         try {
-            // ffmpeg -i input.heic -q:v 2 output.jpg (-q:v 2 is high quality)
-            execSync(`ffmpeg -i "${filePath}" -y -q:v 2 "${newPath}"`, { stdio: 'inherit' });
+            // magick input.heic -quality 95 output.jpg (full resolution, high quality)
+            execSync(`magick "${filePath}" -quality 95 "${newPath}"`, { stdio: 'inherit' });
             uploadPath = newPath;
             cleanup = true;
         } catch (e) {
@@ -69,7 +69,7 @@ const processFile = (filePath) => {
     console.log(`Uploading ${key} to R2...`);
     try {
         // npx wrangler r2 object put neosphere-assets/Flora/image.jpg --file Share/Flora/image.jpg
-        execSync(`npx wrangler r2 object put ${BUCKET_NAME}/${key} --file "${uploadPath}"`, { stdio: 'inherit' });
+        execSync(`npx wrangler r2 object put ${BUCKET_NAME}/${key} --file "${uploadPath}" --remote`, { stdio: 'inherit' });
     } catch (e) {
         console.error(`Failed to upload ${key}:`, e);
     }

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Spotlight } from '../Spotlight';
 import { PageHeader } from '../PageHeader';
-import { Maximize2, ArrowLeft } from 'lucide-react';
+import { Maximize2, ArrowLeft, X } from 'lucide-react';
 
 interface GalleryProps {
     onExit: () => void;
@@ -11,7 +11,7 @@ interface GalleryProps {
 interface Album {
     title: string;
     count: number;
-    cover: string[]; // Array of up to 4 image URLs for grid
+    cover: string[];
     photos: string[];
     category: string;
 }
@@ -19,14 +19,36 @@ interface Album {
 export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
     const [albums, setAlbums] = useState<Album[]>([]);
     const [activeAlbum, setActiveAlbum] = useState<Album | null>(null);
+    const [activePhoto, setActivePhoto] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
 
+    // Fetch albums and handle deep link on mount
     useEffect(() => {
         fetch('/api/gallery')
             .then(res => res.json())
-            .then(data => {
+            .then((data: Album[]) => {
                 setAlbums(data);
                 setLoading(false);
+
+                // Deep link: parse URL like /gallery/flora/filename.jpg
+                const path = window.location.pathname;
+                if (path.startsWith('/gallery/')) {
+                    const parts = path.split('/').slice(2); // e.g. ['flora', 'filename.jpg']
+                    if (parts.length >= 1 && parts[0]) {
+                        const slug = decodeURIComponent(parts[0]);
+                        const album = data.find((a: Album) =>
+                            a.title.toLowerCase() === slug.toLowerCase()
+                        );
+                        if (album) {
+                            setActiveAlbum(album);
+                            if (parts.length >= 2) {
+                                const photoName = decodeURIComponent(parts.slice(1).join('/'));
+                                const photoUrl = `/api/gallery/${album.title}/${photoName}`;
+                                setActivePhoto(photoUrl);
+                            }
+                        }
+                    }
+                }
             })
             .catch(err => {
                 console.error('Failed to load gallery:', err);
@@ -34,9 +56,58 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
             });
     }, []);
 
+    // Browser back button support
+    useEffect(() => {
+        const handlePopState = () => {
+            const path = window.location.pathname;
+            if (path === '/gallery') {
+                setActiveAlbum(null);
+                setActivePhoto(null);
+            } else if (path.startsWith('/gallery/')) {
+                const parts = path.split('/').slice(2);
+                if (parts.length <= 1) {
+                    // Album level - close photo if open
+                    setActivePhoto(null);
+                }
+            }
+        };
+        window.addEventListener('popstate', handlePopState);
+        return () => window.removeEventListener('popstate', handlePopState);
+    }, []);
+
     const handleNavigate = (dest: string) => {
         if (dest === 'Terminal') onExit();
         else if (onNavigate) onNavigate(dest);
+    };
+
+    const openAlbum = (album: Album) => {
+        setActiveAlbum(album);
+        setActivePhoto(null);
+        const slug = album.title.toLowerCase();
+        window.history.pushState({}, '', `/gallery/${slug}`);
+    };
+
+    const closeAlbum = () => {
+        setActiveAlbum(null);
+        setActivePhoto(null);
+        window.history.pushState({}, '', '/gallery');
+    };
+
+    const openPhoto = (photo: string) => {
+        setActivePhoto(photo);
+        // photo URL: /api/gallery/Flora/img.jpg -> browser URL: /gallery/flora/img.jpg
+        const browserPath = photo
+            .replace('/api/gallery/', '/gallery/')
+            .replace(/\/gallery\/([^/]+)/, (_, album) => `/gallery/${album.toLowerCase()}`);
+        window.history.pushState({}, '', browserPath);
+    };
+
+    const closePhoto = () => {
+        setActivePhoto(null);
+        if (activeAlbum) {
+            const slug = activeAlbum.title.toLowerCase();
+            window.history.pushState({}, '', `/gallery/${slug}`);
+        }
     };
 
     return (
@@ -58,14 +129,30 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                         <span>/</span>
                         <span
                             className={activeAlbum ? "hover:text-elegant-text-primary transition-colors cursor-pointer hover:underline decoration-elegant-text-muted underline-offset-4" : "text-elegant-text-primary font-bold"}
-                            onClick={() => activeAlbum && setActiveAlbum(null)}
+                            onClick={() => {
+                                if (activePhoto) closePhoto();
+                                if (activeAlbum) closeAlbum();
+                            }}
                         >
                             gallery
                         </span>
                         {activeAlbum && (
                             <>
                                 <span>/</span>
-                                <span className="text-elegant-accent font-bold">{activeAlbum.title.toLowerCase().replace(/ /g, '_')}</span>
+                                <span
+                                    className={activePhoto ? "hover:text-elegant-text-primary transition-colors cursor-pointer hover:underline decoration-elegant-text-muted underline-offset-4" : "text-elegant-accent font-bold"}
+                                    onClick={() => activePhoto && closePhoto()}
+                                >
+                                    {activeAlbum.title.toLowerCase()}
+                                </span>
+                            </>
+                        )}
+                        {activePhoto && (
+                            <>
+                                <span>/</span>
+                                <span className="text-elegant-accent font-bold">
+                                    {decodeURIComponent(activePhoto.split('/').pop() || '')}
+                                </span>
                             </>
                         )}
                     </div>
@@ -75,12 +162,13 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                             Loading gallery...
                         </div>
                     ) : !activeAlbum ? (
+                        /* ---- Album Grid ---- */
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                             {albums.map((album) => (
                                 <div
                                     key={album.title}
                                     className="group relative bg-elegant-card border border-elegant-border rounded-sm overflow-hidden hover:border-elegant-text-muted transition-all duration-300 cursor-pointer"
-                                    onClick={() => setActiveAlbum(album)}
+                                    onClick={() => openAlbum(album)}
                                 >
                                     {/* 2x2 Grid Cover */}
                                     <div className="aspect-video bg-black relative overflow-hidden grid grid-cols-2 grid-rows-2">
@@ -119,10 +207,11 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                             ))}
                         </div>
                     ) : (
+                        /* ---- Photo Grid (inside album) ---- */
                         <>
                             <div className="mb-6 flex items-center gap-4">
                                 <button
-                                    onClick={() => setActiveAlbum(null)}
+                                    onClick={closeAlbum}
                                     className="text-elegant-text-muted hover:text-elegant-text-primary transition-colors flex items-center gap-2 text-sm"
                                 >
                                     <ArrowLeft size={16} /> Back
@@ -132,16 +221,17 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                                     {activeAlbum.count} photos
                                 </p>
                             </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                            <div className="columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4">
                                 {activeAlbum.photos.map((photo, i) => (
                                     <div
                                         key={i}
-                                        className="group aspect-video bg-elegant-card border border-elegant-border rounded-sm overflow-hidden hover:border-elegant-text-muted transition-all relative cursor-pointer"
+                                        className="group bg-elegant-card border border-elegant-border rounded-sm overflow-hidden hover:border-elegant-text-muted transition-all relative cursor-pointer break-inside-avoid"
+                                        onClick={() => openPhoto(photo)}
                                     >
                                         <img
                                             src={photo}
                                             alt={`Photo ${i + 1}`}
-                                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 grayscale group-hover:grayscale-0"
+                                            className="w-full h-auto object-contain group-hover:scale-[1.02] transition-transform duration-500 grayscale group-hover:grayscale-0"
                                             onError={(e) => {
                                                 e.currentTarget.style.display = 'none';
                                                 const parent = e.currentTarget.parentElement;
@@ -151,13 +241,11 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                                                 }
                                             }}
                                         />
-                                        <div className="placeholder hidden w-full h-full flex items-center justify-center bg-elegant-card absolute inset-0">
+                                        <div className="placeholder hidden w-full aspect-video flex items-center justify-center bg-elegant-card">
                                             <span className="text-xs text-elegant-text-muted font-mono">IMG_{i + 1}.RAW</span>
                                         </div>
                                         <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                            <button className="p-3 bg-elegant-card/80 hover:bg-elegant-card rounded-sm transition-all border border-elegant-border">
-                                                <Maximize2 size={20} className="text-elegant-text-primary" />
-                                            </button>
+                                            <Maximize2 size={20} className="text-elegant-text-primary" />
                                         </div>
                                     </div>
                                 ))}
@@ -165,6 +253,34 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                         </>
                     )}
                 </main>
+
+                {/* Lightbox */}
+                {activePhoto && (
+                    <div
+                        className="fixed inset-0 z-50 bg-black/95 flex flex-col"
+                        onClick={closePhoto}
+                    >
+                        <div className="flex items-center justify-between p-4 flex-shrink-0">
+                            <span className="text-elegant-text-muted font-mono text-sm truncate max-w-[70%]">
+                                {decodeURIComponent(activePhoto.split('/').pop() || '')}
+                            </span>
+                            <button
+                                onClick={closePhoto}
+                                className="p-2 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors"
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+                        <div className="flex-1 flex items-center justify-center p-4 min-h-0">
+                            <img
+                                src={activePhoto}
+                                alt="Full view"
+                                className="max-w-full max-h-full object-contain"
+                                onClick={(e) => e.stopPropagation()}
+                            />
+                        </div>
+                    </div>
+                )}
 
                 {/* Footer */}
                 <footer className="border-t border-elegant-border bg-elegant-bg py-2 mt-auto">

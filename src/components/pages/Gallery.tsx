@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { optimizeImage } from '../../utils/imageOptimizer';
 import { Spotlight } from '../Spotlight';
 import { PageHeader } from '../PageHeader';
@@ -26,9 +26,13 @@ interface Album {
 
 export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
     const [albums, setAlbums] = useState<Album[]>([]);
-    const [activeAlbum, setActiveAlbum] = useState<Album | null>(null);
-    const [activePhoto, setActivePhoto] = useState<Photo | null>(null);
+    const [activeAlbumTitle, setActiveAlbumTitle] = useState<string | null>(null);
+    const [activePhotoKey, setActivePhotoKey] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
+
+    // Derive activeAlbum and activePhoto from albums state (single source of truth)
+    const activeAlbum = activeAlbumTitle ? albums.find(a => a.title === activeAlbumTitle) ?? null : null;
+    const activePhoto = activeAlbum && activePhotoKey ? activeAlbum.photos.find(p => p.key === activePhotoKey) ?? null : null;
 
     // Admin State
     const [isAdmin, setIsAdmin] = useState(false);
@@ -57,11 +61,12 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
         isOpen: boolean;
         title: string;
         message: string;
+        confirmLabel: string;
         onConfirm: () => void;
     } | null>(null);
 
-    const showConfirm = (title: string, message: string, onConfirm: () => void) => {
-        setConfirmConfig({ isOpen: true, title, message, onConfirm });
+    const showConfirm = (title: string, message: string, onConfirm: () => void, confirmLabel = 'Confirm') => {
+        setConfirmConfig({ isOpen: true, title, message, onConfirm, confirmLabel });
     };
 
     const showAlert = (message: string, type: 'error' | 'success' | 'info' = 'info') => {
@@ -74,7 +79,6 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
     };
 
     useEffect(() => {
-        // Check local admin token
         const token = localStorage.getItem('admin_token');
         if (token) setIsAdmin(true);
     }, []);
@@ -87,23 +91,22 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                 setAlbums(data);
                 setLoading(false);
 
-                // Deep link: parse URL like /gallery/flora/filename.jpg
+                // Deep link: parse URL like /gallery/Flora/filename.jpg
                 const path = window.location.pathname;
                 if (path.startsWith('/gallery/')) {
-                    const parts = path.split('/').slice(2); // e.g. ['flora', 'filename.jpg']
+                    const parts = path.split('/').slice(2); // e.g. ['Flora', 'filename.jpg']
                     if (parts.length >= 1 && parts[0]) {
                         const slug = decodeURIComponent(parts[0]);
                         const album = data.find((a: Album) =>
                             a.title.toLowerCase() === slug.toLowerCase()
                         );
                         if (album) {
-                            setActiveAlbum(album);
+                            setActiveAlbumTitle(album.title);
                             if (parts.length >= 2) {
                                 const photoFilename = decodeURIComponent(parts.slice(1).join('/'));
-                                // Case insensitive match for filename
                                 const foundPhoto = album.photos.find(p => p.key.toLowerCase().endsWith(photoFilename.toLowerCase()));
                                 if (foundPhoto) {
-                                    setActivePhoto(foundPhoto);
+                                    setActivePhotoKey(foundPhoto.key);
                                 }
                             }
                         }
@@ -116,25 +119,32 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
             });
     }, []);
 
-    // Swipe Hint Timer
-    const [showSwipeHint, setShowSwipeHint] = useState(true);
+    // Swipe hint: only show when lightbox first opens, not on mount
+    const [showSwipeHint, setShowSwipeHint] = useState(false);
+    const hasShownSwipeHint = useRef(false);
     useEffect(() => {
-        const timer = setTimeout(() => setShowSwipeHint(false), 3000);
-        return () => clearTimeout(timer);
-    }, []);
+        if (activePhoto && !hasShownSwipeHint.current) {
+            hasShownSwipeHint.current = true;
+            setShowSwipeHint(true);
+            const timer = setTimeout(() => setShowSwipeHint(false), 3000);
+            return () => clearTimeout(timer);
+        }
+        if (!activePhoto) {
+            setShowSwipeHint(false);
+        }
+    }, [activePhoto]);
 
     // Browser back button support
     useEffect(() => {
         const handlePopState = () => {
             const path = window.location.pathname;
             if (path === '/gallery') {
-                setActiveAlbum(null);
-                setActivePhoto(null);
+                setActiveAlbumTitle(null);
+                setActivePhotoKey(null);
             } else if (path.startsWith('/gallery/')) {
                 const parts = path.split('/').slice(2);
                 if (parts.length <= 1) {
-                    // Album level - close photo if open
-                    setActivePhoto(null);
+                    setActivePhotoKey(null);
                 }
             }
         };
@@ -147,44 +157,57 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
         else if (onNavigate) onNavigate(dest);
     };
 
-    const openAlbum = (album: Album) => {
-        setActiveAlbum(album);
-        setActivePhoto(null);
-        const slug = album.title.toLowerCase();
+    const openAlbum = useCallback((album: Album) => {
+        setActiveAlbumTitle(album.title);
+        setActivePhotoKey(null);
+        const slug = encodeURIComponent(album.title);
         window.history.pushState({}, '', `/gallery/${slug}`);
-    };
+    }, []);
 
-    const closeAlbum = () => {
-        setActiveAlbum(null);
-        setActivePhoto(null);
+    const closeAlbum = useCallback(() => {
+        setActiveAlbumTitle(null);
+        setActivePhotoKey(null);
         window.history.pushState({}, '', '/gallery');
-    };
+    }, []);
 
-    const openPhoto = (photo: Photo) => {
-        setActivePhoto(photo);
-        // Deep link update (optional or simplified)
-        window.history.pushState({}, '', photo.url.replace('/api/gallery', '/gallery'));
-    };
+    const buildPhotoUrl = useCallback((photo: Photo) => {
+        // Build deep link from key parts instead of string-replacing the API URL
+        const parts = photo.key.split('/');
+        return `/gallery/${parts.map(p => encodeURIComponent(p)).join('/')}`;
+    }, []);
 
-    const handleNext = (e?: React.MouseEvent) => {
+    const openPhoto = useCallback((photo: Photo) => {
+        setActivePhotoKey(photo.key);
+        window.history.pushState({}, '', buildPhotoUrl(photo));
+    }, [buildPhotoUrl]);
+
+    const closePhoto = useCallback(() => {
+        setActivePhotoKey(null);
+        if (activeAlbum) {
+            const slug = encodeURIComponent(activeAlbum.title);
+            window.history.pushState({}, '', `/gallery/${slug}`);
+        }
+    }, [activeAlbum]);
+
+    const handleNext = useCallback((e?: React.MouseEvent) => {
         e?.stopPropagation();
         if (!activeAlbum || !activePhoto) return;
         const currentIndex = activeAlbum.photos.findIndex(p => p.key === activePhoto.key);
         if (currentIndex === -1) return;
         const nextIndex = (currentIndex + 1) % activeAlbum.photos.length;
         openPhoto(activeAlbum.photos[nextIndex]);
-    };
+    }, [activeAlbum, activePhoto, openPhoto]);
 
-    const handlePrev = (e?: React.MouseEvent) => {
+    const handlePrev = useCallback((e?: React.MouseEvent) => {
         e?.stopPropagation();
         if (!activeAlbum || !activePhoto) return;
         const currentIndex = activeAlbum.photos.findIndex(p => p.key === activePhoto.key);
         if (currentIndex === -1) return;
         const prevIndex = (currentIndex - 1 + activeAlbum.photos.length) % activeAlbum.photos.length;
         openPhoto(activeAlbum.photos[prevIndex]);
-    };
+    }, [activeAlbum, activePhoto, openPhoto]);
 
-    // Keyboard navigation
+    // Keyboard navigation - use refs to avoid stale closures
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'Escape') {
@@ -203,7 +226,7 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [activePhoto, activeAlbum]);
+    }, [activePhoto, activeAlbum, closePhoto, closeAlbum, onExit, handleNext, handlePrev]);
 
     // Swipe handlers
     const [touchStart, setTouchStart] = useState<number | null>(null);
@@ -229,11 +252,8 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
         if (isRightSwipe) handlePrev();
     };
 
-
-
-    // Preload Logic
-    // Keep track of preloaded URLs to avoid duplicate requests
-    const preloadedRef = React.useRef<Set<string>>(new Set());
+    // Preload Logic - limited to nearby photos only
+    const preloadedRef = useRef<Set<string>>(new Set());
 
     useEffect(() => {
         if (!activeAlbum || !activePhoto) return;
@@ -244,7 +264,6 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
         const photos = activeAlbum.photos;
         const total = photos.length;
 
-        // Function to preload an image
         const preload = (photo: Photo) => {
             const optimizedUrl = optimizeImage(photo.url, { width: 1920, quality: 90 });
             if (preloadedRef.current.has(optimizedUrl)) return;
@@ -254,51 +273,37 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
             preloadedRef.current.add(optimizedUrl);
         };
 
-        // 1. Immediate Priority: Next & Prev
-        const nextIndex = (currentIndex + 1) % total;
-        const prevIndex = (currentIndex - 1 + total) % total;
-        preload(photos[nextIndex]);
-        preload(photos[prevIndex]);
-
-        // 2. Background Load: Rest of the album
-        // We use a timeout to let the UI settle and main image load first
-        const timer = setTimeout(() => {
-            // Load forward direction first
-            for (let i = 1; i < total; i++) {
-                const idx = (currentIndex + i) % total;
-                preload(photos[idx]);
-            }
-        }, 500);
-
-        return () => clearTimeout(timer);
+        // Preload next/prev + 3 ahead and 1 behind (not the entire album)
+        const preloadRange = 3;
+        for (let i = 1; i <= preloadRange; i++) {
+            preload(photos[(currentIndex + i) % total]);
+        }
+        preload(photos[(currentIndex - 1 + total) % total]);
     }, [activeAlbum, activePhoto]);
 
-
-
-    const closePhoto = () => {
-        setActivePhoto(null);
-        if (activeAlbum) {
-            const slug = activeAlbum.title.toLowerCase();
-            window.history.pushState({}, '', `/gallery/${slug}`);
-        }
-    };
-
     // --- ADMIN ACTIONS ---
+
+    const resetUploadForm = () => {
+        setUploadFile(null);
+        setUploadCaption('');
+        setUploadAlbumName('');
+    };
 
     const handleUpload = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!uploadFile) return;
         if (!uploadAlbumName) {
-            alert('Please select or enter an album name');
+            showAlert('Please select or enter an album name', 'error');
             return;
         }
 
         setIsProcessing(true);
+        let objectUrl: string | null = null;
 
         try {
-            // 1. Process Image
             const img = new Image();
-            img.src = URL.createObjectURL(uploadFile);
+            objectUrl = URL.createObjectURL(uploadFile);
+            img.src = objectUrl;
             await new Promise((resolve, reject) => {
                 img.onload = resolve;
                 img.onerror = reject;
@@ -312,7 +317,6 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                 ctx.drawImage(img, 0, 0);
             }
 
-            // Convert and strip metadata
             const blob = await new Promise<Blob | null>(resolve =>
                 canvas.toBlob(resolve, 'image/jpeg', 0.9)
             );
@@ -333,20 +337,58 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                 body: formData
             });
 
+            const resBody = await res.json() as any;
             if (!res.ok) {
-                const err = await res.json() as any;
-                throw new Error(err.error || 'Upload failed');
+                throw new Error(resBody.error || 'Upload failed');
             }
 
-            // Reload to show changes
-            window.location.reload();
+            const { key } = resBody;
+
+            // Update state instead of reloading the page
+            const newPhoto: Photo = {
+                url: `/api/gallery/${key}`,
+                caption: uploadCaption,
+                key
+            };
+
+            setAlbums(prev => {
+                const existing = prev.find(a => a.title === uploadAlbumName);
+                if (existing) {
+                    return prev.map(a => {
+                        if (a.title === uploadAlbumName) {
+                            const updatedPhotos = [...a.photos, newPhoto];
+                            return {
+                                ...a,
+                                count: a.count + 1,
+                                photos: updatedPhotos,
+                                cover: updatedPhotos.slice(0, 4).map(p => p.url)
+                            };
+                        }
+                        return a;
+                    });
+                } else {
+                    // New album
+                    return [...prev, {
+                        title: uploadAlbumName,
+                        count: 1,
+                        cover: [newPhoto.url],
+                        photos: [newPhoto],
+                        category: 'Gallery'
+                    }];
+                }
+            });
+
+            showAlert('Photo uploaded successfully', 'success');
+            resetUploadForm();
+            setShowUploadModal(false);
 
         } catch (err: any) {
             console.error(err);
             showAlert(`Upload Error: ${err.message}`, 'error');
         } finally {
+            // Revoke object URL to prevent memory leak
+            if (objectUrl) URL.revokeObjectURL(objectUrl);
             setIsProcessing(false);
-            setShowUploadModal(false);
         }
     };
 
@@ -367,38 +409,30 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
 
                     if (!res.ok) throw new Error('Delete failed');
 
-                    // Update State without Reload
                     if (isAlbum) {
                         setAlbums(prev => prev.filter(a => a.title !== key));
-                        if (activeAlbum?.title === key) closeAlbum();
+                        if (activeAlbumTitle === key) closeAlbum();
                     } else {
-                        // Delete Photo
                         setAlbums(prev => prev.map(a => {
-                            if (a.title === activeAlbum?.title) {
+                            if (a.title === activeAlbumTitle) {
+                                const updatedPhotos = a.photos.filter(p => p.key !== key);
                                 return {
                                     ...a,
-                                    count: a.count - 1,
-                                    photos: a.photos.filter(p => p.key !== key),
-                                    cover: a.cover.filter(url => !url.includes(key)) // Approximate check
+                                    count: updatedPhotos.length,
+                                    photos: updatedPhotos,
+                                    cover: updatedPhotos.slice(0, 4).map(p => p.url)
                                 };
                             }
                             return a;
                         }));
-                        // Also update activeAlbum state if it's the current one
-                        if (activeAlbum) {
-                            setActiveAlbum(prev => prev ? {
-                                ...prev,
-                                count: prev.count - 1,
-                                photos: prev.photos.filter(p => p.key !== key)
-                            } : null);
-                        }
-                        if (activePhoto?.key === key) closePhoto();
+                        if (activePhotoKey === key) closePhoto();
                     }
 
                 } catch (err: any) {
                     showAlert(err.message, 'error');
                 }
-            }
+            },
+            'Delete'
         );
     };
 
@@ -406,10 +440,6 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
         if (!activePhoto) return;
 
         showPrompt('Update Caption', activePhoto.caption, async (newCaption) => {
-            // Optimistic Update
-            const prevCaption = activePhoto.caption;
-            setActivePhoto({ ...activePhoto, caption: newCaption });
-
             try {
                 const res = await fetch('/api/gallery', {
                     method: 'PUT',
@@ -426,9 +456,9 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
 
                 if (!res.ok) throw new Error('Update failed');
 
-                // Update local albums state
+                // Update in albums (single source of truth)
                 setAlbums(prev => prev.map(a => {
-                    if (a.title === activeAlbum?.title) {
+                    if (a.title === activeAlbumTitle) {
                         return {
                             ...a,
                             photos: a.photos.map(p => p.key === activePhoto.key ? { ...p, caption: newCaption } : p)
@@ -438,8 +468,6 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                 }));
 
             } catch (err: any) {
-                // Revert
-                setActivePhoto({ ...activePhoto, caption: prevCaption });
                 showAlert(err.message, 'error');
             }
         });
@@ -458,13 +486,15 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                     body: JSON.stringify({ action: 'rename-album', oldName, newName })
                 });
 
-                if (!res.ok) throw new Error('Rename failed');
+                if (!res.ok) {
+                    const resBody = await res.json() as any;
+                    throw new Error(resBody.error || 'Rename failed');
+                }
 
                 // Refetch albums to get correct new keys/urls
                 const data = await fetch('/api/gallery').then(r => r.json());
                 setAlbums(data);
-                // If we were inside the album, we should navigate to the new one or close it
-                if (activeAlbum?.title === oldName) {
+                if (activeAlbumTitle === oldName) {
                     const newAlbum = data.find((a: any) => a.title === newName);
                     if (newAlbum) openAlbum(newAlbum);
                     else closeAlbum();
@@ -490,15 +520,16 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                     body: JSON.stringify({ action: 'rename-photo', key, newName })
                 });
 
-                if (!res.ok) throw new Error('Rename failed');
+                const resBody = await res.json() as any;
+                if (!res.ok) {
+                    throw new Error(resBody.error || 'Rename failed');
+                }
 
-                // Construct new key/url locally
-                // Backend returns { success: true, newKey }
-                const { newKey } = await res.json() as any;
+                const { newKey } = resBody;
 
-                // Update State
+                // Update albums (single source of truth)
                 setAlbums(prev => prev.map(a => {
-                    if (a.title === activeAlbum?.title) {
+                    if (a.title === activeAlbumTitle) {
                         return {
                             ...a,
                             photos: a.photos.map(p => p.key === key ? {
@@ -511,27 +542,12 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                     return a;
                 }));
 
-                if (activeAlbum) {
-                    setActiveAlbum(prev => prev ? {
-                        ...prev,
-                        photos: prev.photos.map(p => p.key === key ? {
-                            ...p,
-                            key: newKey,
-                            url: `/api/gallery/${newKey}`
-                        } : p)
-                    } : null);
-                }
-
-                if (activePhoto?.key === key) {
-                    setActivePhoto(prev => prev ? {
-                        ...prev,
-                        key: newKey,
-                        url: `/api/gallery/${newKey}`
-                    } : null);
-                    // Update URL without reload
+                // Update active photo key if it was the one renamed
+                if (activePhotoKey === key) {
+                    setActivePhotoKey(newKey);
                     if (activeAlbum) {
-                        const slug = activeAlbum.title.toLowerCase();
-                        window.history.replaceState({}, '', `/gallery/${slug}/${newName}`);
+                        const slug = encodeURIComponent(activeAlbum.title);
+                        window.history.replaceState({}, '', `/gallery/${slug}/${encodeURIComponent(newName)}`);
                     }
                 }
 
@@ -562,7 +578,7 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                             className={activeAlbum ? "hover:text-elegant-text-primary transition-colors cursor-pointer hover:underline decoration-elegant-text-muted underline-offset-4" : "text-elegant-text-primary font-bold"}
                             onClick={() => {
                                 if (activePhoto) closePhoto();
-                                if (activeAlbum) closeAlbum();
+                                else if (activeAlbum) closeAlbum();
                             }}
                         >
                             gallery
@@ -594,71 +610,78 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                         </div>
                     ) : !activeAlbum ? (
                         /* ---- Album Grid ---- */
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {albums.map((album) => (
-                                <div
-                                    key={album.title}
-                                    className="group relative bg-elegant-card border border-elegant-border rounded-sm overflow-hidden hover:border-elegant-text-muted transition-all duration-300 cursor-pointer"
-                                    onClick={() => openAlbum(album)}
-                                >
-                                    {/* 2x2 Grid Cover */}
-                                    <div className="aspect-video bg-black relative overflow-hidden grid grid-cols-2 grid-rows-2">
-                                        {Array.from({ length: 4 }).map((_, i) => (
-                                            <div key={i} className="relative w-full h-full overflow-hidden border-r border-b border-black/10 last:border-0">
-                                                {album.cover[i] ? (
-                                                    <img
-                                                        src={optimizeImage(album.cover[i], { width: 400, height: 400, fit: 'cover', quality: 80 })}
-                                                        alt={`${album.title} cover ${i + 1} `}
-                                                        loading="lazy"
-                                                        decoding="async"
-                                                        className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-100 grayscale group-hover:grayscale-0"
-                                                        onError={(e) => {
-                                                            e.currentTarget.style.opacity = '0';
-                                                        }}
-                                                    />
-                                                ) : (
-                                                    <div className="w-full h-full bg-elegant-bg/50" />
-                                                )}
+                        albums.length === 0 ? (
+                            <div className="text-center py-20 text-elegant-text-muted">
+                                <p className="text-lg mb-2">No albums yet</p>
+                                <p className="text-sm">Photos will appear here once uploaded.</p>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {albums.map((album) => (
+                                    <div
+                                        key={album.title}
+                                        className="group relative bg-elegant-card border border-elegant-border rounded-sm overflow-hidden hover:border-elegant-text-muted transition-all duration-300 cursor-pointer"
+                                        onClick={() => openAlbum(album)}
+                                    >
+                                        {/* 2x2 Grid Cover */}
+                                        <div className="aspect-video bg-black relative overflow-hidden grid grid-cols-2 grid-rows-2">
+                                            {Array.from({ length: 4 }).map((_, i) => (
+                                                <div key={i} className="relative w-full h-full overflow-hidden border-r border-b border-black/10 last:border-0">
+                                                    {album.cover[i] ? (
+                                                        <img
+                                                            src={optimizeImage(album.cover[i], { width: 400, height: 400, fit: 'cover', quality: 80 })}
+                                                            alt={`${album.title} cover ${i + 1}`}
+                                                            loading="lazy"
+                                                            decoding="async"
+                                                            className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-100 grayscale group-hover:grayscale-0"
+                                                            onError={(e) => {
+                                                                e.currentTarget.style.opacity = '0';
+                                                            }}
+                                                        />
+                                                    ) : (
+                                                        <div className="w-full h-full bg-elegant-bg/50" />
+                                                    )}
+                                                </div>
+                                            ))}
+
+                                            <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-all duration-300 pointer-events-none" />
+
+                                            <div className="absolute top-3 right-3 pointer-events-none">
+                                                <span className="px-3 py-1 bg-black/80 border border-elegant-border rounded text-xs text-elegant-text-secondary backdrop-blur-sm">
+                                                    {album.count} items
+                                                </span>
                                             </div>
-                                        ))}
-
-                                        <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-all duration-300 pointer-events-none" />
-
-                                        <div className="absolute top-3 right-3 pointer-events-none">
-                                            <span className="px-3 py-1 bg-black/80 border border-elegant-border rounded text-xs text-elegant-text-secondary backdrop-blur-sm">
-                                                {album.count} items
-                                            </span>
+                                        </div>
+                                        <div className="p-5 flex justify-between items-start">
+                                            <div>
+                                                <h3 className="text-lg font-bold text-elegant-text-primary mb-1 group-hover:text-elegant-accent transition-colors">
+                                                    {album.title}
+                                                </h3>
+                                                <p className="text-sm text-elegant-text-muted">{album.category}</p>
+                                            </div>
+                                            {isAdmin && (
+                                                <div className="flex gap-2">
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); handleRenameAlbum(album.title); }}
+                                                        className="text-elegant-text-muted hover:text-elegant-accent p-1"
+                                                        title="Rename Album"
+                                                    >
+                                                        <FileEdit size={16} />
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); handleDelete(album.title, true); }}
+                                                        className="text-red-500 hover:text-red-400 p-1"
+                                                        title="Delete Album"
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
-                                    <div className="p-5 flex justify-between items-start">
-                                        <div>
-                                            <h3 className="text-lg font-bold text-elegant-text-primary mb-1 group-hover:text-elegant-accent transition-colors">
-                                                {album.title}
-                                            </h3>
-                                            <p className="text-sm text-elegant-text-muted">{album.category}</p>
-                                        </div>
-                                        {isAdmin && (
-                                            <div className="flex gap-2">
-                                                <button
-                                                    onClick={(e) => { e.stopPropagation(); handleRenameAlbum(album.title); }}
-                                                    className="text-elegant-text-muted hover:text-elegant-accent p-1"
-                                                    title="Rename Album"
-                                                >
-                                                    <FileEdit size={16} />
-                                                </button>
-                                                <button
-                                                    onClick={(e) => { e.stopPropagation(); handleDelete(album.title, true); }}
-                                                    className="text-red-500 hover:text-red-400 p-1"
-                                                    title="Delete Album"
-                                                >
-                                                    <Trash2 size={16} />
-                                                </button>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
+                                ))}
+                            </div>
+                        )
                     ) : (
                         /* ---- Photo Grid (inside album) ---- */
                         <>
@@ -671,64 +694,71 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                                 </button>
                                 <span className="text-elegant-text-muted">|</span>
                                 <p className="text-elegant-text-muted text-sm">
-                                    {activeAlbum.count} photos
+                                    {activeAlbum.photos.length} photos
                                 </p>
                             </div>
-                            <div className="columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4">
-                                {activeAlbum.photos.map((photo, i) => (
-                                    <div
-                                        key={photo.key}
-                                        className="group bg-elegant-card border border-elegant-border rounded-sm overflow-hidden hover:border-elegant-text-muted transition-all relative cursor-pointer break-inside-avoid"
-                                        onClick={() => openPhoto(photo)}
-                                    >
-                                        <img
-                                            src={optimizeImage(photo.url, { width: 600, quality: 80 })}
-                                            alt={photo.caption || `Photo ${i + 1} `}
-                                            loading="lazy"
-                                            decoding="async"
-                                            className="w-full h-auto object-contain group-hover:scale-[1.02] transition-transform duration-300"
-                                            onError={(e) => {
-                                                e.currentTarget.style.display = 'none';
-                                                const parent = e.currentTarget.parentElement;
-                                                if (parent) {
-                                                    const placeholder = parent.querySelector('.placeholder');
-                                                    if (placeholder) placeholder.classList.remove('hidden');
-                                                }
-                                            }}
-                                        />
-                                        <div className="placeholder hidden w-full aspect-video flex items-center justify-center bg-elegant-card">
-                                            <span className="text-xs text-elegant-text-muted font-mono">IMG_{i + 1}.RAW</span>
+                            {activeAlbum.photos.length === 0 ? (
+                                <div className="text-center py-20 text-elegant-text-muted">
+                                    <p className="text-lg mb-2">This album is empty</p>
+                                    <p className="text-sm">Upload photos to get started.</p>
+                                </div>
+                            ) : (
+                                <div className="columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4">
+                                    {activeAlbum.photos.map((photo, i) => (
+                                        <div
+                                            key={photo.key}
+                                            className="group bg-elegant-card border border-elegant-border rounded-sm overflow-hidden hover:border-elegant-text-muted transition-all relative cursor-pointer break-inside-avoid"
+                                            onClick={() => openPhoto(photo)}
+                                        >
+                                            <img
+                                                src={optimizeImage(photo.url, { width: 600, quality: 80 })}
+                                                alt={photo.caption || `Photo ${i + 1}`}
+                                                loading="lazy"
+                                                decoding="async"
+                                                className="w-full h-auto object-contain group-hover:scale-[1.02] transition-transform duration-300"
+                                                onError={(e) => {
+                                                    e.currentTarget.style.display = 'none';
+                                                    const parent = e.currentTarget.parentElement;
+                                                    if (parent) {
+                                                        const placeholder = parent.querySelector('.placeholder');
+                                                        if (placeholder) placeholder.classList.remove('hidden');
+                                                    }
+                                                }}
+                                            />
+                                            <div className="placeholder hidden w-full aspect-video flex items-center justify-center bg-elegant-card">
+                                                <span className="text-xs text-elegant-text-muted font-mono">IMG_{i + 1}.RAW</span>
+                                            </div>
+                                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
+                                                <Maximize2 size={20} className="text-elegant-text-primary" />
+                                                {isAdmin && (
+                                                    <>
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleRenamePhoto(photo.key);
+                                                            }}
+                                                            className="p-2 bg-white/10 rounded-full hover:bg-white/20 text-white transition-colors"
+                                                            title="Rename Photo"
+                                                        >
+                                                            <FileEdit size={16} />
+                                                        </button>
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleDelete(photo.key);
+                                                            }}
+                                                            className="p-2 bg-red-500/80 rounded-full hover:bg-red-500 text-white transition-colors"
+                                                            title="Delete Photo"
+                                                        >
+                                                            <Trash2 size={16} />
+                                                        </button>
+                                                    </>
+                                                )}
+                                            </div>
                                         </div>
-                                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
-                                            <Maximize2 size={20} className="text-elegant-text-primary" />
-                                            {isAdmin && (
-                                                <>
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            handleRenamePhoto(photo.key);
-                                                        }}
-                                                        className="p-2 bg-white/10 rounded-full hover:bg-white/20 text-white transition-colors"
-                                                        title="Rename Photo"
-                                                    >
-                                                        <FileEdit size={16} />
-                                                    </button>
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            handleDelete(photo.key);
-                                                        }}
-                                                        className="p-2 bg-red-500/80 rounded-full hover:bg-red-500 text-white transition-colors"
-                                                        title="Delete Photo"
-                                                    >
-                                                        <Trash2 size={16} />
-                                                    </button>
-                                                </>
-                                            )}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
+                                    ))}
+                                </div>
+                            )}
                         </>
                     )}
                 </main>
@@ -745,7 +775,7 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                         <div className="flex items-center justify-between p-4 flex-shrink-0 z-50">
                             <span
                                 className={`text-elegant-text-primary font-mono text-sm truncate max-w-[70%] ${isAdmin ? 'cursor-pointer hover:text-elegant-accent hover:underline decoration-dashed underline-offset-4' : ''}`}
-                                onClick={() => isAdmin && handleRenamePhoto(activePhoto.key)}
+                                onClick={(e) => { e.stopPropagation(); if (isAdmin) handleRenamePhoto(activePhoto.key); }}
                                 title={isAdmin ? "Click to Rename" : ""}
                             >
                                 {decodeURIComponent(activePhoto.key.split('/').pop() || '')}
@@ -834,11 +864,24 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                                 </div>
                             )}
                         </div>
+
+                        {/* Lightbox Edit Caption Button - inside the lightbox fixed container */}
+                        {isAdmin && (
+                            <div className="absolute bottom-6 right-6 z-50">
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); handleUpdateCaption(); }}
+                                    className="p-3 bg-elegant-card/80 border border-elegant-border backdrop-blur-md text-elegant-text-primary rounded-full hover:bg-elegant-accent hover:text-white transition-all shadow-lg"
+                                    title="Edit Caption"
+                                >
+                                    <Edit2 size={20} />
+                                </button>
+                            </div>
+                        )}
                     </div>
                 )}
 
                 {/* Main UI Overlays */}
-                {isAdmin && (
+                {isAdmin && !activePhoto && (
                     <div className="fixed bottom-24 right-8 flex flex-col gap-4 z-40">
                         <button
                             onClick={() => {
@@ -878,6 +921,9 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                                 onKeyDown={(e) => {
                                     if (e.key === 'Enter') {
                                         promptConfig.onConfirm(e.currentTarget.value);
+                                        setPromptConfig(null);
+                                    }
+                                    if (e.key === 'Escape') {
                                         setPromptConfig(null);
                                     }
                                 }}
@@ -923,9 +969,9 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                                         confirmConfig.onConfirm();
                                         setConfirmConfig(null);
                                     }}
-                                    className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
+                                    className={`px-4 py-2 text-white rounded transition-colors ${confirmConfig.confirmLabel === 'Delete' ? 'bg-red-500 hover:bg-red-600' : 'bg-elegant-accent hover:bg-elegant-accent/90'}`}
                                 >
-                                    Delete
+                                    {confirmConfig.confirmLabel}
                                 </button>
                             </div>
                         </div>
@@ -947,10 +993,10 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
 
                 {/* 3. Upload Modal */}
                 {showUploadModal && (
-                    <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4 backdrop-blur-sm">
+                    <div className="fixed inset-0 z-[60] bg-black/90 flex items-center justify-center p-4 backdrop-blur-sm">
                         <div className="bg-elegant-card border border-elegant-border rounded-lg max-w-lg w-full p-6 shadow-2xl relative">
                             <button
-                                onClick={() => setShowUploadModal(false)}
+                                onClick={() => { setShowUploadModal(false); resetUploadForm(); }}
                                 className="absolute top-4 right-4 text-elegant-text-muted hover:text-white"
                             >
                                 <X size={20} />
@@ -1022,19 +1068,6 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                                 </button>
                             </form>
                         </div>
-                    </div>
-                )}
-
-                {/* Lightbox Edit Button (Bottom Right) */}
-                {activePhoto && isAdmin && (
-                    <div className="absolute bottom-6 right-6 z-50">
-                        <button
-                            onClick={handleUpdateCaption}
-                            className="p-3 bg-elegant-card/80 border border-elegant-border backdrop-blur-md text-elegant-text-primary rounded-full hover:bg-elegant-accent hover:text-white transition-all shadow-lg"
-                            title="Edit Caption"
-                        >
-                            <Edit2 size={20} />
-                        </button>
                     </div>
                 )}
 

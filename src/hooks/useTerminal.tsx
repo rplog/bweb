@@ -98,7 +98,9 @@ export const useTerminal = () => {
     const setFullScreenWithRoute = useCallback((component: React.ReactNode | null, path?: string) => {
         setActiveComponent(component);
         if (path) {
-            if (window.location.pathname !== path) {
+            const currentPath = window.location.pathname;
+            // Don't overwrite if current URL is already a sub-path (preserves deep links)
+            if (currentPath !== path && !currentPath.startsWith(path + '/')) {
                 window.history.pushState({}, '', path);
             }
         } else if (component === null) {
@@ -204,10 +206,9 @@ export const useTerminal = () => {
             } else {
                 const command = ROUTES[path];
                 if (command) {
-                    // We just re-execute to open the modal
-                    // Pass true to avoid polluting history? Or false to show "user navigated"?
-                    // Let's pass true to keep it clean on back button
                     execute(command, true);
+                } else if (path.startsWith('/gallery')) {
+                    execute('gallery', true);
                 }
             }
         };

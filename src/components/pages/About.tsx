@@ -17,13 +17,13 @@ export const About: React.FC<AboutProps> = ({ onExit, onNavigate }) => {
     };
 
     return (
-        <div className="h-full w-full bg-elegant-bg text-elegant-text-secondary font-mono selection:bg-elegant-accent/20 overflow-y-auto lg:overflow-hidden">
-            <div className="h-full flex flex-col">
+        <div className="h-full w-full bg-elegant-bg text-elegant-text-secondary font-mono selection:bg-elegant-accent/20 overflow-y-auto">
+            <div className="min-h-full flex flex-col">
                 <Spotlight onNavigate={handleNavigate} />
                 <PageHeader currentPath="about" onNavigate={handleNavigate} className="shrink-0" />
 
                 {/* Main Content */}
-                <main className="flex-1 max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 h-full overflow-hidden flex flex-col">
+                <main className="flex-1 max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 flex flex-col">
                     {/* Breadcrumbs */}
                     <div className="mb-6 text-base font-semibold text-elegant-text-muted flex items-center gap-2 shrink-0">
                         <button
@@ -36,10 +36,10 @@ export const About: React.FC<AboutProps> = ({ onExit, onNavigate }) => {
                         <span className="text-elegant-text-primary font-bold">about</span>
                     </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 h-full overflow-y-auto lg:overflow-visible">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                         {/* Profile Card */}
                         <div className="lg:col-span-1">
-                            <div className="bg-elegant-card border border-elegant-border rounded-sm p-6 lg:sticky lg:top-0">
+                            <div className="bg-elegant-card border border-elegant-border rounded-sm p-6 lg:sticky lg:top-8">
                                 <div className="flex flex-col items-center text-center">
                                     <div className="w-24 h-24 lg:w-32 lg:h-32 rounded-full bg-elegant-bg border border-elegant-border p-1 mb-4 lg:mb-6 grayscale">
                                         <div className="w-full h-full rounded-full bg-elegant-bg flex items-center justify-center overflow-hidden">

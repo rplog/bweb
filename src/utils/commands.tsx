@@ -32,8 +32,14 @@ export const commands: Record<string, Command> = {
     ls: {
         description: 'List directory contents',
         execute: async (args, { currentPath, fileSystem }) => {
-            const targetPath = args[0] || '.';
+            const flags = args.filter(arg => arg.startsWith('-'));
+            const targets = args.filter(arg => !arg.startsWith('-'));
 
+            const showHidden = flags.some(f => f.includes('a'));
+            const longFormat = flags.some(f => f.includes('l'));
+            const humanReadable = flags.some(f => f.includes('h'));
+
+            const targetPath = targets[0] || '.';
             const targetNode = resolvePath(fileSystem, currentPath, targetPath);
 
             if (!targetNode) {
@@ -46,9 +52,49 @@ export const commands: Record<string, Command> = {
 
             if (targetNode.type === 'directory') {
                 const contents = getDirectoryContents(targetNode);
+                const filtered = showHidden ? contents : contents.filter(c => !c.startsWith('.'));
+
+                if (longFormat) {
+                    return (
+                        <div className="flex flex-col font-mono text-sm">
+                            {filtered.map(item => {
+                                const node = targetNode.children?.[item];
+                                const isDir = node?.type === 'directory';
+                                const permissions = isDir ? 'drwxr-xr-x' : '-rw-r--r--';
+                                const owner = 'neo neo';
+
+                                let size = node?.size || (node?.content?.length || 0);
+                                if (isDir) size = 4096;
+
+                                let sizeStr = size.toString();
+                                if (humanReadable) {
+                                    if (size < 1024) sizeStr = size + 'B';
+                                    else if (size < 1024 * 1024) sizeStr = (size / 1024).toFixed(1) + 'K';
+                                    else sizeStr = (size / (1024 * 1024)).toFixed(1) + 'M';
+                                }
+
+                                const date = node?.lastModified ? new Date(node.lastModified) : new Date();
+                                const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric', hour12: false });
+
+                                return (
+                                    <div key={item} className="grid grid-cols-[100px_80px_60px_120px_1fr] gap-2 hover:bg-white/5 p-0.5 rounded">
+                                        <span className="text-elegant-text-muted">{permissions}</span>
+                                        <span className="text-elegant-text-secondary">{owner}</span>
+                                        <span className="text-elegant-text-secondary text-right">{sizeStr}</span>
+                                        <span className="text-elegant-text-muted text-right">{dateStr}</span>
+                                        <span className={`${isDir ? 'text-elegant-accent font-bold' : 'text-elegant-text-primary'} ml-2`}>
+                                            {item}{isDir ? '/' : ''}
+                                        </span>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    );
+                }
+
                 return (
                     <div className="flex flex-wrap gap-4">
-                        {contents.map(item => {
+                        {filtered.map(item => {
                             const isDir = targetNode.children?.[item]?.type === 'directory';
                             return (
                                 <span key={item} className={isDir ? 'text-elegant-accent font-bold' : 'text-elegant-text-primary'}>

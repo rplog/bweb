@@ -4,6 +4,8 @@ export interface FileSystemNode {
   type: FileType;
   content?: string;
   children?: { [key: string]: FileSystemNode };
+  size?: number;
+  lastModified?: number;
 }
 
 export const initialFileSystem: { [key: string]: FileSystemNode } = {

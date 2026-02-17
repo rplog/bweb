@@ -44,7 +44,12 @@ export const useTerminal = () => {
                     if (visitorsDir) {
                         const children: { [key: string]: any } = {};
                         notes.forEach((note: any) => {
-                            children[note.filename] = { type: 'file', content: '' };
+                            children[note.filename] = {
+                                type: 'file',
+                                content: '',
+                                size: note.size || 0,
+                                lastModified: note.updated_at
+                            };
                         });
                         visitorsDir.children = children;
                     }

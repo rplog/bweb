@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Spotlight } from '../Spotlight';
 import { PageHeader } from '../PageHeader';
-import { Globe, Code } from 'lucide-react';
-import { SiGithub, SiX, SiLinkedin, SiReact, SiTypescript, SiRust, SiTailwindcss, SiPython, SiNodedotjs } from 'react-icons/si';
+import { Code, X } from 'lucide-react';
+import { SiGithub, SiX, SiLinkedin, SiReact, SiTypescript, SiRust, SiTailwindcss, SiPython, SiTelegram, SiNodedotjs } from 'react-icons/si';
 
 interface AboutProps {
     onExit: () => void;
@@ -15,6 +15,8 @@ export const About: React.FC<AboutProps> = ({ onExit, onNavigate }) => {
         if (dest === 'Terminal') onExit();
         else if (onNavigate) onNavigate(dest);
     };
+
+    const [showProfile, setShowProfile] = useState(false);
 
     return (
         <div className="h-full w-full bg-elegant-bg text-elegant-text-secondary font-mono selection:bg-elegant-accent/20 overflow-y-auto">
@@ -41,7 +43,10 @@ export const About: React.FC<AboutProps> = ({ onExit, onNavigate }) => {
                         <div className="lg:col-span-1">
                             <div className="bg-elegant-card border border-elegant-border rounded-sm p-6 lg:sticky lg:top-8">
                                 <div className="flex flex-col items-center text-center">
-                                    <div className="w-24 h-24 lg:w-32 lg:h-32 rounded-full bg-elegant-bg border border-elegant-border p-1 mb-4 lg:mb-6 grayscale">
+                                    <div
+                                        className="w-24 h-24 lg:w-32 lg:h-32 rounded-full bg-elegant-bg border border-elegant-border p-1 mb-4 lg:mb-6 cursor-pointer hover:border-elegant-accent transition-colors group"
+                                        onClick={() => setShowProfile(true)}
+                                    >
                                         <div className="w-full h-full rounded-full bg-elegant-bg flex items-center justify-center overflow-hidden">
                                             <img
                                                 src="/api/gallery/assets/me.jpg"
@@ -70,8 +75,8 @@ export const About: React.FC<AboutProps> = ({ onExit, onNavigate }) => {
                                         <a href="#" className="p-2 bg-elegant-bg hover:bg-elegant-card rounded transition-colors border border-elegant-border text-elegant-text-muted hover:text-elegant-text-primary">
                                             <SiLinkedin size={18} />
                                         </a>
-                                        <a href="#" className="p-2 bg-elegant-bg hover:bg-elegant-card rounded transition-colors border border-elegant-border text-elegant-text-muted hover:text-elegant-text-primary">
-                                            <Globe size={18} />
+                                        <a href="https://t.me/bahauddinalam" target="_blank" rel="noopener noreferrer" className="p-2 bg-elegant-bg hover:bg-elegant-card rounded transition-colors border border-elegant-border text-elegant-text-muted hover:text-elegant-text-primary">
+                                            <SiTelegram size={18} />
                                         </a>
                                     </div>
 
@@ -85,11 +90,11 @@ export const About: React.FC<AboutProps> = ({ onExit, onNavigate }) => {
                                         </div>
                                         <div className="flex justify-between py-2 border-t border-elegant-border">
                                             <span className="text-elegant-text-secondary">Location</span>
-                                            <span className="text-elegant-text-muted">The Matrix</span>
+                                            <span className="text-elegant-text-muted">Patna, India</span>
                                         </div>
                                         <div className="flex justify-between py-2 border-t border-elegant-border">
                                             <span className="text-elegant-text-secondary">Joined</span>
-                                            <span className="text-elegant-text-muted">2024</span>
+                                            <span className="text-elegant-text-muted">2022</span>
                                         </div>
                                     </div>
                                 </div>
@@ -151,6 +156,32 @@ export const About: React.FC<AboutProps> = ({ onExit, onNavigate }) => {
                         </p>
                     </div>
                 </footer>
+
+                {/* Profile Lightbox */}
+                {showProfile && (
+                    <div
+                        className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200"
+                        onClick={() => setShowProfile(false)}
+                    >
+                        <button
+                            className="absolute top-4 right-4 p-2 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors"
+                            onClick={() => setShowProfile(false)}
+                        >
+                            <X size={24} />
+                        </button>
+
+                        <div
+                            className="relative max-w-2xl w-full aspect-square md:aspect-auto md:h-[80vh] flex items-center justify-center p-2"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <img
+                                src="/api/gallery/assets/me.jpg"
+                                alt="Bahauddin Alam"
+                                className="w-full h-full object-contain rounded-full md:rounded-lg shadow-2xl ring-4 ring-elegant-border/20"
+                            />
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

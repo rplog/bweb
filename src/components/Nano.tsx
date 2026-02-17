@@ -13,9 +13,17 @@ export const Nano: React.FC<NanoProps> = ({ filename: initialFilename, initialCo
     const [message, setMessage] = useState('');
     const [isPromptingSave, setIsPromptingSave] = useState(false);
     const [savePromptValue, setSavePromptValue] = useState('');
+    const [exitAttempt, setExitAttempt] = useState(false);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const promptInputRef = useRef<HTMLInputElement>(null);
     const commitMsgRef = useRef<string>('');
+
+    useEffect(() => {
+        if (exitAttempt) {
+            const timer = setTimeout(() => setExitAttempt(false), 3000);
+            return () => clearTimeout(timer);
+        }
+    }, [exitAttempt]);
 
     useEffect(() => {
         if (textareaRef.current && !isPromptingSave) {
@@ -45,13 +53,41 @@ export const Nano: React.FC<NanoProps> = ({ filename: initialFilename, initialCo
                 handleSave();
             } else if (e.key === 'x') { // Exit
                 e.preventDefault();
-                // TODO: specific check for modified buffer?
-                onExit();
+                if (exitAttempt) {
+                    onExit();
+                } else {
+                    setExitAttempt(true);
+                    setMessage('[ Buffer modified? Press ^X again to discard and exit ]');
+                    setTimeout(() => {
+                        if (!isPromptingSave) setMessage('');
+                    }, 3000);
+                }
             }
+        } else {
+            if (exitAttempt) setExitAttempt(false);
         }
     };
 
     const handlePromptKeyDown = async (e: React.KeyboardEvent) => {
+        if (e.ctrlKey && e.key === 'x') {
+            e.preventDefault();
+            if (exitAttempt) {
+                onExit();
+            } else {
+                setExitAttempt(true);
+                const prevMessage = message;
+                setMessage('[ Press ^X again to force exit ]');
+                setTimeout(() => {
+                    // Restore prompt message if still prompting
+                    // Note: This is an approximation, might be slightly off if state changed rapdily
+                    setMessage(prevMessage);
+                }, 2000);
+            }
+            return;
+        }
+
+        if (exitAttempt) setExitAttempt(false);
+
         if (e.key === 'Enter') {
             e.preventDefault();
             if (message.startsWith('File Name to Write:')) {

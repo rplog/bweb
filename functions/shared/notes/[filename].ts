@@ -184,8 +184,8 @@ export const onRequestGet = async (context: any) => {
         .git-entry::before {
             content: '';
             position: absolute;
-            left: -4px;
-            top: 6px;
+            left: -6px; /* Center on 1px border (11px width: -6 + 5.5 = -0.5) */
+            top: 8px;   /* Center vertically on line height */
             width: 7px;
             height: 7px;
             background: ${colors.border};

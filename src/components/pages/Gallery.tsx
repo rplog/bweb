@@ -943,9 +943,9 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                     </div>
                 )}
 
-                {/* Admin FABs */}
+                {/* Admin FABs — tucked to the right edge, expand on hover */}
                 {isAdmin && !activePhoto && (
-                    <div className="fixed bottom-24 right-8 flex flex-col gap-4 z-40">
+                    <div className="fixed bottom-24 right-0 z-40 group/fab flex flex-col gap-4 translate-x-[calc(100%-16px)] hover:translate-x-0 transition-transform duration-300 pr-4">
                         <Tooltip text="New Album" position="left">
                             <button
                                 onClick={() => {

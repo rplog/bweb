@@ -10,6 +10,8 @@ A sophisticated personal portfolio website featuring a functional terminal inter
 - **Secure Contact Form**: Support for Telegram notifications, SMTP emails, and database storage.
 - **Admin Tools**: Built-in terminal commands for managing the site (`login`, `inbox`, `alerts`).
 - **Database**: Persistent storage using Cloudflare D1.
+- **Performance**: Cloudflare Image Resizing and Edge Caching for fast media delivery.
+- **Security**: Rate limiting on sensitive endpoints using Cloudflare KV.
 
 ## Architecture
 
@@ -36,7 +38,7 @@ See [docs/architecture.md](docs/architecture.md) for a detailed overview of the 
 
 ## Configuration
 
-This project relies on Cloudflare Pages Functions and D1 Database.
+This project relies on Cloudflare Pages Functions, D1 Database, KV Storage, and R2 Object Storage.
 
 ### 1. Database Setup
 
@@ -80,6 +82,20 @@ The Gallery feature requires an R2 bucket to store images.
    ```
 
 3. **Important**: You must upload images to this bucket for the Gallery to work. You can use the Cloudflare Dashboard or Wrangler.
+
+### 4. KV Namespace (Rate Limiting)
+
+Create a KV namespace to store rate limit counters:
+```bash
+npx wrangler kv:namespace create RATE_LIMITER
+```
+
+Update `wrangler.toml` with the ID:
+```toml
+[[kv_namespaces]]
+binding = "RATE_LIMITER"
+id = "<your-kv-id>"
+```
 
 ### 3. Environment Secrets
 

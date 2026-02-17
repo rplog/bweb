@@ -15,6 +15,7 @@ graph TD
     subgraph "Backend (Serverless)"
         Functions -->|CRUD| D1[(D1 Database)]
         Functions -->|Assets| R2[(R2 Object Storage)]
+        Functions -->|Rate Limit| KV[(KV Storage)]
         Functions -->|Notify| Telegram[Telegram API]
         Functions -->|Email| SMTP[SMTP Server]
         Functions -->|Weather| OpenWeather[OpenWeatherMap API]
@@ -41,6 +42,10 @@ sequenceDiagram
     
     User->>Frontend: Enters message
     Frontend->>API: POST /api/contact {name, email, message}
+    API->>KV: Check Rate Limit
+    alt Limit Exceeded
+        API-->>Frontend: 429 Too Many Requests
+    end
     API->>D1: INSERT INTO messages
     
     rect rgb(240, 240, 240)
@@ -114,3 +119,18 @@ The application uses Cloudflare D1 (SQLite) for persistence.
   - `functions/api/contact/index.ts`: Public contact endpoint.
   - `functions/api/contact/inbox.ts`: Protected message retrieval.
   - `functions/api/admin/config.ts`: Configuration management.
+
+## Performance & Security
+
+### Rate Limiting
+To prevent abuse, sensitive endpoints (`/api/contact`, `/api/auth/login`) are protected by a custom rate limiter using **Cloudflare KV**.
+- **Strategy**: Variable window counters (Sliding Window approximation).
+- **Limits**:
+  - Login: 5 attempts / 60s per IP.
+  - Contact: 3 messages / hour per IP.
+
+### Image Optimization
+Gallery images stored in R2 are optimized on-the-fly using **Cloudflare Image Resizing**.
+- **Frontend**: `src/utils/imageOptimizer.ts` rewrites R2 URLs to `/cdn-cgi/image/...`.
+- **Backend**: Cloudflare Edge handles resizing, format conversion (WebP/AVIF), and caching.
+- **UX**: Images are lazy-loaded (`loading="lazy"`) and preloaded in the lightbox for instant navigation.

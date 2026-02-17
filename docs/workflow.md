@@ -11,9 +11,9 @@ graph TD
     User[End User]
     
     subgraph "Cloudflare Ecosystem"
-        CF_Pages[Cloudflare Pages<br>(Frontend Hosting)]
-        CF_Functions[Pages Functions<br>(/functions directory)]
-        CF_R2[R2 Storage<br>(neosphere-assets)]
+        CF_Pages["Cloudflare Pages<br>(Frontend Hosting)"]
+        CF_Functions["Pages Functions<br>(/functions directory)"]
+        CF_R2["R2 Storage<br>(neosphere-assets)"]
     end
     
     External_API[OpenWeatherMap API]
@@ -87,6 +87,7 @@ sequenceDiagram
 
 ### Steps in Detail:
 1.  **Push**: You commit and push changes to `main`.
+    -   *Note*: The workflow **will not run** if you only change `.md` files or the `docs/` folder.
 2.  **Trigger**: The `.github/workflows/deploy.yml` file detects the push and starts a runner (Ubuntu VM).
 3.  **Build**:
     -   It installs `npm` packages.

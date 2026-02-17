@@ -19,6 +19,10 @@ export const onRequest: PagesFunction<Env> = async (context) => {
                 if (parts.length < 2) continue; // Root files ignored
 
                 const albumName = parts[0];
+
+                // Skip system/assets folder
+                if (albumName === 'assets') continue;
+
                 const filename = parts.slice(1).join('/');
 
                 if (!albums[albumName]) {

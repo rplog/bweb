@@ -2,7 +2,7 @@ import React from 'react';
 import { Spotlight } from '../Spotlight';
 import { PageHeader } from '../PageHeader';
 import { Globe, Code } from 'lucide-react';
-import { SiGithub, SiX, SiLinkedin, SiReact, SiTypescript, SiVite, SiTailwindcss, SiCloudflare, SiNodedotjs } from 'react-icons/si';
+import { SiGithub, SiX, SiLinkedin, SiReact, SiTypescript, SiRust, SiTailwindcss, SiPython, SiNodedotjs } from 'react-icons/si';
 
 interface AboutProps {
     onExit: () => void;
@@ -44,7 +44,7 @@ export const About: React.FC<AboutProps> = ({ onExit, onNavigate }) => {
                                     <div className="w-24 h-24 lg:w-32 lg:h-32 rounded-full bg-elegant-bg border border-elegant-border p-1 mb-4 lg:mb-6 grayscale">
                                         <div className="w-full h-full rounded-full bg-elegant-bg flex items-center justify-center overflow-hidden">
                                             <img
-                                                src="/media/avatars/me.jpg"
+                                                src="/api/gallery/assets/me.jpg"
                                                 alt="Profile"
                                                 className="w-full h-full object-cover"
                                                 onError={(e) => {
@@ -64,7 +64,7 @@ export const About: React.FC<AboutProps> = ({ onExit, onNavigate }) => {
                                         <a href="#" className="p-2 bg-elegant-bg hover:bg-elegant-card rounded transition-colors border border-elegant-border text-elegant-text-muted hover:text-elegant-text-primary">
                                             <SiGithub size={18} />
                                         </a>
-                                        <a href="#" className="p-2 bg-elegant-bg hover:bg-elegant-card rounded transition-colors border border-elegant-border text-elegant-text-muted hover:text-elegant-text-primary">
+                                        <a href="https://x.com/bahauddinalam" target="_blank" rel="noopener noreferrer" className="p-2 bg-elegant-bg hover:bg-elegant-card rounded transition-colors border border-elegant-border text-elegant-text-muted hover:text-elegant-text-primary">
                                             <SiX size={18} />
                                         </a>
                                         <a href="#" className="p-2 bg-elegant-bg hover:bg-elegant-card rounded transition-colors border border-elegant-border text-elegant-text-muted hover:text-elegant-text-primary">
@@ -106,12 +106,10 @@ export const About: React.FC<AboutProps> = ({ onExit, onNavigate }) => {
                                 </div>
                                 <div className="space-y-4 text-elegant-text-secondary leading-relaxed text-sm">
                                     <p>
-                                        I construct digital infrastructures in the void. Specializing in high-performance
-                                        React environments, edge computing, and minimalistic UI/UX design.
+                                        I construct digital infrastructures in the void. Specializing in high-performance edge computing, and easy to navigate UI/UX design.
                                     </p>
                                     <p>
-                                        My work focuses on creating seamless user experiences with cutting-edge web
-                                        technologies, always pushing the boundaries of what's possible in the browser.
+                                        My work focuses on creating seamless user experiences and always pushing the boundaries of what's possible in the browser.
                                     </p>
                                     <p className="text-elegant-accent text-xs font-mono mt-4 pt-4 border-t border-elegant-border">
                                         $ whoami → Building the future, one commit at a time.
@@ -126,9 +124,9 @@ export const About: React.FC<AboutProps> = ({ onExit, onNavigate }) => {
                                     {[
                                         { name: 'React', icon: SiReact, color: 'text-[#61DAFB]' },
                                         { name: 'TypeScript', icon: SiTypescript, color: 'text-[#3178C6]' },
-                                        { name: 'Vite', icon: SiVite, color: 'text-[#646CFF]' },
+                                        { name: 'Rust', icon: SiRust, color: 'text-[#646CFF]' },
                                         { name: 'Tailwind', icon: SiTailwindcss, color: 'text-[#06B6D4]' },
-                                        { name: 'Cloudflare', icon: SiCloudflare, color: 'text-[#F38020]' },
+                                        { name: 'Python', icon: SiPython, color: 'text-[#F38020]' },
                                         { name: 'Node.js', icon: SiNodedotjs, color: 'text-[#339933]' }
                                     ].map((skill) => (
                                         <div

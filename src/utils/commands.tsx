@@ -17,9 +17,64 @@ export const commands: Record<string, Command> = {
     help: {
         description: 'List all available commands',
         execute: (_args) => {
-            const commandList = Object.keys(commands).join(', ');
-            return `Available commands: ${commandList}`;
+            const hiddenCommands = ['login', 'inbox', 'alerts', 'admin'];
+            const commandList = Object.keys(commands)
+                .filter(cmd => !hiddenCommands.includes(cmd))
+                .join(', ');
+            return (
+                <div>
+                    <div>Available commands: {commandList}</div>
+                    <div className="text-elegant-text-muted text-xs mt-1">Type 'admin' for administrative tools.</div>
+                </div>
+            );
         },
+    },
+    admin: {
+        description: 'Administrative tools and help',
+        execute: (args) => {
+            const token = localStorage.getItem('admin_token');
+            const isLoggedIn = !!token;
+
+            if (args[0] === '-h' || args[0] === '--help') {
+                return (
+                    <div className="flex flex-col gap-2 text-sm">
+                        <div className="text-elegant-accent font-bold">Admin Tools</div>
+                        <div className="grid grid-cols-[100px_1fr] gap-x-2">
+                            <span className="text-elegant-text-primary">login</span><span>Authenticate as admin</span>
+                            <span className="text-elegant-text-primary">inbox</span><span>View/Manage messages (Requires Login)</span>
+                            <span className="text-elegant-text-primary">alerts</span><span>Configure notifications (Requires Login)</span>
+                        </div>
+                    </div>
+                );
+            }
+
+            if (!isLoggedIn) {
+                return (
+                    <div className="text-elegant-text-secondary">
+                        Admin tools require authentication.
+                        <br />
+                        Usage: <span className="text-elegant-text-primary">login &lt;password&gt;</span>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="flex flex-col gap-2 text-sm">
+                    <div className="text-elegant-accent font-bold">Authenticated (Admin)</div>
+                    <div>You have access to the following tools:</div>
+                    <div className="grid grid-cols-[100px_1fr] gap-x-2 mt-1">
+                        <span className="text-elegant-text-primary font-bold">inbox</span>
+                        <span className="text-elegant-text-muted">View, filter, and delete messages.</span>
+
+                        <span className="text-elegant-text-primary font-bold">alerts</span>
+                        <span className="text-elegant-text-muted">Configure notification channels.</span>
+                    </div>
+                    <div className="mt-2 text-elegant-text-muted text-xs">
+                        Type <span className="text-elegant-text-primary">inbox -h</span> or <span className="text-elegant-text-primary">alerts -h</span> for details.
+                    </div>
+                </div>
+            );
+        }
     },
     login: {
         description: 'Login as admin',
@@ -42,20 +97,75 @@ export const commands: Record<string, Command> = {
 
                 const data = await res.json();
                 localStorage.setItem('admin_token', data.token);
-                return 'Logged in successfully. Use "inbox" to view messages.';
+                return 'Logged in successfully as Admin.';
             } catch (e: any) {
                 return `Error: ${e.message}`;
             }
         }
     },
     inbox: {
-        description: 'View contact messages (Admin only)',
-        execute: async () => {
+        description: 'View contact messages',
+        execute: async (args) => {
             const token = localStorage.getItem('admin_token');
             if (!token) return 'Error: You must be logged in. Use "login <password>" first.';
 
+            const arg = args[0]?.toLowerCase();
+
+            // Help
+            if (arg === '-h' || arg === '--help' || arg === 'help') {
+                return (
+                    <div className="flex flex-col gap-2 text-sm max-w-lg">
+                        <div className="text-elegant-accent font-bold mb-1">Inbox Management</div>
+                        <div className="grid grid-cols-[120px_1fr] gap-x-2 gap-y-1">
+                            <span className="text-elegant-text-primary font-bold">inbox</span>
+                            <span className="text-elegant-text-muted">View all messages (latest 100)</span>
+
+                            <span className="text-elegant-text-primary font-bold">inbox day</span>
+                            <span className="text-elegant-text-muted">View messages from last 24h</span>
+
+                            <span className="text-elegant-text-primary font-bold">inbox week</span>
+                            <span className="text-elegant-text-muted">View messages from last 7 days</span>
+
+                            <span className="text-elegant-text-primary font-bold">inbox month</span>
+                            <span className="text-elegant-text-muted">View messages from last 30 days</span>
+
+                            <span className="text-elegant-text-primary font-bold">inbox [date]</span>
+                            <span className="text-elegant-text-muted">View messages from YYYY-MM-DD</span>
+
+                            <span className="text-elegant-text-primary font-bold">inbox delete [id]</span>
+                            <span className="text-elegant-text-muted">Delete a specific message by ID</span>
+                        </div>
+                    </div>
+                );
+            }
+
+            // Delete
+            if (arg === 'delete') {
+                const id = args[1];
+                if (!id) return 'Usage: inbox delete <id>';
+
+                try {
+                    const res = await fetch(`/api/contact/inbox?id=${id}`, {
+                        method: 'DELETE',
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (!res.ok) throw new Error('Failed to delete message');
+                    return `Message ${id} deleted successfully.`;
+                } catch (e: any) {
+                    return `Error: ${e.message}`;
+                }
+            }
+
+            // Fetch
+            let query = '';
+            if (['day', 'week', 'month', 'year'].includes(arg)) {
+                query = `?period=${arg}`;
+            } else if (arg && arg.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                query = `?date=${arg}`;
+            }
+
             try {
-                const res = await fetch('/api/contact/inbox', {
+                const res = await fetch(`/api/contact/inbox${query}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
 
@@ -74,7 +184,10 @@ export const commands: Record<string, Command> = {
                     <div className="flex flex-col gap-4 font-mono text-sm">
                         <div className="text-elegant-accent font-bold mb-2">Inbox ({messages.length})</div>
                         {messages.map((msg: any) => (
-                            <div key={msg.id} className="bg-white/5 p-3 rounded border border-white/10">
+                            <div key={msg.id} className="bg-white/5 p-3 rounded border border-white/10 group relative">
+                                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity text-xs text-elegant-text-muted">
+                                    ID: {msg.id}
+                                </div>
                                 <div className="flex justify-between items-start mb-2">
                                     <div className="flex flex-col">
                                         <span className="text-elegant-text-primary font-bold">{msg.name}</span>

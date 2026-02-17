@@ -38,3 +38,10 @@ CREATE TABLE IF NOT EXISTS messages (
     read BOOLEAN DEFAULT 0
 );
 
+
+
+CREATE TABLE IF NOT EXISTS config (
+    key TEXT PRIMARY KEY,
+    value TEXT
+);
+

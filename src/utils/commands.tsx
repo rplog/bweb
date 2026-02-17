@@ -92,6 +92,61 @@ export const commands: Record<string, Command> = {
             }
         }
     },
+    alerts: {
+        description: 'Configure notification channels (Admin only)',
+        usage: 'alerts [telegram|email|both|off]',
+        execute: async (args) => {
+            const token = localStorage.getItem('admin_token');
+            if (!token) return 'Error: You must be logged in. Use "login <password>" first.';
+
+            const validModes = ['telegram', 'email', 'both', 'off'];
+            const mode = args[0]?.toLowerCase();
+
+            // GET current setting
+            if (!mode) {
+                try {
+                    const res = await fetch('/api/admin/config', {
+                        method: 'GET',
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (!res.ok) throw new Error(res.statusText);
+                    const config = await res.json();
+                    const current = config['notification_channels'] || 'telegram,email';
+                    return `Current alerts: ${current.replace(',', ' & ')}`;
+                } catch (e: any) {
+                    return `Error fetching config: ${e.message}`;
+                }
+            }
+
+            // SET new setting
+            if (!validModes.includes(mode)) return `Usage: alerts [telegram|email|both|off]`;
+
+            let value = '';
+            if (mode === 'telegram') value = 'telegram';
+            if (mode === 'email') value = 'email';
+            if (mode === 'both') value = 'telegram,email';
+            if (mode === 'off') value = 'none';
+
+            try {
+                const res = await fetch('/api/admin/config', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ key: 'notification_channels', value })
+                });
+
+                if (!res.ok) {
+                    const data = await res.json();
+                    return `Error: ${data.error || 'Failed to update settings'}`;
+                }
+                return `Alerts updated to: ${mode}`;
+            } catch (e: any) {
+                return `Error: ${e.message}`;
+            }
+        }
+    },
     whoami: {
         description: 'Print current user',
         execute: () => 'neo',

@@ -26,7 +26,8 @@ export const onRequestGet = async (context: any) => {
         textSecondary: "#a0a0a0",
         textMuted: "#666666",
         accent: "#C9A66B",
-        accentHover: "#E0C080"
+        accentHover: "#E0C080",
+        danger: "#ff5555"
     };
 
     const html = `
@@ -102,6 +103,30 @@ export const onRequestGet = async (context: any) => {
             tab-size: 4;
         }
         
+        /* Status Banner */
+        .status-banner {
+            background: ${colors.accent};
+            color: ${colors.bg};
+            padding: 8px 12px;
+            font-size: 0.9em;
+            font-weight: bold;
+            display: none; /* hidden by default */
+            justify-content: space-between;
+            align-items: center;
+            border-radius: 4px 4px 0 0;
+        }
+        .status-banner button {
+            background: rgba(0,0,0,0.2);
+            border: none;
+            color: inherit;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-family: inherit;
+            font-weight: bold;
+        }
+        .status-banner button:hover { background: rgba(0,0,0,0.4); }
+        
         /* Button */
         .btn {
             background: transparent;
@@ -148,7 +173,9 @@ export const onRequestGet = async (context: any) => {
             margin-bottom: 20px;
             position: relative;
             padding-left: 20px;
+            transition: opacity 0.2s;
         }
+        .git-entry:hover { opacity: 0.8; }
         .git-entry::before {
             content: '';
             position: absolute;
@@ -160,7 +187,19 @@ export const onRequestGet = async (context: any) => {
             border-radius: 50%;
             border: 2px solid ${colors.bg};
         }
-        .commit-hash { color: ${colors.accent}; font-weight: bold; margin-right: 10px; }
+        .git-entry.active::before {
+            background: ${colors.accent};
+            border-color: ${colors.accent};
+        }
+        .commit-hash { 
+            color: ${colors.accent}; 
+            font-weight: bold; 
+            margin-right: 10px; 
+            cursor: pointer; 
+            text-decoration: underline;
+            text-underline-offset: 4px;
+        }
+        .commit-hash:hover { color: ${colors.accentHover}; }
         .commit-author { color: ${colors.textSecondary}; }
         .commit-date { color: ${colors.textMuted}; font-size: 0.9em; display: block; margin-top: 4px; }
         
@@ -196,7 +235,11 @@ export const onRequestGet = async (context: any) => {
         </header>
 
         <div class="content-wrapper">
-            <div class="content" id="note-content">${content.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</div>
+            <div id="history-banner" class="status-banner">
+                <span>Viewing version <span id="viewing-hash">...</span></span>
+                <button onclick="restoreLatest()">Restore Latest</button>
+            </div>
+            <div class="content" id="note-content"></div>
         </div>
 
         ${edits.length > 0 ? `
@@ -215,12 +258,26 @@ export const onRequestGet = async (context: any) => {
     <script>
         const createdAt = ${created_at};
         const writerTimezone = "${timezone || 'UTC'}";
-        const edits = ${JSON.stringify(edits)};
+        const latestContent = ${JSON.stringify(content)};
+        const edits = ${JSON.stringify(edits)}; // Contains previous_content
 
-        // Date Format: "Tue Feb 17 06:57:55 2026 +0530" (Like git)
+        // Secure content rendering to prevent XSS (basic)
+        function escapeHtml(text) {
+            return text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        // Initialize content
+        const contentEl = document.getElementById('note-content');
+        contentEl.innerHTML = escapeHtml(latestContent);
+
+        // Date Format
         function formatGitDate(timestamp, tz) {
              try {
-                // We'll use a standard sophisticated format
                 return new Date(timestamp).toLocaleString('en-US', { 
                     timeZone: tz,
                     weekday: 'short', 
@@ -239,19 +296,47 @@ export const onRequestGet = async (context: any) => {
 
         document.getElementById('created-date').textContent = formatGitDate(createdAt, writerTimezone);
 
+        // History Logic
         const editList = document.getElementById('edit-list');
+        const banner = document.getElementById('history-banner');
+        const hashDisplay = document.getElementById('viewing-hash');
+
+        function viewVersion(id) {
+            const edit = edits.find(e => e.id === id);
+            if (!edit) return;
+
+            contentEl.innerHTML = escapeHtml(edit.previous_content || "(No content recorded)");
+            banner.style.display = 'flex';
+            hashDisplay.textContent = id.substring(0, 7);
+            
+            // Highlight active
+            document.querySelectorAll('.git-entry').forEach(el => el.classList.remove('active'));
+            document.getElementById('entry-' + id)?.classList.add('active');
+            
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function restoreLatest() {
+            contentEl.innerHTML = escapeHtml(latestContent);
+            banner.style.display = 'none';
+            document.querySelectorAll('.git-entry').forEach(el => el.classList.remove('active'));
+        }
+        
+        // Expose to window for onclick
+        window.restoreLatest = restoreLatest;
+
         if (editList) {
             edits.forEach(edit => {
                 const el = document.createElement('div');
                 el.className = 'git-entry';
+                el.id = 'entry-' + edit.id;
                 
-                // Mock a commit hash from ID
                 const hash = edit.id.substring(0, 7);
                 const dateStr = formatGitDate(edit.created_at, writerTimezone);
                 
                 el.innerHTML = \`
                     <div>
-                        <span class="commit-hash">\${hash}</span>
+                        <span class="commit-hash" onclick="viewVersion('\${edit.id}')">\${hash}</span>
                         <span class="commit-author">msg from \${edit.ip} (\${edit.city})</span>
                     </div>
                     <span class="commit-date">Date:   \${dateStr}</span>
@@ -259,9 +344,12 @@ export const onRequestGet = async (context: any) => {
                 editList.appendChild(el);
             });
         }
+        
+        // Expose for onclick
+        window.viewVersion = viewVersion;
 
         function copyContent() {
-            const text = document.getElementById('note-content').innerText;
+            const text = contentEl.innerText;
             navigator.clipboard.writeText(text).then(() => {
                 const btn = document.querySelector('.btn');
                 const originalText = btn.innerText;

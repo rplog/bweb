@@ -7,13 +7,17 @@ export const onRequestGet = async (context: any) => {
         if (search) {
             // Grep mode: search entire DB by filename pattern (no limit)
             const { results: r } = await context.env.DB.prepare(
-                "SELECT filename, created_at, updated_at, length(content) as size FROM notes WHERE filename LIKE ? ORDER BY updated_at DESC"
+                `SELECT filename, created_at, updated_at, length(content) as size, 
+                (SELECT author_name FROM note_edits WHERE note_id = notes.id ORDER BY created_at ASC LIMIT 1) as author 
+                FROM notes WHERE filename LIKE ? ORDER BY updated_at DESC`
             ).bind(`%${search}%`).all();
             results = r;
         } else {
             // Default: return last 100 notes
             const { results: r } = await context.env.DB.prepare(
-                "SELECT filename, created_at, updated_at, length(content) as size FROM notes ORDER BY updated_at DESC LIMIT 100"
+                `SELECT filename, created_at, updated_at, length(content) as size, 
+                (SELECT author_name FROM note_edits WHERE note_id = notes.id ORDER BY created_at ASC LIMIT 1) as author 
+                FROM notes ORDER BY updated_at DESC LIMIT 100`
             ).all();
             results = r;
         }

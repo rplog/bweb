@@ -61,7 +61,8 @@ export const commands: Record<string, Command> = {
                                 const node = targetNode.children?.[item];
                                 const isDir = node?.type === 'directory';
                                 const permissions = isDir ? 'drwxr-xr-x' : '-rw-r--r--';
-                                const owner = 'neo neo';
+                                const author = node?.author || 'neo';
+                                const owner = `${author} neo`;
 
                                 let size = node?.size || (node?.content?.length || 0);
                                 if (isDir) size = 4096;
@@ -77,9 +78,9 @@ export const commands: Record<string, Command> = {
                                 const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric', hour12: false });
 
                                 return (
-                                    <div key={item} className="grid grid-cols-[100px_80px_60px_120px_1fr] gap-2 hover:bg-white/5 p-0.5 rounded">
+                                    <div key={item} className="grid grid-cols-[100px_150px_80px_120px_1fr] gap-2 hover:bg-white/5 p-0.5 rounded items-center">
                                         <span className="text-elegant-text-muted">{permissions}</span>
-                                        <span className="text-elegant-text-secondary">{owner}</span>
+                                        <span className="text-elegant-text-secondary font-bold text-base truncate" title={owner}>{owner}</span>
                                         <span className="text-elegant-text-secondary text-right">{sizeStr}</span>
                                         <span className="text-elegant-text-muted text-right">{dateStr}</span>
                                         <span className={`${isDir ? 'text-elegant-accent font-bold' : 'text-elegant-text-primary'} ml-2`}>

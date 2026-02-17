@@ -48,7 +48,8 @@ export const useTerminal = () => {
                                 type: 'file',
                                 content: '',
                                 size: note.size || 0,
-                                lastModified: note.updated_at
+                                lastModified: note.updated_at,
+                                author: note.author
                             };
                         });
                         visitorsDir.children = children;

@@ -6,6 +6,7 @@ export interface FileSystemNode {
   children?: { [key: string]: FileSystemNode };
   size?: number;
   lastModified?: number;
+  author?: string;
 }
 
 export const initialFileSystem: { [key: string]: FileSystemNode } = {

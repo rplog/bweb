@@ -31,39 +31,134 @@ export const commands: Record<string, Command> = {
     },
     ls: {
         description: 'List directory contents',
-        execute: (args, { currentPath, fileSystem }) => {
-            const target = args[0] || '.';
-            const node = resolvePath(fileSystem, currentPath, target);
+        execute: async (args, { currentPath, fileSystem }) => {
+            const targetPath = args[0] || '.';
 
-            if (!node) return `ls: cannot access '${target}': No such file or directory`;
-            if (node.type !== 'directory') return target; // Just print the filename
+            // Special handling for visitors_notes
+            if (targetPath === 'visitors_notes' || (targetPath === '.' && currentPath[0] === 'visitors_notes')) {
+                try {
+                    const response = await fetch('/api/notes');
+                    if (!response.ok) throw new Error('Failed to fetch notes');
+                    const notes = await response.json();
+                    return (
+                        <div className="grid grid-cols-2 gap-2">
+                            {notes.map((note: any) => (
+                                <div key={note.filename} className="flex justify-between">
+                                    <span className="text-elegant-text-primary">{note.filename}</span>
+                                    <span className="text-elegant-text-muted text-xs">{new Date(note.updated_at).toLocaleDateString()}</span>
+                                </div>
+                            ))}
+                            {notes.length === 0 && <span className="text-elegant-text-muted">No notes found. Create one with nano!</span>}
+                        </div>
+                    );
+                } catch (e: any) {
+                    return `Error: ${e.message}`;
+                }
+            }
 
-            const contents = getDirectoryContents(node);
-            return contents.join('  ');
+            const targetNode = resolvePath(fileSystem, currentPath, targetPath);
+
+            if (!targetNode) {
+                return `ls: cannot access '${targetPath}': No such file or directory`;
+            }
+
+            if (targetNode.type === 'file') {
+                return targetNode.content || '';
+            }
+
+            if (targetNode.type === 'directory') {
+                const contents = getDirectoryContents(targetNode);
+                return (
+                    <div className="flex flex-wrap gap-4">
+                        {contents.map(item => {
+                            const isDir = targetNode.children?.[item]?.type === 'directory';
+                            return (
+                                <span key={item} className={isDir ? 'text-elegant-accent font-bold' : 'text-elegant-text-primary'}>
+                                    {item}{isDir ? '/' : ''}
+                                </span>
+                            );
+                        })}
+                    </div>
+                );
+            }
+
+            return '';
         }
     },
     cat: {
         description: 'Concatenate and print files',
-        execute: (args, { currentPath, fileSystem }) => {
+        execute: async (args, { currentPath, fileSystem }) => {
             if (args.length === 0) return 'cat: missing operand';
-            const target = args[0];
-            const node = resolvePath(fileSystem, currentPath, target);
 
-            if (!node) return `cat: ${target}: No such file or directory`;
-            if (node.type === 'directory') return `cat: ${target}: Is a directory`;
+            const pathParts = args[0].split('/');
+            const isInVisitorsNotes = currentPath[0] === 'visitors_notes' || pathParts[0] === 'visitors_notes';
 
-            return node.content || '';
+            if (isInVisitorsNotes) {
+                const filename = pathParts[pathParts.length - 1];
+                try {
+                    const response = await fetch(`/api/notes/${filename}`);
+                    if (response.status === 404) return `cat: ${filename}: No such file or directory`;
+                    if (!response.ok) throw new Error('Failed to fetch note');
+                    const note = await response.json();
+                    return note.content;
+                } catch (e: any) {
+                    return `Error: ${e.message}`;
+                }
+            }
+
+            const targetNode = resolvePath(fileSystem, currentPath, args[0]);
+
+            if (!targetNode) {
+                return `cat: ${args[0]}: No such file or directory`;
+            }
+
+            if (targetNode.type === 'directory') {
+                return `cat: ${args[0]}: Is a directory`;
+            }
+
+            return targetNode.content || '';
+        }
+    },
+    share: {
+        description: 'share a visitor note via public link',
+        usage: 'share <filename>',
+        execute: async (args, { currentPath }) => {
+            if (!args[0]) return 'share: missing file operand';
+
+            // Check if target is in visitors_notes
+            let filename = args[0];
+            let isVisitorNote = false;
+
+            if (currentPath[0] === 'visitors_notes') {
+                isVisitorNote = true;
+            } else if (filename.startsWith('visitors_notes/')) {
+                isVisitorNote = true;
+                filename = filename.replace('visitors_notes/', '');
+            }
+
+            if (!isVisitorNote) {
+                return 'share: can only share files from visitors_notes directory';
+            }
+
+            const url = `${window.location.origin}/shared/notes/${filename}`;
+
+            return (
+                <div className="text-elegant-text-primary">
+                    <div className="mb-2">Shareable Link generated:</div>
+                    <a href={url} target="_blank" rel="noopener noreferrer" className="text-elegant-accent hover:underline break-all">
+                        {url}
+                    </a>
+                </div>
+            );
         }
     },
     fastfetch: {
         description: 'Display system information (fast)',
         execute: () => {
-            // Simulate realistic uptime (45 days since that's what the server shows)
             const baseDays = 45;
             const baseHours = 10;
             const baseMins = 38;
 
-            // Add some variation based on current time
             const now = new Date();
             const extraMins = now.getMinutes();
             const extraHours = now.getHours() % 12;
@@ -77,7 +172,6 @@ export const commands: Record<string, Command> = {
 
             const uptimeStr = `${totalDays} days, ${finalHours} hours, ${finalMins} mins`;
 
-            // Calculate memory (simulated)
             const memUsed = 4.2;
             const memTotal = 16.0;
             const memPercent = Math.round((memUsed / memTotal) * 100);
@@ -157,7 +251,6 @@ export const commands: Record<string, Command> = {
     neofetch: {
         description: 'Display system information (alias for fastfetch)',
         execute: (_args, context) => {
-            // Just call fastfetch
             return commands.fastfetch.execute([], context);
         }
     },
@@ -166,7 +259,7 @@ export const commands: Record<string, Command> = {
         execute: (_args, { setFullScreen }) => {
             if (setFullScreen) {
                 setFullScreen(<Htop onExit={() => setFullScreen(null)} />);
-                return ''; // Don't add to history immediately or return empty
+                return '';
             }
             return 'Error: Fullscreen mode not supported';
         }
@@ -228,7 +321,6 @@ export const commands: Record<string, Command> = {
             let host = args[0];
             let count: number | undefined = undefined;
 
-            // Parse -c flag
             if (args[0] === '-c') {
                 if (args.length < 3) return 'Usage: ping [-c count] <host>';
                 count = parseInt(args[1]);
@@ -243,32 +335,99 @@ export const commands: Record<string, Command> = {
     nano: {
         description: 'Nano text editor',
         usage: 'nano <filename>',
-        execute: (args, { setFullScreen, currentPath, fileSystem, setFileSystem }) => {
-            // Allow opening without filename
-            const filename = args.length > 0 ? args[0] : undefined;
+        execute: async (args, { setFullScreen, currentPath, fileSystem, setFileSystem }) => {
+            const filenameArg = args.length > 0 ? args[0] : undefined;
 
-            // Resolve file content if it exists
-            let initialContent = '';
-            if (filename) {
-                const node = resolvePath(fileSystem, currentPath, filename);
-                initialContent = (node && node.type === 'file') ? (node.content || '') : '';
+            const isVisitorNote = (name: string) => {
+                return currentPath[0] === 'visitors_notes' || name?.startsWith('visitors_notes/');
+            };
+
+            let loadFilename = filenameArg;
+            let contentToEdit = '';
+
+            if (loadFilename) {
+                if (isVisitorNote(loadFilename)) {
+                    const cleanName = loadFilename.replace('visitors_notes/', '');
+                    if (cleanName) {
+                        try {
+                            const res = await fetch(`/api/notes/${cleanName}`);
+                            if (res.ok) {
+                                const data = await res.json();
+                                contentToEdit = data.content;
+                            }
+                        } catch (e) {
+                            // Ignore error, assume new file
+                        }
+                    }
+                } else {
+                    const node = resolvePath(fileSystem, currentPath, loadFilename);
+                    contentToEdit = (node && node.type === 'file') ? (node.content || '') : '';
+                }
             }
 
             if (setFullScreen) {
                 setFullScreen(
                     <Nano
-                        filename={filename}
-                        initialContent={initialContent}
-                        onSave={(newContent) => {
-                            if (setFileSystem && filename) {
-                                const newFS = writeFile(fileSystem, currentPath, filename, newContent);
-                                setFileSystem(newFS);
+                        filename={loadFilename}
+                        initialContent={contentToEdit}
+                        onSave={async (newContent) => {
+                            if (!loadFilename) return;
+
+                            if (isVisitorNote(loadFilename)) {
+                                const cleanName = loadFilename.replace('visitors_notes/', '');
+                                // Try Create first
+                                let res = await fetch('/api/notes', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ filename: cleanName, content: newContent })
+                                });
+
+                                if (res.status === 409) {
+                                    // Exists, try Update
+                                    res = await fetch(`/api/notes/${cleanName}`, {
+                                        method: 'PUT',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ content: newContent })
+                                    });
+                                }
+
+                                if (!res.ok) {
+                                    throw new Error(await res.text());
+                                }
+                            } else {
+                                if (setFileSystem) {
+                                    const newFS = writeFile(fileSystem, currentPath, loadFilename, newContent);
+                                    setFileSystem(newFS);
+                                }
                             }
                         }}
-                        onSaveAs={(newFilename, newContent) => {
-                            if (setFileSystem) {
-                                const newFS = writeFile(fileSystem, currentPath, newFilename, newContent);
-                                setFileSystem(newFS);
+                        onSaveAs={async (newFilename, newContent) => {
+                            let targetIsVisitor = false;
+                            let cleanName = newFilename;
+
+                            if (currentPath[0] === 'visitors_notes') {
+                                targetIsVisitor = true;
+                            } else if (newFilename.startsWith('visitors_notes/')) {
+                                targetIsVisitor = true;
+                                cleanName = newFilename.replace('visitors_notes/', '');
+                            }
+
+                            if (targetIsVisitor) {
+                                const res = await fetch('/api/notes', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ filename: cleanName, content: newContent })
+                                });
+
+                                if (!res.ok) {
+                                    if (res.status === 409) throw new Error('File exists (Overwrite not implemented in SaveAs)');
+                                    throw new Error(await res.text());
+                                }
+                            } else {
+                                if (setFileSystem) {
+                                    const newFS = writeFile(fileSystem, currentPath, newFilename, newContent);
+                                    setFileSystem(newFS);
+                                }
                             }
                         }}
                         onExit={() => setFullScreen(null)}

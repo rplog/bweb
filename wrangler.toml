@@ -5,3 +5,8 @@ pages_build_output_dir = "./dist"
 [[r2_buckets]]
 binding = "neosphere_assets"
 bucket_name = "neosphere-assets"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "neosphere-db"
+database_id = "4ec14f0d-7ce9-4ae7-8469-3074b38fe915"

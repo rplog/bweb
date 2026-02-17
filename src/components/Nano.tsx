@@ -3,8 +3,8 @@ import React, { useState, useRef, useEffect } from 'react';
 interface NanoProps {
     filename?: string;
     initialContent: string;
-    onSave: (content: string) => void;
-    onSaveAs: (filename: string, content: string) => void;
+    onSave: (content: string) => Promise<void> | void;
+    onSaveAs: (filename: string, content: string) => Promise<void> | void;
     onExit: () => void;
 }
 
@@ -29,10 +29,14 @@ export const Nano: React.FC<NanoProps> = ({ filename: initialFilename, initialCo
         }
     }, [isPromptingSave]);
 
-    const handleSave = () => {
+    const handleSave = async () => {
         if (filename) {
-            onSave(content);
-            setMessage(`[ Wrote ${content.split('\n').length} lines ]`);
+            try {
+                await onSave(content);
+                setMessage(`[ Wrote ${content.split('\n').length} lines ]`);
+            } catch (e: any) {
+                setMessage(`[ Error: ${e.message} ]`);
+            }
             setTimeout(() => setMessage(''), 2000);
         } else {
             setIsPromptingSave(true);
@@ -56,14 +60,18 @@ export const Nano: React.FC<NanoProps> = ({ filename: initialFilename, initialCo
         }
     };
 
-    const handlePromptKeyDown = (e: React.KeyboardEvent) => {
+    const handlePromptKeyDown = async (e: React.KeyboardEvent) => {
         if (e.key === 'Enter') {
             e.preventDefault();
             if (savePromptValue.trim()) {
                 setFilename(savePromptValue);
-                onSaveAs(savePromptValue, content);
-                setIsPromptingSave(false);
-                setMessage(`[ Wrote ${content.split('\n').length} lines ]`);
+                try {
+                    await onSaveAs(savePromptValue, content);
+                    setIsPromptingSave(false);
+                    setMessage(`[ Wrote ${content.split('\n').length} lines ]`);
+                } catch (e: any) {
+                    setMessage(`[ Error: ${e.message} ]`);
+                }
                 setTimeout(() => setMessage(''), 2000);
             } else {
                 setMessage('[ Cancelled ]');

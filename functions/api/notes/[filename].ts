@@ -28,10 +28,21 @@ export const onRequestPut = async (context: any) => {
         const now = Date.now();
         const ip = request.headers.get("CF-Connecting-IP") || "unknown";
         const city = request.cf?.city || "unknown";
+        const timezone = request.cf?.timezone || "UTC";
+
+        // Get current content for history
+        const currentNote = await env.DB.prepare("SELECT id, content FROM notes WHERE filename = ?").bind(filename).first();
+
+        if (currentNote) {
+            const editId = crypto.randomUUID();
+            await env.DB.prepare(
+                "INSERT INTO note_edits (id, note_id, previous_content, ip, city, created_at) VALUES (?, ?, ?, ?, ?, ?)"
+            ).bind(editId, currentNote.id, currentNote.content, ip, city, now).run();
+        }
 
         const info = await env.DB.prepare(
-            "UPDATE notes SET content = ?, updated_at = ?, ip = ?, city = ? WHERE filename = ?"
-        ).bind(content, now, ip, city, filename).run();
+            "UPDATE notes SET content = ?, updated_at = ?, ip = ?, city = ?, timezone = ? WHERE filename = ?"
+        ).bind(content, now, ip, city, timezone, filename).run();
 
         if (info.meta.changes === 0) {
             return new Response("File not found", { status: 404 });

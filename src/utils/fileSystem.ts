@@ -41,12 +41,12 @@ export const initialFileSystem: { [key: string]: FileSystemNode } = {
               },
             },
           },
+          'visitors_notes': {
+            type: 'directory',
+            children: {}
+          },
         },
       },
     },
   },
-  visitors_notes: {
-    type: 'directory',
-    children: {}
-  }
 };

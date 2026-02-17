@@ -24,11 +24,12 @@ export const onRequestPost = async (context: any) => {
         const city = request.cf?.city || "unknown";
         const country = request.cf?.country || "unknown";
         const userAgent = request.headers.get("User-Agent") || "unknown";
+        const timezone = request.cf?.timezone || "UTC";
 
         await env.DB.prepare(
-            `INSERT INTO notes (id, filename, content, ip, city, country, user_agent, created_at, updated_at) 
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-        ).bind(id, filename, content, ip, city, country, userAgent, now, now).run();
+            `INSERT INTO notes (id, filename, content, ip, city, country, timezone, user_agent, created_at, updated_at) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        ).bind(id, filename, content, ip, city, country, timezone, userAgent, now, now).run();
 
         return new Response(JSON.stringify({ success: true, filename }), {
             headers: { "Content-Type": "application/json" },

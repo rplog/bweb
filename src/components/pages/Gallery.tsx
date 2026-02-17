@@ -173,6 +173,48 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
         }
     }, [activePhoto]);
 
+    // Preload Logic
+    // Keep track of preloaded URLs to avoid duplicate requests
+    const preloadedRef = React.useRef<Set<string>>(new Set());
+
+    useEffect(() => {
+        if (!activeAlbum || !activePhoto) return;
+
+        const currentIndex = activeAlbum.photos.indexOf(activePhoto);
+        if (currentIndex === -1) return;
+
+        const photos = activeAlbum.photos;
+        const total = photos.length;
+
+        // Function to preload an image
+        const preload = (url: string) => {
+            const optimizedUrl = optimizeImage(url, { width: 1920, quality: 90 });
+            if (preloadedRef.current.has(optimizedUrl)) return;
+
+            const img = new Image();
+            img.src = optimizedUrl;
+            preloadedRef.current.add(optimizedUrl);
+        };
+
+        // 1. Immediate Priority: Next & Prev
+        const nextIndex = (currentIndex + 1) % total;
+        const prevIndex = (currentIndex - 1 + total) % total;
+        preload(photos[nextIndex]);
+        preload(photos[prevIndex]);
+
+        // 2. Background Load: Rest of the album
+        // We use a timeout to let the UI settle and main image load first
+        const timer = setTimeout(() => {
+            // Load forward direction first
+            for (let i = 1; i < total; i++) {
+                const idx = (currentIndex + i) % total;
+                preload(photos[idx]);
+            }
+        }, 500);
+
+        return () => clearTimeout(timer);
+    }, [activeAlbum, activePhoto]);
+
 
 
     const closePhoto = () => {

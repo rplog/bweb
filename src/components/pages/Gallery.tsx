@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Spotlight } from '../Spotlight';
 import { PageHeader } from '../PageHeader';
-import { Maximize2, ArrowLeft, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Maximize2, ArrowLeft, X, ChevronLeft, ChevronRight, Hand } from 'lucide-react';
 
 interface GalleryProps {
     onExit: () => void;
@@ -155,6 +155,24 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
         if (isLeftSwipe) handleNext();
         if (isRightSwipe) handlePrev();
     };
+
+    // Swipe Hint Logic
+    const [showSwipeHint, setShowSwipeHint] = useState(false);
+
+    useEffect(() => {
+        if (activePhoto) {
+            // Show hint only on touch devices (approximate check) or small screens
+            if (window.matchMedia('(pointer: coarse)').matches || window.innerWidth < 768) {
+                setShowSwipeHint(true);
+                const timer = setTimeout(() => setShowSwipeHint(false), 2500);
+                return () => clearTimeout(timer);
+            }
+        } else {
+            setShowSwipeHint(false);
+        }
+    }, [activePhoto]);
+
+
 
     const closePhoto = () => {
         setActivePhoto(null);
@@ -352,6 +370,31 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                             >
                                 <ChevronRight size={32} />
                             </button>
+
+                            {/* Mobile Swipe Hint Overlay */}
+                            {showSwipeHint && (
+                                <div className="absolute inset-0 flex items-center justify-center pointer-events-none md:hidden">
+                                    <div className="bg-black/60 text-white px-4 py-3 rounded-full flex items-center gap-3 backdrop-blur-sm animate-fade-out">
+                                        <Hand size={24} className="animate-swipe-hint" />
+                                        <span className="text-sm font-medium">Swipe to navigate</span>
+                                    </div>
+                                    <style>{`
+                                        @keyframes swipe-hint {
+                                            0%, 100% { transform: translateX(0); }
+                                            25% { transform: translateX(-10px); }
+                                            75% { transform: translateX(10px); }
+                                        }
+                                        .animate-swipe-hint {
+                                            animation: swipe-hint 1.5s ease-in-out infinite;
+                                        }
+                                        @keyframes fade-out {
+                                            0% { opacity: 1; }
+                                            80% { opacity: 1; }
+                                            100% { opacity: 0; }
+                                        }
+                                    `}</style>
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}

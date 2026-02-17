@@ -292,6 +292,28 @@ export const onRequestGet = async (context: any) => {
         a:hover { color: ${colors.accent}; }
 
         /* Mobile Responsiveness */
+        .breadcrumb {
+            font-size: 0.85rem;
+            margin-bottom: 20px;
+            color: ${colors.textSecondary};
+        }
+        .breadcrumb a {
+            color: ${colors.accent};
+            text-decoration: none;
+            transition: opacity 0.2s;
+        }
+        .breadcrumb a:hover {
+            opacity: 0.8;
+            text-decoration: underline;
+        }
+        .breadcrumb .sep {
+            margin: 0 8px;
+            color: ${colors.border};
+        }
+        .breadcrumb .current {
+            color: ${colors.textPrimary};
+        }
+
         @media (max-width: 600px) {
             body { padding: 20px 15px; }
             h1 { 
@@ -310,6 +332,13 @@ export const onRequestGet = async (context: any) => {
 </head>
 <body>
     <div class="container">
+        <nav class="breadcrumb">
+            <a href="/">~</a>
+            <span class="sep">/</span>
+            <a href="/">visitors_notes</a>
+            <span class="sep">/</span>
+            <span class="current">${filename}</span>
+        </nav>
         <header>
             <h1>
                 <span>${filename}</span>

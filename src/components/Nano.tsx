@@ -14,6 +14,7 @@ export const Nano: React.FC<NanoProps> = ({ filename: initialFilename, initialCo
     const [isPromptingSave, setIsPromptingSave] = useState(false);
     const [savePromptValue, setSavePromptValue] = useState('');
     const [exitAttempt, setExitAttempt] = useState(false);
+    const [isModified, setIsModified] = useState(false);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const promptInputRef = useRef<HTMLInputElement>(null);
     const commitMsgRef = useRef<string>('');
@@ -53,7 +54,7 @@ export const Nano: React.FC<NanoProps> = ({ filename: initialFilename, initialCo
                 handleSave();
             } else if (e.key === 'x') { // Exit
                 e.preventDefault();
-                if (exitAttempt) {
+                if (!isModified || exitAttempt) {
                     onExit();
                 } else {
                     setExitAttempt(true);
@@ -112,6 +113,7 @@ export const Nano: React.FC<NanoProps> = ({ filename: initialFilename, initialCo
                 try {
                     await onSaveAs(filename!, content, commitMsg, authorName);
                     setIsPromptingSave(false);
+                    setIsModified(false); // Reset modified state on successful save
                     setMessage(`[ Wrote ${content.split('\n').length} lines ]`);
                 } catch (e: any) {
                     setMessage(`[ Error: ${e.message} ]`);
@@ -139,7 +141,10 @@ export const Nano: React.FC<NanoProps> = ({ filename: initialFilename, initialCo
             <textarea
                 ref={textareaRef}
                 value={content}
-                onChange={(e) => setContent(e.target.value)}
+                onChange={(e) => {
+                    setContent(e.target.value);
+                    if (!isModified) setIsModified(true);
+                }}
                 onKeyDown={handleKeyDown}
                 className="flex-grow bg-elegant-bg text-elegant-text-primary p-2 outline-none resize-none border-none font-inherit"
                 spellCheck={false}

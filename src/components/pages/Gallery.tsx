@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { optimizeImage } from '../../utils/imageOptimizer';
 import { Spotlight } from '../Spotlight';
 import { PageHeader } from '../PageHeader';
-import { Maximize2, ArrowLeft, X, ChevronLeft, ChevronRight, Hand } from 'lucide-react';
+import { Maximize2, ArrowLeft, X, ChevronLeft, ChevronRight, Hand, Loader2, Upload, Trash2, Edit2, Plus, Save, FileEdit } from 'lucide-react';
 
 interface GalleryProps {
     onExit: () => void;
@@ -15,6 +15,7 @@ interface Album {
     cover: string[];
     photos: string[];
     category: string;
+    items?: { url: string; caption?: string; key: string; filename: string }[];
 }
 
 export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
@@ -22,6 +23,21 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
     const [activeAlbum, setActiveAlbum] = useState<Album | null>(null);
     const [activePhoto, setActivePhoto] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
+
+    // Admin State
+    const [isAdmin, setIsAdmin] = useState(false);
+    const [showUploadModal, setShowUploadModal] = useState(false);
+    const [uploadFile, setUploadFile] = useState<File | null>(null);
+    const [uploadCaption, setUploadCaption] = useState('');
+    const [uploadAlbumName, setUploadAlbumName] = useState('');
+    const [isProcessing, setIsProcessing] = useState(false);
+    const [editCaption, setEditCaption] = useState<string | null>(null); // For lightbox editing
+
+    useEffect(() => {
+        // Check local admin token
+        const token = localStorage.getItem('admin_token');
+        if (token) setIsAdmin(true);
+    }, []);
 
     // Fetch albums and handle deep link on mount
     useEffect(() => {
@@ -234,6 +250,165 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
         }
     };
 
+    // --- ADMIN ACTIONS ---
+
+    const handleUpload = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!uploadFile) return;
+        if (!uploadAlbumName) {
+            alert('Please select or enter an album name');
+            return;
+        }
+
+        setIsProcessing(true);
+
+        try {
+            // 1. Process Image
+            const img = new Image();
+            img.src = URL.createObjectURL(uploadFile);
+            await new Promise((resolve, reject) => {
+                img.onload = resolve;
+                img.onerror = reject;
+            });
+
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+                ctx.drawImage(img, 0, 0);
+            }
+
+            // Convert and strip metadata
+            const blob = await new Promise<Blob | null>(resolve =>
+                canvas.toBlob(resolve, 'image/jpeg', 0.9)
+            );
+
+            if (!blob) throw new Error('Image processing failed');
+
+            const formData = new FormData();
+            formData.append('action', 'upload');
+            formData.append('file', blob, uploadFile.name);
+            formData.append('album', uploadAlbumName);
+            formData.append('caption', uploadCaption);
+
+            const res = await fetch('/api/gallery', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
+                },
+                body: formData
+            });
+
+            if (!res.ok) {
+                const err = await res.json() as any;
+                throw new Error(err.error || 'Upload failed');
+            }
+
+            // Reload to show changes
+            window.location.reload();
+
+        } catch (err: any) {
+            console.error(err);
+            alert(`Upload Error: ${err.message}`);
+        } finally {
+            setIsProcessing(false);
+            setShowUploadModal(false);
+        }
+    };
+
+    const handleDelete = async (key: string, isAlbum = false) => {
+        if (!confirm(`Are you sure you want to delete this ${isAlbum ? 'album' : 'photo'}?`)) return;
+
+        try {
+            const res = await fetch('/api/gallery', {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
+                },
+                body: JSON.stringify(isAlbum ? { album: key } : { key })
+            });
+
+            if (!res.ok) throw new Error('Delete failed');
+            window.location.reload();
+        } catch (err: any) {
+            alert(err.message);
+        }
+    };
+
+    const handleUpdateCaption = async () => {
+        if (!activePhoto || editCaption === null) return;
+        // activePhoto is URL, need key
+        // URL: /api/gallery/Album/file.jpg -> Key: Album/file.jpg
+        const key = decodeURIComponent(activePhoto.split('/api/gallery/')[1]);
+
+        try {
+            const res = await fetch('/api/gallery', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
+                },
+                body: JSON.stringify({
+                    action: 'update-caption',
+                    key,
+                    caption: editCaption
+                })
+            });
+            if (!res.ok) throw new Error('Update failed');
+            alert('Caption updated');
+            setEditCaption(null);
+            // Ideally update local state, but reload is safer for sync
+            // window.location.reload(); 
+        } catch (err: any) {
+            alert(err.message);
+        }
+    };
+
+    const handleRenameAlbum = async (oldName: string) => {
+        const newName = prompt('New album name:', oldName);
+        if (!newName || newName === oldName) return;
+
+        try {
+            const res = await fetch('/api/gallery', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
+                },
+                body: JSON.stringify({ action: 'rename-album', oldName, newName })
+            });
+
+            if (!res.ok) throw new Error('Rename failed');
+            window.location.reload();
+        } catch (err: any) {
+            alert(err.message);
+        }
+    };
+
+    const handleRenamePhoto = async (key: string) => {
+        const oldName = key.split('/').pop() || '';
+        const newName = prompt('New filename:', oldName);
+        if (!newName || newName === oldName) return;
+
+        try {
+            const res = await fetch('/api/gallery', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
+                },
+                body: JSON.stringify({ action: 'rename-photo', key, newName })
+            });
+
+            if (!res.ok) throw new Error('Rename failed');
+            window.location.reload();
+        } catch (err: any) {
+            alert(err.message);
+        }
+    };
+
     return (
         <div className="h-full w-full bg-elegant-bg text-elegant-text-secondary font-mono selection:bg-elegant-accent/20 overflow-y-auto">
             <div className="min-h-full flex flex-col">
@@ -323,11 +498,31 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                                             </span>
                                         </div>
                                     </div>
-                                    <div className="p-5">
-                                        <h3 className="text-lg font-bold text-elegant-text-primary mb-1 group-hover:text-elegant-accent transition-colors">
-                                            {album.title}
-                                        </h3>
-                                        <p className="text-sm text-elegant-text-muted">{album.category}</p>
+                                    <div className="p-5 flex justify-between items-start">
+                                        <div>
+                                            <h3 className="text-lg font-bold text-elegant-text-primary mb-1 group-hover:text-elegant-accent transition-colors">
+                                                {album.title}
+                                            </h3>
+                                            <p className="text-sm text-elegant-text-muted">{album.category}</p>
+                                        </div>
+                                        {isAdmin && (
+                                            <div className="flex gap-2">
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); handleRenameAlbum(album.title); }}
+                                                    className="text-elegant-text-muted hover:text-elegant-accent p-1"
+                                                    title="Rename Album"
+                                                >
+                                                    <FileEdit size={16} />
+                                                </button>
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); handleDelete(album.title, true); }}
+                                                    className="text-red-500 hover:text-red-400 p-1"
+                                                    title="Delete Album"
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             ))}
@@ -372,8 +567,35 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                                         <div className="placeholder hidden w-full aspect-video flex items-center justify-center bg-elegant-card">
                                             <span className="text-xs text-elegant-text-muted font-mono">IMG_{i + 1}.RAW</span>
                                         </div>
-                                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
                                             <Maximize2 size={20} className="text-elegant-text-primary" />
+                                            {isAdmin && (
+                                                <>
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            const key = decodeURIComponent(photo.split('/api/gallery/')[1]);
+                                                            handleRenamePhoto(key);
+                                                        }}
+                                                        className="p-2 bg-white/10 rounded-full hover:bg-white/20 text-white transition-colors"
+                                                        title="Rename Photo"
+                                                    >
+                                                        <FileEdit size={16} />
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            // Extract key from URL
+                                                            const key = decodeURIComponent(photo.split('/api/gallery/')[1]);
+                                                            handleDelete(key);
+                                                        }}
+                                                        className="p-2 bg-red-500/80 rounded-full hover:bg-red-500 text-white transition-colors"
+                                                        title="Delete Photo"
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                </>
+                                            )}
                                         </div>
                                     </div>
                                 ))}
@@ -465,6 +687,123 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                                 </div>
                             )}
                         </div>
+                    </div>
+                )}
+
+                {/* Admin Toolbar */}
+                {isAdmin && !activePhoto && (
+                    <div className="fixed bottom-8 right-8 z-40">
+                        <button
+                            onClick={() => {
+                                setUploadAlbumName(activeAlbum ? activeAlbum.title : '');
+                                setShowUploadModal(true);
+                            }}
+                            className="bg-elegant-accent text-elegant-bg p-4 rounded-full shadow-lg hover:bg-white transition-colors flex items-center gap-2"
+                        >
+                            <Plus size={24} />
+                            <span className="font-bold hidden sm:inline">Add Photos</span>
+                        </button>
+                    </div>
+                )}
+
+                {/* Upload Modal */}
+                {showUploadModal && (
+                    <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+                        <div className="bg-elegant-card border border-elegant-border p-6 rounded-lg max-w-md w-full relative">
+                            <button
+                                onClick={() => setShowUploadModal(false)}
+                                className="absolute top-4 right-4 text-elegant-text-muted hover:text-white"
+                            >
+                                <X size={20} />
+                            </button>
+
+                            <h2 className="text-xl font-bold text-elegant-text-primary mb-4">Upload Photo</h2>
+
+                            <form onSubmit={handleUpload} className="space-y-4">
+                                <div>
+                                    <label className="block text-sm text-elegant-text-secondary mb-1">Album Name</label>
+                                    <input
+                                        type="text"
+                                        value={uploadAlbumName}
+                                        onChange={(e) => setUploadAlbumName(e.target.value)}
+                                        className="w-full bg-elegant-bg border border-elegant-border rounded p-2 text-elegant-text-primary"
+                                        placeholder="e.g. Flora"
+                                        list="albums-list"
+                                        required
+                                    />
+                                    <datalist id="albums-list">
+                                        {albums.map(a => <option key={a.title} value={a.title} />)}
+                                    </datalist>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm text-elegant-text-secondary mb-1">Photo</label>
+                                    <div className="border-2 border-dashed border-elegant-border rounded p-4 text-center hover:border-elegant-accent transition-colors cursor-pointer relative">
+                                        <input
+                                            type="file"
+                                            accept="image/png, image/jpeg, image/webp"
+                                            onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
+                                            className="absolute inset-0 opacity-0 cursor-pointer"
+                                            required
+                                        />
+                                        <Upload size={24} className="mx-auto mb-2 text-elegant-text-muted" />
+                                        <p className="text-sm text-elegant-text-muted">
+                                            {uploadFile ? uploadFile.name : 'Click or drop image here'}
+                                        </p>
+                                    </div>
+                                    <p className="text-xs text-elegant-text-muted mt-1">
+                                        Location metadata will be stripped. JPG/PNG/WebP only.
+                                    </p>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm text-elegant-text-secondary mb-1">Caption</label>
+                                    <textarea
+                                        value={uploadCaption}
+                                        onChange={(e) => setUploadCaption(e.target.value)}
+                                        className="w-full bg-elegant-bg border border-elegant-border rounded p-2 text-elegant-text-primary"
+                                        placeholder="Optional caption..."
+                                        rows={2}
+                                    />
+                                </div>
+
+                                <button
+                                    type="submit"
+                                    disabled={isProcessing}
+                                    className="w-full bg-elegant-accent text-elegant-bg font-bold py-2 rounded hover:bg-white transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                                >
+                                    {isProcessing ? <Loader2 className="animate-spin" size={20} /> : <Save size={20} />}
+                                    {isProcessing ? 'Processing...' : 'Upload'}
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                )}
+
+                {/* Lightbox Edit Overlay */}
+                {activePhoto && isAdmin && (
+                    <div className="absolute bottom-4 left-4 z-50 flex gap-2">
+                        {editCaption !== null ? (
+                            <div className="flex items-center gap-2 bg-black/60 p-2 rounded backdrop-blur-sm">
+                                <input
+                                    type="text"
+                                    value={editCaption}
+                                    onChange={(e) => setEditCaption(e.target.value)}
+                                    className="bg-transparent border-b border-white/30 text-white focus:outline-none text-sm"
+                                    autoFocus
+                                />
+                                <button onClick={handleUpdateCaption} className="text-green-400 hover:text-green-300"><Save size={16} /></button>
+                                <button onClick={() => setEditCaption(null)} className="text-red-400 hover:text-red-300"><X size={16} /></button>
+                            </div>
+                        ) : (
+                            <button
+                                onClick={() => setEditCaption('')} // TODO: Load existing caption if available
+                                className="p-2 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors"
+                                title="Edit Caption"
+                            >
+                                <Edit2 size={20} />
+                            </button>
+                        )}
                     </div>
                 )}
 

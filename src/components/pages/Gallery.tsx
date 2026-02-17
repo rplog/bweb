@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Spotlight } from '../Spotlight';
 import { PageHeader } from '../PageHeader';
 import { Maximize2, ArrowLeft } from 'lucide-react';
@@ -8,32 +8,31 @@ interface GalleryProps {
     onNavigate?: (dest: string) => void;
 }
 
-const ALBUMS = [
-    {
-        title: 'Neon Nights',
-        count: 5,
-        cover: '/media/gallery/neon_cover.jpg',
-        photos: Array.from({ length: 5 }, (_, i) => `/media/gallery/neon_${i + 1}.jpg`),
-        category: 'Urban',
-    },
-    {
-        title: 'Cyber Dreams',
-        count: 4,
-        cover: '/media/gallery/cyber_cover.jpg',
-        photos: Array.from({ length: 4 }, (_, i) => `/media/gallery/cyber_${i + 1}.jpg`),
-        category: 'Digital',
-    },
-    {
-        title: 'Matrix Code',
-        count: 6,
-        cover: '/media/gallery/matrix_cover.jpg',
-        photos: Array.from({ length: 6 }, (_, i) => `/media/gallery/matrix_${i + 1}.jpg`),
-        category: 'Abstract',
-    },
-];
+interface Album {
+    title: string;
+    count: number;
+    cover: string[]; // Array of up to 4 image URLs for grid
+    photos: string[];
+    category: string;
+}
 
 export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
-    const [activeAlbum, setActiveAlbum] = useState<typeof ALBUMS[0] | null>(null);
+    const [albums, setAlbums] = useState<Album[]>([]);
+    const [activeAlbum, setActiveAlbum] = useState<Album | null>(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        fetch('/api/gallery')
+            .then(res => res.json())
+            .then(data => {
+                setAlbums(data);
+                setLoading(false);
+            })
+            .catch(err => {
+                console.error('Failed to load gallery:', err);
+                setLoading(false);
+            });
+    }, []);
 
     const handleNavigate = (dest: string) => {
         if (dest === 'Terminal') onExit();
@@ -71,26 +70,41 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                         )}
                     </div>
 
-                    {!activeAlbum ? (
+                    {loading ? (
+                        <div className="text-center py-20 text-elegant-text-muted animate-pulse">
+                            Loading gallery...
+                        </div>
+                    ) : !activeAlbum ? (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {ALBUMS.map((album) => (
+                            {albums.map((album) => (
                                 <div
                                     key={album.title}
                                     className="group relative bg-elegant-card border border-elegant-border rounded-sm overflow-hidden hover:border-elegant-text-muted transition-all duration-300 cursor-pointer"
                                     onClick={() => setActiveAlbum(album)}
                                 >
-                                    <div className="aspect-video bg-black relative overflow-hidden">
-                                        <img
-                                            src={album.cover}
-                                            alt={album.title}
-                                            className="w-full h-full object-cover opacity-60 group-hover:opacity-80 group-hover:scale-105 transition-all duration-500 grayscale group-hover:grayscale-0"
-                                            onError={(e) => {
-                                                e.currentTarget.style.opacity = '0';
-                                            }}
-                                        />
-                                        <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-all duration-300" />
-                                        <div className="absolute top-3 right-3">
-                                            <span className="px-3 py-1 bg-black/80 border border-elegant-border rounded text-xs text-elegant-text-secondary">
+                                    {/* 2x2 Grid Cover */}
+                                    <div className="aspect-video bg-black relative overflow-hidden grid grid-cols-2 grid-rows-2">
+                                        {Array.from({ length: 4 }).map((_, i) => (
+                                            <div key={i} className="relative w-full h-full overflow-hidden border-r border-b border-black/10 last:border-0">
+                                                {album.cover[i] ? (
+                                                    <img
+                                                        src={album.cover[i]}
+                                                        alt={`${album.title} cover ${i + 1}`}
+                                                        className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500 grayscale group-hover:grayscale-0"
+                                                        onError={(e) => {
+                                                            e.currentTarget.style.opacity = '0';
+                                                        }}
+                                                    />
+                                                ) : (
+                                                    <div className="w-full h-full bg-elegant-bg/50" />
+                                                )}
+                                            </div>
+                                        ))}
+
+                                        <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-all duration-300 pointer-events-none" />
+
+                                        <div className="absolute top-3 right-3 pointer-events-none">
+                                            <span className="px-3 py-1 bg-black/80 border border-elegant-border rounded text-xs text-elegant-text-secondary backdrop-blur-sm">
                                                 {album.count} items
                                             </span>
                                         </div>

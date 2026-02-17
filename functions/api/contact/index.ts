@@ -89,10 +89,10 @@ export const onRequestPost: PagesFunction<{
             return new Response(JSON.stringify({ error: 'Rate limit exceeded. Please wait before sending another message.' }), { status: 429, headers: { 'Content-Type': 'application/json' } });
         }
 
-        const formData = await request.formData();
-        const name = formData.get('name') as string;
-        const email = formData.get('email') as string;
-        const message = formData.get('message') as string;
+        const body = await request.json() as { name?: string; email?: string; message?: string };
+        const name = body.name;
+        const email = body.email;
+        const message = body.message;
 
         if (!name || !email || !message) {
             return new Response(JSON.stringify({ error: 'Missing required fields' }), { status: 400, headers: { 'Content-Type': 'application/json' } });

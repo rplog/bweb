@@ -1,6 +1,73 @@
 import { WorkerMailer } from 'worker-mailer';
 import { checkRateLimit } from "../../utils/rateLimit";
 
+// Retry helper: exponential backoff with configurable attempts
+async function withRetry<T>(
+    fn: () => Promise<T>,
+    label: string,
+    maxAttempts: number = 3,
+    baseDelayMs: number = 500
+): Promise<T> {
+    let lastError: Error | null = null;
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        try {
+            return await fn();
+        } catch (err: any) {
+            lastError = err;
+            console.error(`[${label}] Attempt ${attempt}/${maxAttempts} failed:`, err.message || err);
+
+            if (attempt < maxAttempts) {
+                const delay = baseDelayMs * Math.pow(2, attempt - 1); // 500, 1000, 2000
+                await new Promise(r => setTimeout(r, delay));
+            }
+        }
+    }
+
+    throw lastError;
+}
+
+async function sendTelegram(env: any, name: string, email: string, message: string): Promise<void> {
+    const text = `*New Message from* ${name}\nEmail: ${email}\n\n${message}`;
+    const telegramUrl = `https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/sendMessage`;
+
+    const res = await fetch(telegramUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            chat_id: env.TELEGRAM_CHAT_ID,
+            text: text,
+            parse_mode: 'Markdown'
+        })
+    });
+
+    if (!res.ok) {
+        const body = await res.text();
+        throw new Error(`Telegram API ${res.status}: ${body}`);
+    }
+}
+
+async function sendEmail(env: any, name: string, email: string, message: string): Promise<void> {
+    const port = parseInt(env.SMTP_PORT || '587');
+
+    await WorkerMailer.send({
+        host: env.SMTP_HOST,
+        port: port,
+        credentials: {
+            username: env.SMTP_USER,
+            password: env.SMTP_PASS
+        },
+        startTls: port === 587,
+        secure: port === 465
+    }, {
+        from: env.SMTP_FROM || env.SMTP_USER,
+        to: env.SMTP_FROM || env.SMTP_USER,
+        subject: `New Contact: ${name}`,
+        text: `Name: ${name}\nEmail: ${email}\n\n${message}`,
+        reply: email
+    });
+}
+
 export const onRequestPost: PagesFunction<{
     DB: D1Database,
     RATE_LIMITER: KVNamespace,
@@ -31,55 +98,28 @@ export const onRequestPost: PagesFunction<{
             return new Response(JSON.stringify({ error: 'Missing required fields' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
         }
 
-        // 1. Save to D1
+        // 1. Save to D1 (critical — fail the request if this fails)
         const insertQuery = `INSERT INTO messages (name, email, message, ip, user_agent) VALUES (?, ?, ?, ?, ?)`;
         const userAgent = request.headers.get('User-Agent') || 'unknown';
-
         await env.DB.prepare(insertQuery).bind(name, email, message, ip, userAgent).run();
 
-        // 1.5. Check Notification Preferences
+        // 2. Check notification preferences
         const configResult = await env.DB.prepare("SELECT value FROM config WHERE key = 'notification_channels'").first();
         const notificationChannels = (configResult?.value as string || 'telegram,email').split(',');
 
-        // 2. Send Telegram Notification
+        // 3. Send Telegram with retry (fire-and-forget, 3 attempts)
         if (notificationChannels.includes('telegram') && env.TELEGRAM_BOT_TOKEN && env.TELEGRAM_CHAT_ID) {
-            const text = `*New Message from* ${name}\nEmail: ${email}\n\n${message}`;
-            const telegramUrl = `https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/sendMessage`;
-
-            // Fire and forget (don't await to speed up response, but catch errors)
             context.waitUntil(
-                fetch(telegramUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        chat_id: env.TELEGRAM_CHAT_ID,
-                        text: text,
-                        parse_mode: 'Markdown'
-                    })
-                }).catch(err => console.error('Telegram Error:', err))
+                withRetry(() => sendTelegram(env, name, email, message), 'Telegram', 3, 500)
+                    .catch(err => console.error('[Telegram] All retries failed:', err.message))
             );
         }
 
-        // 3. Send Email (SMTP)
+        // 4. Send Email with retry (fire-and-forget, 3 attempts)
         if (notificationChannels.includes('email') && env.SMTP_HOST && env.SMTP_USER && env.SMTP_PASS) {
-            const port = parseInt(env.SMTP_PORT || '587');
             context.waitUntil(
-                WorkerMailer.send({
-                    host: env.SMTP_HOST,
-                    port: port,
-                    credentials: {
-                        username: env.SMTP_USER,
-                        password: env.SMTP_PASS
-                    },
-                    startTls: port === 587,
-                    secure: port === 465
-                }, {
-                    from: env.SMTP_FROM || env.SMTP_USER,
-                    to: env.SMTP_FROM || env.SMTP_USER, // Send TO yourself
-                    subject: `New Contact: ${name}`,
-                    text: `Name: ${name}\nEmail: ${email}\n\n${message}`,
-                    reply: email
-                }).catch(err => console.error('SMTP Error:', err))
+                withRetry(() => sendEmail(env, name, email, message), 'Email', 3, 1000)
+                    .catch(err => console.error('[Email] All retries failed:', err.message))
             );
         }
 

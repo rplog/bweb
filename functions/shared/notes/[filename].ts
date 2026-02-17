@@ -42,6 +42,7 @@ export const onRequestGet = async (context: any) => {
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/diff@5.2.0/dist/diff.min.js"></script>
     <style>
         body { 
             background-color: ${colors.bg}; 
@@ -102,6 +103,23 @@ export const onRequestGet = async (context: any) => {
             color: ${colors.textPrimary};
             tab-size: 4;
             word-break: break-word; /* Prevent content overflow */
+        }
+        
+        /* Diff Styles */
+        .diff-added {
+            background-color: rgba(46, 160, 67, 0.15);
+            color: #b7f0c1;
+            display: block;
+        }
+        .diff-removed {
+            background-color: rgba(248, 81, 73, 0.15);
+            color: #ffdce0;
+            display: block;
+            text-decoration: line-through; /* Optional preference */
+        }
+        .diff-line {
+            display: block;
+            width: 100%; 
         }
         
         /* Status Banner */
@@ -253,16 +271,19 @@ export const onRequestGet = async (context: any) => {
                     <span id="created-date">...</span>
                 </div>
                 <div class="meta-item">
-                     <span class="meta-label">From:</span>
-                     <span>${city}, ${country}</span>
+                    <span class="meta-label">From:</span>
+                    <span>${city}, ${country}</span>
                 </div>
             </div>
         </header>
 
         <div class="content-wrapper">
             <div id="history-banner" class="status-banner">
-                <span>Viewing version <span id="viewing-hash">...</span></span>
-                <button onclick="restoreLatest()">Restore Latest</button>
+                <span>Viewing diff for <span id="viewing-hash">...</span></span>
+                <div>
+                     <button onclick="viewFileContent()" id="toggle-view-btn" style="margin-right: 10px;">View Content</button>
+                     <button onclick="restoreLatest()">Restore Latest</button>
+                </div>
             </div>
             <div class="content" id="note-content"></div>
         </div>
@@ -325,12 +346,20 @@ export const onRequestGet = async (context: any) => {
         const editList = document.getElementById('edit-list');
         const banner = document.getElementById('history-banner');
         const hashDisplay = document.getElementById('viewing-hash');
+        const toggleBtn = document.getElementById('toggle-view-btn');
+
+        let currentViewedEdit = null;
+        let isDiffView = true;
 
         function viewVersion(id) {
-            const edit = edits.find(e => e.id === id);
-            if (!edit) return;
+            const index = edits.findIndex(e => e.id === id);
+            if (index === -1) return;
+            const edit = edits[index];
+            currentViewedEdit = { edit, index };
+            isDiffView = true; // Default to diff
 
-            contentEl.innerHTML = escapeHtml(edit.previous_content || "(No content recorded)");
+            renderCurrentView();
+
             banner.style.display = 'flex';
             hashDisplay.textContent = id.substring(0, 7);
             
@@ -341,10 +370,67 @@ export const onRequestGet = async (context: any) => {
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
+        function renderCurrentView() {
+            if (!currentViewedEdit) return;
+            const { edit, index } = currentViewedEdit;
+
+            toggleBtn.textContent = isDiffView ? "View File Content" : "View Diff";
+
+            if (isDiffView) {
+                // Determine Old and New
+                // Edit stores 'previous_content'. 
+                // So this edit represents the transition: edit.previous_content -> (Next State)
+                const oldText = edit.previous_content || "";
+                
+                // The 'New' text is the 'previous_content' of the NEXT edit (newer), 
+                // OR result is 'latestContent' if this is the newest edit
+                const newText = (index === 0) ? latestContent : edits[index - 1].previous_content;
+
+                if (window.Diff) {
+                    const diff = window.Diff.diffLines(oldText, newText);
+                    let html = '';
+                    diff.forEach(part => {
+                        const colorClass = part.added ? 'diff-added' :
+                                           part.removed ? 'diff-removed' : 'diff-line';
+                        const prefix = part.added ? '+ ' : part.removed ? '- ' : '  ';
+                        
+                        // Split by newline to ensure proper block formatting
+                        // escapeHtml is crucial here
+                        const escaped = escapeHtml(part.value);
+                        // We wrap the whole block? No, each line usually. 
+                        // But diffLines gives blocks.
+                        // Let's just wrap the block for simplicity but style it carefully
+                        html += \`<span class="\${colorClass}">\${escaped}</span>\`;
+                    });
+                    contentEl.innerHTML = html;
+                } else {
+                    contentEl.textContent = "Diff library not loaded. Refresh page.";
+                }
+            } else {
+                 // View content of the specific version?
+                 // Wait, clicking "Commit 2" usually implies "Show me what Commit 2 looked like" 
+                 // OR "Show me what changed".
+                 // "View File Content" -> Show result content? (Next State) 
+                 // OR Show Previous content?
+                 // Logic: If I select a commit, I want to see the resulting file state.
+                 // The resulting state of 'Edit 2' is 'NewText' from calculation above.
+                 const newText = (index === 0) ? latestContent : edits[index - 1].previous_content;
+                 contentEl.innerHTML = escapeHtml(newText);
+            }
+        }
+
+        function viewFileContent() {
+            isDiffView = !isDiffView;
+            renderCurrentView();
+        }
+        // Expose
+        window.viewFileContent = viewFileContent;
+
         function restoreLatest() {
             contentEl.innerHTML = escapeHtml(latestContent);
             banner.style.display = 'none';
             document.querySelectorAll('.git-entry').forEach(el => el.classList.remove('active'));
+            currentViewedEdit = null;
         }
         
         // Expose to window for onclick
@@ -362,10 +448,9 @@ export const onRequestGet = async (context: any) => {
                 let authorDisplay = edit.author_name ? escapeHtml(edit.author_name) : \`\${edit.ip} (\${edit.city})\`;
                 let msgDisplay = edit.commit_msg ? escapeHtml(edit.commit_msg) : 'Update';
                 
-                // If it was the fallback generic message logic before:
                 if (!edit.commit_msg && !edit.author_name) {
                      msgDisplay = 'msg from ' + authorDisplay;
-                     authorDisplay = ''; // Don't duplicate
+                     authorDisplay = ''; 
                 }
 
                 el.innerHTML = \`

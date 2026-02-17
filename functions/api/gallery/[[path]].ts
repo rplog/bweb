@@ -132,13 +132,9 @@ async function handleGet(context: EventContext<Env, any, any>) {
         Object.values(albumsV2).forEach((album: any) => {
             // Cover logic: use URLs
             album.cover = album.photos.slice(0, 4).map((p: any) => p.url);
-            // Photos: return objects? Or just URLs?
-            // To support captions, we MUST return objects.
-            // Breaking change: `photos` is now `GalleryItem[]`.
-            // Wait, standard `photos` was `string[]`.
-            // I'll keep `photos` as `string[]` for compat and add `items: GalleryItem[]`.
-            album.items = album.photos; // The objects
-            album.photos = album.items.map((i: any) => i.url); // The strings
+
+            // Return full objects for frontend
+            // album.photos is already { url, caption, key }[] from lines 121-128
         });
 
         return new Response(JSON.stringify(Object.values(albumsV2)), {

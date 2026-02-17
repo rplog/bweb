@@ -293,7 +293,8 @@ export const onRequestGet = async (context: any) => {
 
         /* Mobile Responsiveness */
         .breadcrumb {
-            font-size: 0.85rem;
+            font-size: 1.1rem;
+            font-weight: 700;
             margin-bottom: 20px;
             color: ${colors.textSecondary};
         }
@@ -335,7 +336,7 @@ export const onRequestGet = async (context: any) => {
         <nav class="breadcrumb">
             <a href="/">~</a>
             <span class="sep">/</span>
-            <a href="/">visitors_notes</a>
+            <a href="/?dir=visitors_notes">visitors_notes</a>
             <span class="sep">/</span>
             <span class="current">${filename}</span>
         </nav>

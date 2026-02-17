@@ -144,6 +144,14 @@ export const useTerminal = () => {
             if (command) {
                 execute(command, true);
             }
+            // Auto-cd if ?dir= query parameter is present
+            const params = new URLSearchParams(window.location.search);
+            const dir = params.get('dir');
+            if (dir) {
+                execute(`cd ${dir}`, true);
+                // Clean the URL
+                window.history.replaceState({}, '', '/');
+            }
             setInitialized(true);
         }
 

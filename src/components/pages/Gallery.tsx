@@ -158,17 +158,17 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
 
     // Swipe Hint Logic
     const [showSwipeHint, setShowSwipeHint] = useState(false);
+    const hasShownHint = React.useRef(false);
 
     useEffect(() => {
-        if (activePhoto) {
+        if (activePhoto && !hasShownHint.current) {
             // Show hint only on touch devices (approximate check) or small screens
             if (window.matchMedia('(pointer: coarse)').matches || window.innerWidth < 768) {
                 setShowSwipeHint(true);
+                hasShownHint.current = true; // Mark as shown
                 const timer = setTimeout(() => setShowSwipeHint(false), 2500);
                 return () => clearTimeout(timer);
             }
-        } else {
-            setShowSwipeHint(false);
         }
     }, [activePhoto]);
 

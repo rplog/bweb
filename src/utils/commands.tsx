@@ -35,7 +35,10 @@ export const commands: Record<string, Command> = {
             const targetPath = args[0] || '.';
 
             // Special handling for visitors_notes
-            if (targetPath === 'visitors_notes' || (targetPath === '.' && currentPath[0] === 'visitors_notes')) {
+            const isVisitorsNotes = (path: string[]) => path[path.length - 1] === 'visitors_notes';
+            const targetIsVisitorsNotes = targetPath === 'visitors_notes' || targetPath.endsWith('/visitors_notes');
+
+            if (targetIsVisitorsNotes || (targetPath === '.' && isVisitorsNotes(currentPath))) {
                 try {
                     const response = await fetch('/api/notes');
                     if (!response.ok) throw new Error('Failed to fetch notes');
@@ -91,7 +94,8 @@ export const commands: Record<string, Command> = {
             if (args.length === 0) return 'cat: missing operand';
 
             const pathParts = args[0].split('/');
-            const isInVisitorsNotes = currentPath[0] === 'visitors_notes' || pathParts[0] === 'visitors_notes';
+            const isVisitorsNotesDir = (path: string[]) => path[path.length - 1] === 'visitors_notes';
+            const isInVisitorsNotes = isVisitorsNotesDir(currentPath) || pathParts.includes('visitors_notes');
 
             if (isInVisitorsNotes) {
                 const filename = pathParts[pathParts.length - 1];
@@ -129,11 +133,13 @@ export const commands: Record<string, Command> = {
             let filename = args[0];
             let isVisitorNote = false;
 
-            if (currentPath[0] === 'visitors_notes') {
+            const isVisitorsNotesDir = (path: string[]) => path[path.length - 1] === 'visitors_notes';
+
+            if (isVisitorsNotesDir(currentPath)) {
                 isVisitorNote = true;
-            } else if (filename.startsWith('visitors_notes/')) {
+            } else if (filename.includes('visitors_notes/')) {
                 isVisitorNote = true;
-                filename = filename.replace('visitors_notes/', '');
+                filename = filename.split('visitors_notes/')[1];
             }
 
             if (!isVisitorNote) {
@@ -339,7 +345,7 @@ export const commands: Record<string, Command> = {
             const filenameArg = args.length > 0 ? args[0] : undefined;
 
             const isVisitorNote = (name: string) => {
-                return currentPath[0] === 'visitors_notes' || name?.startsWith('visitors_notes/');
+                return currentPath[currentPath.length - 1] === 'visitors_notes' || name?.includes('visitors_notes/');
             };
 
             let loadFilename = filenameArg;
@@ -347,7 +353,7 @@ export const commands: Record<string, Command> = {
 
             if (loadFilename) {
                 if (isVisitorNote(loadFilename)) {
-                    const cleanName = loadFilename.replace('visitors_notes/', '');
+                    const cleanName = loadFilename.includes('visitors_notes/') ? loadFilename.split('visitors_notes/')[1] : loadFilename;
                     if (cleanName) {
                         try {
                             const res = await fetch(`/api/notes/${cleanName}`);
@@ -374,7 +380,7 @@ export const commands: Record<string, Command> = {
                             if (!loadFilename) return;
 
                             if (isVisitorNote(loadFilename)) {
-                                const cleanName = loadFilename.replace('visitors_notes/', '');
+                                const cleanName = loadFilename.includes('visitors_notes/') ? loadFilename.split('visitors_notes/')[1] : loadFilename;
                                 // Try Create first
                                 let res = await fetch('/api/notes', {
                                     method: 'POST',
@@ -405,11 +411,11 @@ export const commands: Record<string, Command> = {
                             let targetIsVisitor = false;
                             let cleanName = newFilename;
 
-                            if (currentPath[0] === 'visitors_notes') {
+                            if (currentPath[currentPath.length - 1] === 'visitors_notes') {
                                 targetIsVisitor = true;
-                            } else if (newFilename.startsWith('visitors_notes/')) {
+                            } else if (newFilename.includes('visitors_notes/')) {
                                 targetIsVisitor = true;
-                                cleanName = newFilename.replace('visitors_notes/', '');
+                                cleanName = newFilename.split('visitors_notes/')[1];
                             }
 
                             if (targetIsVisitor) {

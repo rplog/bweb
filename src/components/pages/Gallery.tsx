@@ -250,7 +250,7 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                                                     <img
                                                         src={album.cover[i]}
                                                         alt={`${album.title} cover ${i + 1}`}
-                                                        className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500 grayscale group-hover:grayscale-0"
+                                                        className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-200 grayscale group-hover:grayscale-0"
                                                         onError={(e) => {
                                                             e.currentTarget.style.opacity = '0';
                                                         }}
@@ -303,7 +303,7 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                                         <img
                                             src={photo}
                                             alt={`Photo ${i + 1}`}
-                                            className="w-full h-auto object-contain group-hover:scale-[1.02] transition-transform duration-500 grayscale group-hover:grayscale-0"
+                                            className="w-full h-auto object-contain group-hover:scale-[1.02] transition-transform duration-300 grayscale group-hover:grayscale-0"
                                             onError={(e) => {
                                                 e.currentTarget.style.display = 'none';
                                                 const parent = e.currentTarget.parentElement;

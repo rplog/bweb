@@ -168,10 +168,22 @@ export const useTerminal = () => {
                 // If the command returned active component (via context), we might not want to show output?
                 // But for "about", "gallery", etc, they return string '' or null usually.
                 if (result) {
-                    addToHistory(trimmed, result);
+                    // MASK PASSWORD IN HISTORY
+                    // If command is login, we want the history entry to be "login" or "login *****"
+                    // NOT the actual password
+                    let historyCommand = trimmed;
+                    if (cmdName === 'login' && args.length > 0) {
+                        historyCommand = 'login *********';
+                    }
+                    addToHistory(historyCommand, result);
                 }
             } catch (e) {
-                addToHistory(trimmed, `Error executing ${cmdName}: ${e}`);
+                // Also mask in error case
+                let historyCommand = trimmed;
+                if (cmdName === 'login' && args.length > 0) {
+                    historyCommand = 'login *********';
+                }
+                addToHistory(historyCommand, `Error executing ${cmdName}: ${e}`);
             }
         } else {
             addToHistory(trimmed, `${cmdName}: command not found`);

@@ -112,7 +112,7 @@ export const commands: Record<string, Command> = {
     },
     login: {
         description: 'Login as admin',
-        usage: 'login <password>',
+        usage: 'login [password]',
         execute: async (args, { user, setUser }) => {
             if (user === 'root') return 'Already logged in as root.';
             if (args.length === 0) return 'Usage: login <password>';

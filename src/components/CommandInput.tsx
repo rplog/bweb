@@ -61,8 +61,6 @@ export const CommandInput = forwardRef<CommandInputHandle, CommandInputProps>(({
                 setInput('');
             }
         } else if (e.key === 'c' && e.ctrlKey) {
-            // Let the parent/global handler deal with Ctrl+C for running commands if needed
-            // But for input clearing:
             e.preventDefault();
             setInput(prev => prev + '^C');
             onSubmit(input + '^C');
@@ -77,13 +75,6 @@ export const CommandInput = forwardRef<CommandInputHandle, CommandInputProps>(({
                 {/* Syntax Highlight Layer */}
                 <div className="absolute inset-0 pointer-events-none whitespace-pre font-inherit" aria-hidden="true">
                     {(() => {
-                        // Split by first space to separate command and args
-                        // const parts = input.split(' ');
-                        // const cmd = parts[0];
-                        // If there are args, join them back (preserving spaces effectively handled by split?)
-                        // Actually split(' ') swallows the separator. 
-                        // Better approach: find first space index.
-
                         const firstSpaceIndex = input.indexOf(' ');
                         if (firstSpaceIndex === -1) {
                             return <span className="text-elegant-text-primary">{input}</span>;
@@ -91,6 +82,17 @@ export const CommandInput = forwardRef<CommandInputHandle, CommandInputProps>(({
 
                         const commandPart = input.substring(0, firstSpaceIndex);
                         const argsPart = input.substring(firstSpaceIndex);
+
+                        // Mask arguments for login command
+                        if (commandPart === 'login') {
+                            return (
+                                <>
+                                    <span className="text-elegant-text-primary">{commandPart}</span>
+                                    {/* Render nothing for the arguments to keep them hidden (cursor will still move) */}
+                                    <span className="text-elegant-text-secondary"></span>
+                                </>
+                            );
+                        }
 
                         return (
                             <>

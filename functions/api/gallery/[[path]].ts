@@ -63,7 +63,11 @@ async function handleGet(context: EventContext<Env, any, any>) {
             if (filename.match(/\.(jpg|jpeg|png|webp|gif)$/i)) {
                 const url = `/api/gallery/${object.key}`;
                 albums[albumName].count++;
-                albums[albumName].photos.push(url);
+                albums[albumName].photos.push({
+                    url,
+                    caption: object.customMetadata?.caption || '',
+                    key: object.key
+                });
 
                 // Add metadata if cover needed or for grid
                 // For now, simple list. We could inject caption into URL or side-channel?

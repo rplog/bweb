@@ -388,23 +388,29 @@ export const commands: Record<string, Command> = {
                             }
 
                             if (targetIsVisitor) {
-                                let res = await fetch('/api/notes', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({
-                                        filename: cleanName,
-                                        content: newContent,
-                                        commit_msg: commitMsg,
-                                        author_name: authorName
-                                    })
-                                });
+                                // Check if file exists first to decide between POST (Create) and PUT (Update)
+                                const checkRes = await fetch(`/api/notes/${cleanName}`);
+                                const exists = checkRes.status === 200;
 
-                                if (res.status === 409) {
-                                    // File exists, try PUT (Update)
+                                let res;
+                                if (exists) {
+                                    // File exists, use PUT to update
                                     res = await fetch(`/api/notes/${cleanName}`, {
                                         method: 'PUT',
                                         headers: { 'Content-Type': 'application/json' },
                                         body: JSON.stringify({
+                                            content: newContent,
+                                            commit_msg: commitMsg,
+                                            author_name: authorName
+                                        })
+                                    });
+                                } else {
+                                    // File does not exist, use POST to create
+                                    res = await fetch('/api/notes', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({
+                                            filename: cleanName,
                                             content: newContent,
                                             commit_msg: commitMsg,
                                             author_name: authorName

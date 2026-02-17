@@ -529,13 +529,19 @@ export const onRequestGet = async (context: any) => {
         window.viewVersion = viewVersion;
 
         function copyContent() {
-            const text = contentEl.innerText;
-            navigator.clipboard.writeText(text).then(() => {
-                const btn = document.querySelector('.btn');
-                const originalText = btn.innerText;
+            var text;
+            if (currentViewedEdit) {
+                var idx = currentViewedEdit.index;
+                text = (idx === 0) ? latestContent : ((edits[idx - 1].previous_content != null) ? edits[idx - 1].previous_content : '');
+            } else {
+                text = latestContent;
+            }
+            navigator.clipboard.writeText(text).then(function() {
+                var btn = document.querySelector('.btn');
+                var originalText = btn.innerText;
                 btn.innerText = 'COPIED';
-                setTimeout(() => btn.innerText = originalText, 2000);
-            }).catch(err => {
+                setTimeout(function() { btn.innerText = originalText; }, 2000);
+            }).catch(function(err) {
                 console.error('Failed to copy: ', err);
             });
         }

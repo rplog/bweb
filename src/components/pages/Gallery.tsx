@@ -123,11 +123,20 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
 
     // Keyboard navigation
     useEffect(() => {
-        if (!activePhoto) return;
         const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === 'ArrowRight') handleNext();
-            if (e.key === 'ArrowLeft') handlePrev();
-            if (e.key === 'Escape') closePhoto();
+            if (e.key === 'Escape') {
+                if (activePhoto) {
+                    closePhoto();
+                } else if (activeAlbum) {
+                    closeAlbum();
+                } else {
+                    onExit();
+                }
+            }
+            if (activePhoto) {
+                if (e.key === 'ArrowRight') handleNext();
+                if (e.key === 'ArrowLeft') handlePrev();
+            }
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);

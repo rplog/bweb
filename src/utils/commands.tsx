@@ -229,17 +229,10 @@ export const commands: Record<string, Command> = {
 
                 return (
                     <div className="flex flex-col gap-4 font-mono text-sm">
-
-
-                        // ... inside inbox execute ...
-                        return (
-                        <div className="flex flex-col gap-4 font-mono text-sm">
-                            <div className="text-elegant-accent font-bold mb-2">Inbox ({messages.length})</div>
-                            {messages.map((msg: any) => (
-                                <InboxMessageItem key={msg.id} msg={msg} />
-                            ))}
-                        </div>
-                        );
+                        <div className="text-elegant-accent font-bold mb-2">Inbox ({messages.length})</div>
+                        {messages.map((msg: any) => (
+                            <InboxMessageItem key={msg.id} msg={msg} />
+                        ))}
                     </div>
                 );
             } catch (e: any) {

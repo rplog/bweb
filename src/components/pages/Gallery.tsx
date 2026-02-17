@@ -99,11 +99,8 @@ const AlbumCard: React.FC<{
                 <h3 className="text-lg font-bold text-elegant-text-primary mb-1 group-hover:text-elegant-accent transition-colors truncate">
                     {displayTitle}
                 </h3>
-                <p
-                    className={`text-sm text-elegant-text-muted truncate ${isAdmin ? 'cursor-pointer hover:text-elegant-accent transition-colors' : ''}`}
-                    onClick={(e) => { if (isAdmin) { e.stopPropagation(); onEditAlbum(album); } }}
-                >
-                    {album.category}{isAdmin && <Edit2 size={10} className="inline ml-1.5 opacity-0 group-hover:opacity-50" />}
+                <p className="text-sm text-elegant-text-muted truncate">
+                    {album.category}
                 </p>
             </div>
             {isAdmin && (
@@ -988,7 +985,7 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                 {/* Prompt Modal */}
                 {promptConfig && (
                     <div className="fixed inset-0 z-[60] bg-black/80 flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
-                        <div className="bg-elegant-card border border-elegant-border p-6 rounded-lg max-w-sm w-full shadow-2xl">
+                        <div className="bg-elegant-card border border-elegant-border p-4 rounded-lg max-w-sm w-full shadow-2xl">
                             <h3 className="text-lg font-bold text-elegant-text-primary mb-4">{promptConfig.title}</h3>
                             <input
                                 autoFocus
@@ -1014,7 +1011,7 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                 {/* Edit Album Modal */}
                 {editAlbumConfig && (
                     <div className="fixed inset-0 z-[60] bg-black/80 flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
-                        <div className="bg-elegant-card border border-elegant-border p-5 rounded-lg max-w-sm w-full shadow-2xl">
+                        <div className="bg-elegant-card border border-elegant-border p-4 rounded-lg max-w-sm w-full shadow-2xl">
                             <h3 className="text-lg font-bold text-elegant-text-primary mb-4">Edit Album</h3>
                             <div className="space-y-4">
                                 <div>
@@ -1058,7 +1055,7 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                 {/* Confirm Modal */}
                 {confirmConfig && (
                     <div className="fixed inset-0 z-[60] bg-black/80 flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
-                        <div className="bg-elegant-card border border-elegant-border p-6 rounded-lg max-w-sm w-full shadow-2xl">
+                        <div className="bg-elegant-card border border-elegant-border p-4 rounded-lg max-w-sm w-full shadow-2xl">
                             <h3 className="text-lg font-bold text-elegant-text-primary mb-2">{confirmConfig.title}</h3>
                             <p className="text-elegant-text-muted mb-6">{confirmConfig.message}</p>
                             <div className="flex justify-end gap-3">
@@ -1088,7 +1085,7 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                 {/* Upload Modal */}
                 {showUploadModal && (
                     <div className="fixed inset-0 z-[60] bg-black/90 flex items-center justify-center p-4 backdrop-blur-sm">
-                        <div className="bg-elegant-card border border-elegant-border rounded-lg max-w-lg w-full p-6 shadow-2xl relative">
+                        <div className="bg-elegant-card border border-elegant-border rounded-lg max-w-lg w-full p-4 shadow-2xl relative">
                             <button onClick={() => { setShowUploadModal(false); resetUploadForm(); }} className="absolute top-4 right-4 text-elegant-text-muted hover:text-white">
                                 <X size={20} />
                             </button>

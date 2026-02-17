@@ -25,3 +25,16 @@ CREATE TABLE note_edits (
   author_name TEXT,
   FOREIGN KEY(note_id) REFERENCES notes(id)
 );
+
+
+CREATE TABLE IF NOT EXISTS messages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    email TEXT NOT NULL,
+    message TEXT NOT NULL,
+    ip TEXT,
+    user_agent TEXT,
+    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+    read BOOLEAN DEFAULT 0
+);
+

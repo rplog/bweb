@@ -119,6 +119,18 @@ export const onRequestGet = async (context: any) => {
             gap: 10px;
         }
 
+        .status-banner button {
+            background: rgba(0,0,0,0.2);
+            border: none;
+            color: inherit;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-family: inherit;
+            font-weight: bold;
+        }
+        .status-banner button:hover { background: rgba(0,0,0,0.4); }
+        
         /* Button */
         .btn {
             background: transparent;

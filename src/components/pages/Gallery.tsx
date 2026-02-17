@@ -145,7 +145,6 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
     const [isAlbumDropdownOpen, setIsAlbumDropdownOpen] = useState(false);
     const albumDropdownRef = useRef<HTMLDivElement>(null);
     const [isProcessing, setIsProcessing] = useState(false);
-    const [fabOpen, setFabOpen] = useState(false);
     const [uploadProgress, setUploadProgress] = useState<{
         current: number;
         total: number;
@@ -700,32 +699,70 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                 <PageHeader currentPath="gallery" onNavigate={handleNavigate} className="sticky top-0 z-30" maxWidth="max-w-7xl" />
 
                 <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
-                    {/* Breadcrumbs */}
-                    <div className="mb-8 text-base font-semibold text-elegant-text-muted flex items-center gap-2 flex-wrap">
-                        <button onClick={() => onExit()} className="hover:text-elegant-text-primary transition-colors hover:underline decoration-elegant-text-muted underline-offset-4">~</button>
-                        <span>/</span>
-                        <span
-                            className={activeAlbum ? "hover:text-elegant-text-primary transition-colors cursor-pointer hover:underline decoration-elegant-text-muted underline-offset-4" : "text-elegant-text-primary font-bold"}
-                            onClick={() => { if (activeAlbum) closeAlbum(); }}
-                        >gallery</span>
-                        {activeAlbum && breadcrumbSegments.map((segment, idx) => {
-                            const isLast = idx === breadcrumbSegments.length - 1 && !activePhoto;
-                            const isClickable = !isLast;
-                            return (
-                                <React.Fragment key={idx}>
+                    {/* Breadcrumbs + Mobile Admin Actions */}
+                    <div className="mb-8 flex items-center justify-between gap-4">
+                        <div className="text-base font-semibold text-elegant-text-muted flex items-center gap-2 flex-wrap min-w-0">
+                            <button onClick={() => onExit()} className="hover:text-elegant-text-primary transition-colors hover:underline decoration-elegant-text-muted underline-offset-4">~</button>
+                            <span>/</span>
+                            <span
+                                className={activeAlbum ? "hover:text-elegant-text-primary transition-colors cursor-pointer hover:underline decoration-elegant-text-muted underline-offset-4" : "text-elegant-text-primary font-bold"}
+                                onClick={() => { if (activeAlbum) closeAlbum(); }}
+                            >gallery</span>
+                            {activeAlbum && breadcrumbSegments.map((segment, idx) => {
+                                const isLast = idx === breadcrumbSegments.length - 1 && !activePhoto;
+                                const isClickable = !isLast;
+                                return (
+                                    <React.Fragment key={idx}>
+                                        <span>/</span>
+                                        <span
+                                            className={isLast ? "text-elegant-accent font-bold" : "hover:text-elegant-text-primary transition-colors cursor-pointer hover:underline decoration-elegant-text-muted underline-offset-4"}
+                                            onClick={() => { if (isClickable) { if (activePhoto) { closePhoto(); } else { navigateToBreadcrumb(idx); } } }}
+                                        >{segment.toLowerCase()}</span>
+                                    </React.Fragment>
+                                );
+                            })}
+                            {activePhoto && (
+                                <>
                                     <span>/</span>
-                                    <span
-                                        className={isLast ? "text-elegant-accent font-bold" : "hover:text-elegant-text-primary transition-colors cursor-pointer hover:underline decoration-elegant-text-muted underline-offset-4"}
-                                        onClick={() => { if (isClickable) { if (activePhoto) { closePhoto(); } else { navigateToBreadcrumb(idx); } } }}
-                                    >{segment.toLowerCase()}</span>
-                                </React.Fragment>
-                            );
-                        })}
-                        {activePhoto && (
-                            <>
-                                <span>/</span>
-                                <span className="text-elegant-accent font-bold">{activePhoto.key.split('/').pop()}</span>
-                            </>
+                                    <span className="text-elegant-accent font-bold">{activePhoto.key.split('/').pop()}</span>
+                                </>
+                            )}
+                        </div>
+                        {/* Mobile admin buttons — inline in top bar */}
+                        {isAdmin && !activePhoto && (
+                            <div className="flex gap-2 flex-shrink-0 md:hidden">
+                                <Tooltip text="New Album">
+                                    <button
+                                        onClick={() => {
+                                            showPrompt(
+                                                activeAlbumTitle ? `Create New Album in ${activeAlbumTitle.split('/').pop()}` : 'Create New Album',
+                                                '',
+                                                (name) => {
+                                                    if (name) {
+                                                        const finalName = activeAlbumTitle ? `${activeAlbumTitle}/${name}` : name;
+                                                        setUploadAlbumName(finalName);
+                                                        setShowUploadModal(true);
+                                                    }
+                                                }
+                                            );
+                                        }}
+                                        className="p-2 bg-elegant-card border border-elegant-border text-elegant-text-primary rounded-lg transition-all active:scale-95"
+                                    >
+                                        <FolderPlus size={18} />
+                                    </button>
+                                </Tooltip>
+                                <Tooltip text="Upload Photos">
+                                    <button
+                                        onClick={() => {
+                                            if (activeAlbumTitle) setUploadAlbumName(activeAlbumTitle);
+                                            setShowUploadModal(true);
+                                        }}
+                                        className="p-2 bg-elegant-card border border-elegant-border text-elegant-text-primary rounded-lg transition-all active:scale-95"
+                                    >
+                                        <ImagePlus size={18} />
+                                    </button>
+                                </Tooltip>
+                            </div>
                         )}
                     </div>
 
@@ -944,70 +981,41 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                     </div>
                 )}
 
-                {/* Admin FABs */}
+                {/* Desktop-only Admin FABs */}
                 {isAdmin && !activePhoto && (
-                    <>
-                        {/* Backdrop to close FAB on mobile */}
-                        {fabOpen && (
-                            <div className="fixed inset-0 z-30 md:hidden" onClick={() => setFabOpen(false)} />
-                        )}
-
-                        <div className="fixed bottom-24 right-0 z-40 flex flex-col items-end gap-3 pr-4">
-                            {/* Action buttons — mobile: toggle, desktop: tuck+hover */}
-                            <div className={`flex flex-col gap-3 transition-all duration-300 origin-bottom
-                                ${fabOpen ? 'scale-100 opacity-100' : 'scale-0 opacity-0 pointer-events-none'}
-                                md:group-hover/fab:scale-100 md:group-hover/fab:opacity-100 md:group-hover/fab:pointer-events-auto
-                            `}>
-                                <Tooltip text="New Album" position="left">
-                                    <button
-                                        onClick={() => {
-                                            setFabOpen(false);
-                                            showPrompt(
-                                                activeAlbumTitle ? `Create New Album in ${activeAlbumTitle.split('/').pop()}` : 'Create New Album',
-                                                '',
-                                                (name) => {
-                                                    if (name) {
-                                                        const finalName = activeAlbumTitle ? `${activeAlbumTitle}/${name}` : name;
-                                                        setUploadAlbumName(finalName);
-                                                        setShowUploadModal(true);
-                                                    }
-                                                }
-                                            );
-                                        }}
-                                        className="p-3.5 bg-elegant-card border border-elegant-border text-elegant-text-primary rounded-full shadow-lg transition-all duration-300 hover:bg-elegant-accent hover:text-white hover:border-elegant-accent active:scale-95"
-                                    >
-                                        <FolderPlus size={20} />
-                                    </button>
-                                </Tooltip>
-                                <Tooltip text="Upload Photos" position="left">
-                                    <button
-                                        onClick={() => {
-                                            setFabOpen(false);
-                                            if (activeAlbumTitle) setUploadAlbumName(activeAlbumTitle);
-                                            setShowUploadModal(true);
-                                        }}
-                                        className="p-3.5 bg-elegant-card border border-elegant-border text-elegant-text-primary rounded-full shadow-lg transition-all duration-300 hover:bg-elegant-accent hover:text-white hover:border-elegant-accent active:scale-95"
-                                    >
-                                        <ImagePlus size={20} />
-                                    </button>
-                                </Tooltip>
-                            </div>
-
-                            {/* Toggle button — visible on mobile, tuck trigger on desktop */}
+                    <div className="fixed bottom-24 right-8 hidden md:flex flex-col gap-4 z-40">
+                        <Tooltip text="New Album" position="left">
                             <button
-                                onClick={() => setFabOpen(prev => !prev)}
-                                className={`p-4 rounded-full shadow-lg transition-all duration-300 active:scale-95
-                                    ${fabOpen
-                                        ? 'bg-elegant-text-muted text-elegant-bg rotate-45'
-                                        : 'bg-elegant-accent text-white'
-                                    }
-                                    md:translate-x-[calc(100%+16px-16px)] md:hover:translate-x-0
-                                `}
+                                onClick={() => {
+                                    showPrompt(
+                                        activeAlbumTitle ? `Create New Album in ${activeAlbumTitle.split('/').pop()}` : 'Create New Album',
+                                        '',
+                                        (name) => {
+                                            if (name) {
+                                                const finalName = activeAlbumTitle ? `${activeAlbumTitle}/${name}` : name;
+                                                setUploadAlbumName(finalName);
+                                                setShowUploadModal(true);
+                                            }
+                                        }
+                                    );
+                                }}
+                                className="p-4 bg-elegant-card border border-elegant-border text-elegant-text-primary rounded-full shadow-lg transition-all duration-300 hover:bg-elegant-accent hover:text-white hover:border-elegant-accent hover:scale-110 hover:shadow-elegant-accent/20 hover:shadow-xl active:scale-95"
+                            >
+                                <FolderPlus size={24} />
+                            </button>
+                        </Tooltip>
+                        <Tooltip text="Upload Photos" position="left">
+                            <button
+                                onClick={() => {
+                                    if (activeAlbumTitle) setUploadAlbumName(activeAlbumTitle);
+                                    setShowUploadModal(true);
+                                }}
+                                className="p-4 bg-elegant-card border border-elegant-border text-elegant-text-primary rounded-full shadow-lg transition-all duration-300 hover:bg-elegant-accent hover:text-white hover:border-elegant-accent hover:scale-110 hover:rotate-90 hover:shadow-elegant-accent/20 hover:shadow-xl active:scale-95"
                             >
                                 <Plus size={24} />
                             </button>
-                        </div>
-                    </>
+                        </Tooltip>
+                    </div>
                 )}
 
                 {/* --- CUSTOM MODALS --- */}

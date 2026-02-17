@@ -23,7 +23,7 @@ export const Terminal: React.FC = () => {
     useEffect(() => {
         // Scroll to the latest command's start to keep it visible, especially on mobile
         if (lastItemRef.current) {
-            lastItemRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            lastItemRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         } else {
             bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
         }

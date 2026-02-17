@@ -18,9 +18,15 @@ export const Terminal: React.FC = () => {
 
     const bottomRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<CommandInputHandle>(null);
+    const lastItemRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+        // Scroll to the latest command's start to keep it visible, especially on mobile
+        if (lastItemRef.current) {
+            lastItemRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } else {
+            bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+        }
     }, [history]);
 
     // Refocus input when activeComponent closes (e.g. exiting htop/nano)
@@ -75,7 +81,7 @@ export const Terminal: React.FC = () => {
                     onClick={handleContainerClick}
                 >
                     <div className="max-w-5xl mx-auto">
-                        <OutputDisplay history={history} />
+                        <OutputDisplay history={history} lastItemRef={lastItemRef} />
                         {isInputVisible && (
                             <CommandInput
                                 ref={inputRef}

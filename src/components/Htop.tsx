@@ -196,70 +196,90 @@ export const Htop: React.FC<HtopProps> = ({ onExit }) => {
                 </div>
             </div>
 
-            {/* Table Header */}
-            <div className="bg-elegant-card text-elegant-text-primary font-bold flex px-1 py-0.5 flex-shrink-0 border-t border-b border-elegant-border">
-                <span className="w-16">PID</span>
-                <span className="w-20">USER</span>
-                <span className="w-10 text-right">PRI</span>
-                <span className="w-10 text-right">NI</span>
-                <span className="w-14 text-right">VIRT</span>
-                <span className="w-14 text-right">RES</span>
-                <span className="w-14 text-right">SHR</span>
-                <span className="w-8">S</span>
-                <span className="w-12 text-right">CPU%</span>
-                <span className="w-12 text-right">MEM%</span>
-                <span className="w-20">TIME+</span>
-                <span className="flex-1">Command</span>
-            </div>
+            {/* Scrollable Table Container */}
+            <div className="flex-1 overflow-auto border-t border-b border-elegant-border scrollbar-thin scrollbar-thumb-elegant-border scrollbar-track-transparent">
+                <div className="min-w-[600px] flex flex-col h-full"> {/* Ensure min-width for mobile scrolling */}
+                    {/* Table Header */}
+                    <div className="bg-elegant-card text-elegant-text-primary font-bold flex px-1 py-0.5 flex-shrink-0 sticky top-0 z-10">
+                        <span className="w-16">PID</span>
+                        <span className="w-20">USER</span>
+                        <span className="w-10 text-right">PRI</span>
+                        <span className="w-10 text-right">NI</span>
+                        <span className="w-14 text-right">VIRT</span>
+                        <span className="w-14 text-right">RES</span>
+                        <span className="w-14 text-right">SHR</span>
+                        <span className="w-8">S</span>
+                        <span className="w-12 text-right">CPU%</span>
+                        <span className="w-12 text-right">MEM%</span>
+                        <span className="w-20">TIME+</span>
+                        <span className="flex-1">Command</span>
+                    </div>
 
-            {/* Process List */}
-            <div ref={scrollRef} className="flex-1 overflow-y-auto space-y-0 scrollbar-thin scrollbar-thumb-elegant-border scrollbar-track-transparent">
-                {processes.map((p, idx) => {
-                    const isHighlighted = idx === selectedIndex;
-                    const isRunning = p.s === 'R';
-                    const userColor = p.user === 'root' ? 'text-red-400' : // Keeping red for root alert
-                        p.user.includes('systemd') ? 'text-elegant-accent' :
-                            p.user === 'x' ? 'text-elegant-text-primary' : 'text-elegant-text-secondary';
+                    {/* Process List */}
+                    <div ref={scrollRef} className="flex-1">
+                        {processes.map((p, idx) => {
+                            const isHighlighted = idx === selectedIndex;
+                            const isRunning = p.s === 'R';
+                            const userColor = p.user === 'root' ? 'text-red-400' : // Keeping red for root alert
+                                p.user.includes('systemd') ? 'text-elegant-accent' :
+                                    p.user === 'x' ? 'text-elegant-text-primary' : 'text-elegant-text-secondary';
 
-                    return (
-                        <div
-                            key={p.pid}
-                            className={`flex px-1 py-0 ${isHighlighted ? 'bg-elegant-accent text-elegant-bg font-bold' : ''} hover:bg-elegant-card cursor-pointer`}
-                        >
-                            <span className={`w-16 ${isHighlighted ? 'text-elegant-bg' : 'text-elegant-accent'}`}>{p.pid}</span>
-                            <span className={`w-20 ${isHighlighted ? 'text-elegant-bg' : userColor}`}>{p.user}</span>
-                            <span className="w-10 text-right">{p.pri}</span>
-                            <span className="w-10 text-right">{p.ni}</span>
-                            <span className="w-14 text-right">{p.virt}</span>
-                            <span className="w-14 text-right">{p.res}</span>
-                            <span className="w-14 text-right">{p.shr}</span>
-                            <span className={`w-8 ${isRunning && !isHighlighted ? 'text-elegant-accent font-bold' : ''}`}>{p.s}</span>
-                            <span className={`w-12 text-right ${isRunning && p.cpu > 1 && !isHighlighted ? 'text-elegant-accent' : ''}`}>
-                                {p.cpu.toFixed(1)}
-                            </span>
-                            <span className="w-12 text-right">{p.mem.toFixed(1)}</span>
-                            <span className="w-20">{p.time}</span>
-                            <span className={`flex-1 truncate ${isHighlighted ? 'text-elegant-bg' : 'text-elegant-text-primary'}`}>{p.cmd}</span>
-                        </div>
-                    );
-                })}
+                            return (
+                                <div
+                                    key={p.pid}
+                                    className={`flex px-1 py-0 ${isHighlighted ? 'bg-elegant-accent text-elegant-bg font-bold' : ''} hover:bg-elegant-card cursor-pointer`}
+                                    onClick={() => setSelectedIndex(idx)} // Allow clicking to select
+                                >
+                                    <span className={`w-16 ${isHighlighted ? 'text-elegant-bg' : 'text-elegant-accent'}`}>{p.pid}</span>
+                                    <span className={`w-20 ${isHighlighted ? 'text-elegant-bg' : userColor}`}>{p.user}</span>
+                                    <span className="w-10 text-right">{p.pri}</span>
+                                    <span className="w-10 text-right">{p.ni}</span>
+                                    <span className="w-14 text-right">{p.virt}</span>
+                                    <span className="w-14 text-right">{p.res}</span>
+                                    <span className="w-14 text-right">{p.shr}</span>
+                                    <span className={`w-8 ${isRunning && !isHighlighted ? 'text-elegant-accent font-bold' : ''}`}>{p.s}</span>
+                                    <span className={`w-12 text-right ${isRunning && p.cpu > 1 && !isHighlighted ? 'text-elegant-accent' : ''}`}>
+                                        {p.cpu.toFixed(1)}
+                                    </span>
+                                    <span className="w-12 text-right">{p.mem.toFixed(1)}</span>
+                                    <span className="w-20">{p.time}</span>
+                                    <span className={`flex-1 truncate ${isHighlighted ? 'text-elegant-bg' : 'text-elegant-text-primary'}`}>{p.cmd}</span>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
             </div>
 
             {/* Footer */}
             <div className="mt-2 flex gap-1 flex-wrap flex-shrink-0 border-t border-elegant-border pt-1">
-                <span className="bg-elegant-card text-elegant-text-primary px-1.5 py-0.5 text-xs">F1Help</span>
-                <span className="bg-elegant-card text-elegant-text-primary px-1.5 py-0.5 text-xs">F2Setup</span>
-                <span className="bg-elegant-card text-elegant-text-primary px-1.5 py-0.5 text-xs">F3Search</span>
-                <span className="bg-elegant-card text-elegant-text-primary px-1.5 py-0.5 text-xs">F4Filter</span>
-                <span className="bg-elegant-card text-elegant-text-primary px-1.5 py-0.5 text-xs">F5Tree</span>
-                <span className="bg-elegant-card text-elegant-text-primary px-1.5 py-0.5 text-xs">F6Sort</span>
-                <span className="bg-elegant-card text-elegant-text-primary px-1.5 py-0.5 text-xs">F7Nice-</span>
-                <span className="bg-elegant-card text-elegant-text-primary px-1.5 py-0.5 text-xs">F8Nice+</span>
-                <span className="bg-elegant-card text-elegant-text-primary px-1.5 py-0.5 text-xs">F9Kill</span>
-                <span className="bg-elegant-card text-elegant-text-primary px-1.5 py-0.5 text-xs">F10Quit</span>
-                <span className="ml-auto bg-elegant-accent text-elegant-bg px-2 py-0.5 text-xs font-bold animate-pulse">
+                {[
+                    { key: 'F1', label: 'Help' },
+                    { key: 'F2', label: 'Setup' },
+                    { key: 'F3', label: 'Search' },
+                    { key: 'F4', label: 'Filter' },
+                    { key: 'F5', label: 'Tree' },
+                    { key: 'F6', label: 'Sort' },
+                    { key: 'F7', label: 'Nice-' },
+                    { key: 'F8', label: 'Nice+' },
+                    { key: 'F9', label: 'Kill' },
+                    { key: 'F10', label: 'Quit', action: onExit }
+                ].map((btn) => (
+                    <button
+                        key={btn.key}
+                        onClick={btn.action}
+                        className="bg-elegant-card hover:bg-elegant-text-muted transition-colors text-elegant-text-primary px-1.5 py-0.5 text-xs cursor-pointer flex items-center"
+                    >
+                        <span className="font-bold mr-0.5">{btn.key}</span>{btn.label}
+                    </button>
+                ))}
+
+                <button
+                    onClick={onExit}
+                    className="ml-auto bg-elegant-accent hover:bg-elegant-text-primary text-elegant-bg px-2 py-0.5 text-xs font-bold animate-pulse cursor-pointer transition-colors"
+                >
                     Press 'Q' to quit
-                </span>
+                </button>
             </div>
         </div>
     );

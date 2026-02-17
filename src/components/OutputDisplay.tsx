@@ -4,13 +4,18 @@ import { Typewriter } from './Typewriter';
 
 interface OutputDisplayProps {
     history: TerminalOutput[];
+    lastItemRef?: React.Ref<HTMLDivElement>;
 }
 
-export const OutputDisplay: React.FC<OutputDisplayProps> = ({ history }) => {
+export const OutputDisplay: React.FC<OutputDisplayProps> = ({ history, lastItemRef }) => {
     return (
         <div className="flex flex-col space-y-2 mb-2">
-            {history.map((entry) => (
-                <div key={entry.id} className="mb-2">
+            {history.map((entry, index) => (
+                <div
+                    key={entry.id}
+                    className="mb-2"
+                    ref={index === history.length - 1 ? lastItemRef : null}
+                >
                     {entry.command && (
                         <div className="flex flex-wrap">
                             <span className="text-elegant-accent mr-2">neo@neosphere:{entry.path}$</span>

@@ -29,21 +29,25 @@ export const Nano: React.FC<NanoProps> = ({ filename: initialFilename, initialCo
         }
     }, [isPromptingSave]);
 
+    const handleSave = () => {
+        if (filename) {
+            onSave(content);
+            setMessage(`[ Wrote ${content.split('\n').length} lines ]`);
+            setTimeout(() => setMessage(''), 2000);
+        } else {
+            setIsPromptingSave(true);
+            setSavePromptValue('');
+            setMessage('File Name to Write: ');
+        }
+    };
+
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (isPromptingSave) return; // Handled by prompt input
 
         if (e.ctrlKey) {
             if (e.key === 'o') { // Save
                 e.preventDefault();
-                if (filename) {
-                    onSave(content);
-                    setMessage(`[ Wrote ${content.split('\n').length} lines ]`);
-                    setTimeout(() => setMessage(''), 2000);
-                } else {
-                    setIsPromptingSave(true);
-                    setSavePromptValue('');
-                    setMessage('File Name to Write: ');
-                }
+                handleSave();
             } else if (e.key === 'x') { // Exit
                 e.preventDefault();
                 // TODO: specific check for modified buffer?
@@ -114,15 +118,37 @@ export const Nano: React.FC<NanoProps> = ({ filename: initialFilename, initialCo
             </div>
 
             {/* Footer / Shortcuts */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 px-2 py-1 bg-elegant-bg text-elegant-text-primary">
-                <div><span className="bg-elegant-accent text-elegant-bg px-1 font-bold">^G</span> Get Help</div>
-                <div><span className="bg-elegant-accent text-elegant-bg px-1 font-bold">^O</span> Write Out</div>
-                <div><span className="bg-elegant-accent text-elegant-bg px-1 font-bold">^W</span> Where Is</div>
-                <div><span className="bg-elegant-accent text-elegant-bg px-1 font-bold">^K</span> Cut Text</div>
-                <div><span className="bg-elegant-accent text-elegant-bg px-1 font-bold">^X</span> Exit</div>
-                <div><span className="bg-elegant-accent text-elegant-bg px-1 font-bold">^R</span> Read File</div>
-                <div><span className="bg-elegant-accent text-elegant-bg px-1 font-bold">^\</span> Replace</div>
-                <div><span className="bg-elegant-accent text-elegant-bg px-1 font-bold">^U</span> Uncut Text</div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 px-2 py-1 bg-elegant-bg text-elegant-text-primary select-none">
+                <button className="text-left hover:bg-elegant-card transition-colors cursor-pointer rounded px-1">
+                    <span className="bg-elegant-accent text-elegant-bg px-1 font-bold mr-1">^G</span> Get Help
+                </button>
+                <button
+                    onClick={(e) => { e.preventDefault(); handleSave(); }}
+                    className="text-left hover:bg-elegant-card transition-colors cursor-pointer rounded px-1"
+                >
+                    <span className="bg-elegant-accent text-elegant-bg px-1 font-bold mr-1">^O</span> Write Out
+                </button>
+                <button className="text-left hover:bg-elegant-card transition-colors cursor-pointer rounded px-1">
+                    <span className="bg-elegant-accent text-elegant-bg px-1 font-bold mr-1">^W</span> Where Is
+                </button>
+                <button className="text-left hover:bg-elegant-card transition-colors cursor-pointer rounded px-1">
+                    <span className="bg-elegant-accent text-elegant-bg px-1 font-bold mr-1">^K</span> Cut Text
+                </button>
+                <button
+                    onClick={(e) => { e.preventDefault(); onExit(); }}
+                    className="text-left hover:bg-elegant-card transition-colors cursor-pointer rounded px-1"
+                >
+                    <span className="bg-elegant-accent text-elegant-bg px-1 font-bold mr-1">^X</span> Exit
+                </button>
+                <button className="text-left hover:bg-elegant-card transition-colors cursor-pointer rounded px-1">
+                    <span className="bg-elegant-accent text-elegant-bg px-1 font-bold mr-1">^R</span> Read File
+                </button>
+                <button className="text-left hover:bg-elegant-card transition-colors cursor-pointer rounded px-1">
+                    <span className="bg-elegant-accent text-elegant-bg px-1 font-bold mr-1">^\</span> Replace
+                </button>
+                <button className="text-left hover:bg-elegant-card transition-colors cursor-pointer rounded px-1">
+                    <span className="bg-elegant-accent text-elegant-bg px-1 font-bold mr-1">^U</span> Uncut Text
+                </button>
             </div>
         </div>
     );

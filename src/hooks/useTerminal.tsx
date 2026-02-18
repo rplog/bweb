@@ -27,6 +27,7 @@ export const useTerminal = () => {
     const [inputHistory, setInputHistory] = useState<string[]>([]);
 
     const [activeComponent, setActiveComponent] = useState<React.ReactNode | null>(null);
+    const activeComponentRef = React.useRef<React.ReactNode | null>(null);
     const [isInputVisible, setIsInputVisible] = useState(true);
     const [fileSystem, setFileSystem] = useState(initialFileSystem);
     const [initialized, setInitialized] = useState(false);
@@ -97,6 +98,7 @@ export const useTerminal = () => {
     // Wrapper to update URL when setting full screen
     const setFullScreenWithRoute = useCallback((component: React.ReactNode | null, path?: string) => {
         setActiveComponent(component);
+        activeComponentRef.current = component;
         if (path) {
             const currentPath = window.location.pathname;
             // Don't overwrite if current URL is already a sub-path (preserves deep links)
@@ -215,12 +217,17 @@ export const useTerminal = () => {
             const path = window.location.pathname;
             if (path === '/') {
                 setActiveComponent(null);
+                activeComponentRef.current = null;
             } else {
                 const command = ROUTES[path];
                 if (command) {
                     execute(command, true);
                 } else if (path.startsWith('/gallery')) {
-                    execute('gallery', true);
+                    // Only mount gallery if it isn't already active — Gallery
+                    // handles its own intra-gallery navigation via its own popstate listener.
+                    if (!activeComponentRef.current) {
+                        execute('gallery', true);
+                    }
                 }
             }
         };

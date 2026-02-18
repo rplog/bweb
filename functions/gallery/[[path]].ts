@@ -16,9 +16,11 @@ export const onRequest: PagesFunction<Env> = async (context) => {
 
     const key = Array.isArray(pathParts) ? pathParts.join('/') : pathParts;
 
-    // 1. Image file — serve raw from R2 only for non-navigation requests (e.g. <img> tags)
+    const isImage = IMAGE_EXT.test(key);
     const accept = request.headers.get('Accept') || '';
-    if (IMAGE_EXT.test(key) && !accept.includes('text/html')) {
+
+    // 1. Image file — serve raw from R2 only for non-navigation requests (e.g. <img> tags)
+    if (isImage && !accept.includes('text/html')) {
         const object = await env.neosphere_assets.get(key);
         if (!object) return context.next();
 
@@ -26,6 +28,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
         object.writeHttpMetadata(headers);
         headers.set('etag', object.httpEtag);
         headers.set('Cache-Control', 'public, max-age=31536000, immutable');
+        headers.set('Vary', 'Accept');
 
         if (object.customMetadata?.caption) {
             headers.set('X-Custom-Caption', object.customMetadata.caption);
@@ -34,7 +37,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
         return new Response(object.body, { headers });
     }
 
-    // 2. Bot User-Agent on non-image path — return HTML with OG tags
+    // 2. Bot User-Agent — return HTML with OG tags
     const ua = request.headers.get('User-Agent') || '';
     if (BOT_UA.test(ua)) {
         try {
@@ -73,5 +76,13 @@ export const onRequest: PagesFunction<Env> = async (context) => {
     }
 
     // 3. Regular browser — fall through to SPA
+    // For image-extension URLs navigated to as pages, add Vary: Accept so
+    // CDN/browser caches keep the HTML and raw-image responses separate.
+    if (isImage) {
+        const response = await context.next();
+        const varied = new Response(response.body, response);
+        varied.headers.set('Vary', 'Accept');
+        return varied;
+    }
     return context.next();
 };

@@ -18,7 +18,7 @@ export const OutputDisplay: React.FC<OutputDisplayProps> = ({ history, lastItemR
                 >
                     {entry.command && (
                         <div className="flex flex-wrap">
-                            <span className="text-elegant-accent mr-2">neo@neosphere:{entry.path}$</span>
+                            <span className="text-elegant-accent mr-2">{entry.user}@neosphere:{entry.path}$</span>
                             <span className="whitespace-pre-wrap break-all">
                                 {(() => {
                                     const parts = entry.command.split(' ');

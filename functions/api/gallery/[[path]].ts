@@ -67,7 +67,7 @@ async function handleGet(context: EventContext<Env, any, any>) {
                     albums[albumPath] = { title: albumPath, count: 0, cover: [], photos: [], category: 'Gallery' };
                 }
 
-                const url = `/gallery/${object.key}`;
+                const url = `/r2/${object.key}`;
                 albums[albumPath].photos.push({
                     url,
                     key: object.key,

@@ -10,6 +10,7 @@ export interface TerminalOutput {
     command: string;
     response: string | React.ReactNode;
     path: string;
+    user: string;
 }
 
 export type CommandHandler = (args: string[]) => string | React.ReactNode;
@@ -21,6 +22,7 @@ export const useTerminal = () => {
             command: '',
             response: 'Welcome to Neosphere v2.0. Type "help" to start. (Tab to autocomplete)',
             path: '~',
+            user: 'neo',
         },
     ]);
     const [currentPath, setCurrentPath] = useState<string[]>(['home', 'neo']);
@@ -87,9 +89,10 @@ export const useTerminal = () => {
                 command,
                 response,
                 path: getPromptPath(),
+                user: user,
             },
         ]);
-    }, [getPromptPath]);
+    }, [getPromptPath, user]);
 
     const clearHistory = useCallback(() => {
         setHistory([]);
@@ -112,7 +115,7 @@ export const useTerminal = () => {
         }
     }, []);
 
-    const execute = async (commandStr: string, isInitialLoad = false) => {
+    const execute = useCallback(async (commandStr: string, isInitialLoad = false) => {
         const trimmed = commandStr.trim();
         if (!trimmed) {
             if (!isInitialLoad) addToHistory(trimmed, '');
@@ -190,7 +193,7 @@ export const useTerminal = () => {
         } else {
             addToHistory(trimmed, `${cmdName}: command not found`);
         }
-    };
+    }, [addToHistory, clearHistory, currentPath, fileSystem, setFullScreenWithRoute, user]);
 
     // Handle initial routing and popstate
     useEffect(() => {

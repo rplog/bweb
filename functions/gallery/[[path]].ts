@@ -16,28 +16,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
 
     const key = Array.isArray(pathParts) ? pathParts.join('/') : pathParts;
 
-    const isImage = IMAGE_EXT.test(key);
-    const accept = request.headers.get('Accept') || '';
-
-    // 1. Image file — serve raw from R2 only for non-navigation requests (e.g. <img> tags)
-    if (isImage && !accept.includes('text/html')) {
-        const object = await env.neosphere_assets.get(key);
-        if (!object) return context.next();
-
-        const headers = new Headers();
-        object.writeHttpMetadata(headers);
-        headers.set('etag', object.httpEtag);
-        headers.set('Cache-Control', 'public, max-age=31536000, immutable');
-        headers.set('Vary', 'Accept');
-
-        if (object.customMetadata?.caption) {
-            headers.set('X-Custom-Caption', object.customMetadata.caption);
-        }
-
-        return new Response(object.body, { headers });
-    }
-
-    // 2. Bot User-Agent — return HTML with OG tags
+    // Bot User-Agent — return HTML with OG tags for social sharing
     const ua = request.headers.get('User-Agent') || '';
     if (BOT_UA.test(ua)) {
         try {
@@ -52,7 +31,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
             let coverUrl = '';
             for (const obj of listing.objects) {
                 if (IMAGE_EXT.test(obj.key)) {
-                    coverUrl = new URL(`/gallery/${obj.key}`, request.url).href;
+                    coverUrl = new URL(`/r2/${obj.key}`, request.url).href;
                     break;
                 }
             }
@@ -75,14 +54,6 @@ export const onRequest: PagesFunction<Env> = async (context) => {
         }
     }
 
-    // 3. Regular browser — fall through to SPA
-    // For image-extension URLs navigated to as pages, add Vary: Accept so
-    // CDN/browser caches keep the HTML and raw-image responses separate.
-    if (isImage) {
-        const response = await context.next();
-        const varied = new Response(response.body, response);
-        varied.headers.set('Vary', 'Accept');
-        return varied;
-    }
+    // Regular browser — always fall through to SPA
     return context.next();
 };

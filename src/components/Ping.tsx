@@ -19,6 +19,13 @@ export const Ping: React.FC<PingProps> = ({ host, onComplete, count }) => {
     // Initial IP is null to prevent showing fake IP
     const [ip, setIp] = useState<string | null>(null);
 
+    // Refs for values used in effect loop
+    const isRunningRef = useRef(isRunning);
+    useEffect(() => { isRunningRef.current = isRunning; }, [isRunning]);
+
+    const ipRef = useRef(ip);
+    useEffect(() => { ipRef.current = ip; }, [ip]);
+
     // Validate hostname
     const isValidHost = useCallback((hostname: string): boolean => {
         if (!hostname || hostname.trim() === '') return false;
@@ -70,7 +77,7 @@ export const Ping: React.FC<PingProps> = ({ host, onComplete, count }) => {
         let mounted = true;
 
         const doPing = async () => {
-            if (!mounted || !isRunning) return;
+            if (!mounted || !isRunningRef.current) return;
 
             const currentSeq = seqRef.current++;
 
@@ -103,9 +110,9 @@ export const Ping: React.FC<PingProps> = ({ host, onComplete, count }) => {
 
                     const time = data.time ? data.time.toFixed(1) : actualTime.toFixed(1);
 
-                    let effectiveIp = ip;
+                    let effectiveIp = ipRef.current;
                     if (data.ip && data.ip !== 'unknown') {
-                        if (data.ip !== ip) {
+                        if (data.ip !== ipRef.current) {
                             setIp(data.ip);
                             effectiveIp = data.ip;
                         }
@@ -126,7 +133,7 @@ export const Ping: React.FC<PingProps> = ({ host, onComplete, count }) => {
                 }
 
                 // Schedule next ping
-                if (mounted && isRunning) {
+                if (mounted && isRunningRef.current) {
                     timeoutId = setTimeout(doPing, 1000);
                 }
             } catch (e: any) {
@@ -138,12 +145,12 @@ export const Ping: React.FC<PingProps> = ({ host, onComplete, count }) => {
                     errorMsg = `ping: ${host}: Name or service not known`;
                     setIsRunning(false);
                 } else if (e.message?.includes('Network') || e.message?.includes('Failed to fetch')) {
-                    errorMsg = `From ${ip || 'unknown'}: icmp_seq=${currentSeq} Destination Host Unreachable`;
+                    errorMsg = `From ${ipRef.current || 'unknown'}: icmp_seq=${currentSeq} Destination Host Unreachable`;
                 }
 
                 setLines(prev => [...prev, errorMsg]);
 
-                if (!e.message?.includes('DNS') && !e.message?.includes('ENOTFOUND') && mounted && isRunning) {
+                if (!e.message?.includes('DNS') && !e.message?.includes('ENOTFOUND') && mounted && isRunningRef.current) {
                     timeoutId = setTimeout(doPing, 1000);
                 } else {
                     finalizePing(false);
@@ -171,7 +178,7 @@ export const Ping: React.FC<PingProps> = ({ host, onComplete, count }) => {
             if (abortControllerRef.current) abortControllerRef.current.abort();
             window.removeEventListener('keydown', handleKeyDown);
         };
-    }, [host, isRunning, count, ip, isValidHost, finalizePing]);
+    }, [host, count, isValidHost, finalizePing]);
 
     return (
         <div className="text-elegant-text-primary">

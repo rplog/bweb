@@ -3,7 +3,8 @@
     "allow": [
       "Bash(git diff:*)",
       "Bash(git show:*)",
-      "Bash(git log:*)"
+      "Bash(git log:*)",
+      "Bash(git hash-object:*)"
     ]
   }
 }

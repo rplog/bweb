@@ -38,7 +38,7 @@ export const Terminal: React.FC = () => {
 
         // Also observe DOM mutations for components that update internally (e.g. Ping)
         const observer = new MutationObserver(scrollToBottom);
-        observer.observe(container, { childList: true, subtree: true, characterData: true });
+        observer.observe(container, { childList: true, subtree: true });
 
         return () => observer.disconnect();
     }, [history]);

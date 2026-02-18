@@ -476,7 +476,7 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                 const { key } = resBody;
 
                 uploadedPhotos.push({
-                    url: `/gallery/${key}`,
+                    url: `/r2/${key}`,
                     caption: uploadCaption,
                     key
                 });
@@ -661,7 +661,7 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                 const { newKey } = resBody;
                 setAlbums(prev => prev.map(a => {
                     if (a.title === activeAlbumTitle) {
-                        return { ...a, photos: a.photos.map(p => p.key === key ? { ...p, key: newKey, url: `/gallery/${newKey}` } : p) };
+                        return { ...a, photos: a.photos.map(p => p.key === key ? { ...p, key: newKey, url: `/r2/${newKey}` } : p) };
                     }
                     return a;
                 }));

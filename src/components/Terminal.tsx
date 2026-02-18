@@ -17,9 +17,7 @@ export const Terminal: React.FC = () => {
         user
     } = useTerminal();
 
-    const bottomRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<CommandInputHandle>(null);
-    const lastItemRef = useRef<HTMLDivElement>(null);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
 
     // Auto-scroll on ANY content change (handles Ping, Htop, etc. internal updates)
@@ -97,7 +95,7 @@ export const Terminal: React.FC = () => {
                     onClick={handleContainerClick}
                 >
                     <div className="max-w-5xl mx-auto">
-                        <OutputDisplay history={history} lastItemRef={lastItemRef} />
+                        <OutputDisplay history={history} />
                         {isInputVisible && (
                             <CommandInput
                                 ref={inputRef}
@@ -107,7 +105,6 @@ export const Terminal: React.FC = () => {
                                 inputHistory={inputHistory}
                                 onTabComplete={handleTabCompletion} />
                         )}
-                        <div ref={bottomRef} />
                     </div>
                 </div>
             </div>

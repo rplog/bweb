@@ -82,7 +82,10 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
     }, []);
 
     useEffect(() => {
-        fetch('/api/gallery')
+        const controller = new AbortController();
+        const signal = controller.signal;
+
+        fetch('/api/gallery', { signal })
             .then(async res => {
                 if (!res.ok) {
                     const err = await res.json();
@@ -91,6 +94,7 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                 return res.json();
             })
             .then((data: Album[]) => {
+                if (signal.aborted) return;
                 setAlbums(data);
                 setLoading(false);
 
@@ -98,23 +102,30 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                 if (path.startsWith('/gallery/')) {
                     const parts = path.split('/').slice(2).filter(Boolean);
                     if (parts.length >= 1) {
-                        const { album, photoFilename } = resolveNestedPath(parts, data);
-                        if (album) {
-                            setActiveAlbumTitle(album.title);
-                            if (photoFilename) {
-                                const foundPhoto = album.photos.find(p => p.key.toLowerCase().endsWith(photoFilename.toLowerCase()));
-                                if (foundPhoto) {
-                                    setActivePhotoKey(foundPhoto.key);
+                        try {
+                            const { album, photoFilename } = resolveNestedPath(parts, data);
+                            if (album) {
+                                setActiveAlbumTitle(album.title);
+                                if (photoFilename) {
+                                    const foundPhoto = album.photos.find(p => p.key.toLowerCase().endsWith(photoFilename.toLowerCase()));
+                                    if (foundPhoto) {
+                                        setActivePhotoKey(foundPhoto.key);
+                                    }
                                 }
                             }
+                        } catch (e: unknown) {
+                            console.error('Deep link error:', e);
                         }
                     }
                 }
             })
             .catch(err => {
+                if (err.name === 'AbortError') return;
                 console.error("Failed to load gallery:", err);
                 setLoading(false);
             });
+
+        return () => controller.abort();
     }, []);
 
     // Popstate handling

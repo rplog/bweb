@@ -105,12 +105,7 @@ export const Lightbox: React.FC<LightboxProps> = ({ activePhoto, onClose, onNext
                             <Hand size={24} className="animate-swipe-hint" />
                             <span className="text-sm font-medium">Swipe to navigate</span>
                         </div>
-                        <style>{`
-                            @keyframes swipe-hint { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-10px); } 75% { transform: translateX(10px); } }
-                            .animate-swipe-hint { animation: swipe-hint 1.5s ease-in-out infinite; }
-                            @keyframes fade-out { 0% { opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; } }
-                            .animate-fade-out { animation: fade-out 3s forwards; }
-                        `}</style>
+
                     </div>
                 )}
             </div>

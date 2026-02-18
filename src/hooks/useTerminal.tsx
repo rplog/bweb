@@ -1,120 +1,21 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { commands } from '../utils/commands';
-import { initialFileSystem, type FileSystemNode } from '../utils/fileSystem';
 import { resolvePath, resolvePathArray } from '../utils/fileSystemUtils';
 import { ROUTES } from '../utils/routes';
-import React from 'react';
+import { useCommandHistory, type TerminalOutput } from './terminal/useCommandHistory';
+import { useFileSystem } from './terminal/useFileSystem';
+import { useTerminalUser } from './terminal/useTerminalUser';
+import { useRouting } from './terminal/useRouting';
 
-export interface TerminalOutput {
-    id: string;
-    command: string;
-    response: string | React.ReactNode;
-    path: string;
-    user: string;
-}
-
-export type CommandHandler = (args: string[]) => string | React.ReactNode;
+export type { TerminalOutput };
 
 export const useTerminal = () => {
-    const [history, setHistory] = useState<TerminalOutput[]>([
-        {
-            id: 'welcome',
-            command: '',
-            response: 'Welcome to Neosphere v2.0. Type "help" to start. (Tab to autocomplete)',
-            path: '~',
-            user: 'neo',
-        },
-    ]);
-    const [currentPath, setCurrentPath] = useState<string[]>(['home', 'neo']);
-    const [inputHistory, setInputHistory] = useState<string[]>([]);
+    const { user, setUser } = useTerminalUser();
+    const { fileSystem, setFileSystem, currentPath, setCurrentPath, getPromptPath } = useFileSystem();
+    const { history, addToHistory, clearHistory, inputHistory, setInputHistory } = useCommandHistory(user, getPromptPath);
+    const { activeComponent, activeComponentRef, isInputVisible, setIsInputVisible, setFullScreenWithRoute, setActiveComponent } = useRouting();
 
-    const [activeComponent, setActiveComponent] = useState<React.ReactNode | null>(null);
-    const activeComponentRef = React.useRef<React.ReactNode | null>(null);
-    const [isInputVisible, setIsInputVisible] = useState(true);
-    const [fileSystem, setFileSystem] = useState(initialFileSystem);
     const [initialized, setInitialized] = useState(false);
-    const [notesPreloaded, setNotesPreloaded] = useState(false);
-
-    // Background preload: fetch last 100 notes and populate fileSystem
-    useEffect(() => {
-        if (notesPreloaded) return;
-        fetch('/api/notes')
-            .then(res => res.ok ? res.json() : Promise.reject())
-            .then((notes: { filename: string; size?: number; updated_at?: number; author?: string }[]) => {
-                setFileSystem(prev => {
-                    const updated = structuredClone(prev);
-                    const visitorsDir = updated.home?.children?.neo?.children?.visitors_notes;
-                    if (visitorsDir) {
-                        const children: Record<string, FileSystemNode> = {};
-                        notes.forEach((note) => {
-                            children[note.filename] = {
-                                type: 'file',
-                                content: '',
-                                size: note.size || 0,
-                                lastModified: note.updated_at,
-                                author: note.author
-                            };
-                        });
-                        visitorsDir.children = children;
-                    }
-                    return updated;
-                });
-                setNotesPreloaded(true);
-            })
-            .catch(() => { /* silently fail, ls will still work via API fallback */ });
-    }, [notesPreloaded]);
-
-    const [user, setUser] = useState('neo');
-
-    // Check login status on mount
-    useEffect(() => {
-        const token = localStorage.getItem('admin_token');
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        if (token) setUser('root');
-    }, []);
-
-    const getPromptPath = useCallback(() => {
-        const pathStr = '/' + currentPath.join('/');
-        if (pathStr === '/home/neo') return '~';
-        if (pathStr.startsWith('/home/neo/')) {
-            return '~' + pathStr.substring('/home/neo'.length);
-        }
-        return pathStr;
-    }, [currentPath]);
-
-    const addToHistory = useCallback((command: string, response: string | React.ReactNode) => {
-        setHistory((prev) => [
-            ...prev,
-            {
-                id: Math.random().toString(36).substring(2, 11),
-                command,
-                response,
-                path: getPromptPath(),
-                user: user,
-            },
-        ]);
-    }, [getPromptPath, user]);
-
-    const clearHistory = useCallback(() => {
-        setHistory([]);
-    }, []);
-
-    // Wrapper to update URL when setting full screen
-    const setFullScreenWithRoute = useCallback((component: React.ReactNode | null, path?: string) => {
-        setActiveComponent(component);
-        activeComponentRef.current = component;
-        if (path) {
-            const currentPath = window.location.pathname;
-            // Don't overwrite if current URL is already a sub-path (preserves deep links)
-            if (currentPath !== path && !currentPath.startsWith(path + '/')) {
-                window.history.pushState({}, '', path);
-            }
-        } else if (component === null) {
-            if (window.location.pathname !== '/') {
-                window.history.pushState({}, '', '/');
-            }
-        }
-    }, []);
 
     const execute = useCallback(async (commandStr: string, isInitialLoad = false) => {
         const trimmed = commandStr.trim();
@@ -171,12 +72,8 @@ export const useTerminal = () => {
                 };
                 const result = await cmd.execute(args, context);
 
-                // If the command returned active component (via context), we might not want to show output?
-                // But for "about", "gallery", etc, they return string '' or null usually.
                 if (result) {
                     // MASK PASSWORD IN HISTORY
-                    // If command is login, we want the history entry to be "login" or "login *****"
-                    // NOT the actual password
                     let historyCommand = trimmed;
                     if (cmdName === 'login' && args.length > 0) {
                         historyCommand = 'login *********';
@@ -184,7 +81,6 @@ export const useTerminal = () => {
                     addToHistory(historyCommand, result);
                 }
             } catch (e: unknown) {
-                // Also mask in error case
                 let historyCommand = trimmed;
                 if (cmdName === 'login' && args.length > 0) {
                     historyCommand = 'login *********';
@@ -194,28 +90,34 @@ export const useTerminal = () => {
         } else {
             addToHistory(trimmed, `${cmdName}: command not found`);
         }
-    }, [addToHistory, clearHistory, currentPath, fileSystem, setFullScreenWithRoute, user]);
+    }, [addToHistory, clearHistory, currentPath, fileSystem, setFullScreenWithRoute, setInputHistory, setCurrentPath, setFileSystem, user, setUser, setIsInputVisible]);
 
     // Handle initial routing and popstate
     useEffect(() => {
         if (!initialized) {
-            const path = window.location.pathname;
-            const command = ROUTES[path];
-            if (command) {
-                // eslint-disable-next-line react-hooks/set-state-in-effect
-                execute(command, true);
-            } else if (path.startsWith('/gallery')) {
-                execute('gallery', true);
-            }
-            // Auto-cd if ?dir= query parameter is present
-            const params = new URLSearchParams(window.location.search);
-            const dir = params.get('dir');
-            if (dir) {
-                execute(`cd ${dir}`, true);
-                // Clean the URL
-                window.history.replaceState({}, '', '/');
-            }
-            setInitialized(true);
+            setTimeout(() => {
+                const path = window.location.pathname;
+                const command = ROUTES[path];
+                if (command) {
+                    execute(command, true);
+                } else if (path.startsWith('/gallery')) {
+                    execute('gallery', true);
+                } else if (path !== '/' && path !== '/index.html') {
+                    addToHistory(`access ${path}`, [
+                        `\x1b[31;1m404 ERROR: ROUTE NOT FOUND\x1b[0m`,
+                        `The requested path '${path}' does not exist in this sector.`,
+                        `Redirecting to safe harbor...`
+                    ].join('\n'));
+                    window.history.replaceState({}, '', '/');
+                }
+                const params = new URLSearchParams(window.location.search);
+                const dir = params.get('dir');
+                if (dir) {
+                    execute(`cd ${dir}`, true);
+                    window.history.replaceState({}, '', '/');
+                }
+                setInitialized(true);
+            }, 0);
         }
 
         const handlePopState = () => {
@@ -228,8 +130,6 @@ export const useTerminal = () => {
                 if (command) {
                     execute(command, true);
                 } else if (path.startsWith('/gallery')) {
-                    // Only mount gallery if it isn't already active — Gallery
-                    // handles its own intra-gallery navigation via its own popstate listener.
                     if (!activeComponentRef.current) {
                         execute('gallery', true);
                     }
@@ -239,7 +139,7 @@ export const useTerminal = () => {
 
         window.addEventListener('popstate', handlePopState);
         return () => window.removeEventListener('popstate', handlePopState);
-    }, [initialized, execute]); // dependencies should be stable
+    }, [initialized, execute, setActiveComponent, activeComponentRef, addToHistory]);
 
     const handleTabCompletion = (input: string): string => {
         if (!input) return '';
@@ -278,7 +178,7 @@ export const useTerminal = () => {
         addToHistory,
         setCurrentPath,
         getPromptPath,
-        execute: (cmd: string) => execute(cmd), // Simple wrapper
+        execute: (cmd: string) => execute(cmd),
         clearHistory,
         activeComponent,
         isInputVisible,

@@ -58,29 +58,9 @@ export const GalleryModals: React.FC<GalleryModalsProps> = ({
     return (
         <>
             {/* Prompt Modal */}
+            {/* Prompt Modal */}
             {promptConfig && (
-                <div className="fixed inset-0 z-[60] bg-black/80 flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
-                    <div className="bg-elegant-card border border-elegant-border p-4 rounded-lg max-w-sm w-full shadow-2xl">
-                        <h3 className="text-lg font-bold text-elegant-text-primary mb-4">{promptConfig.title}</h3>
-                        <input
-                            autoFocus
-                            defaultValue={promptConfig.defaultValue}
-                            className="w-full bg-elegant-bg border border-elegant-border rounded p-2 text-elegant-text-primary focus:border-elegant-accent outline-none mb-6"
-                            onKeyDown={(e) => {
-                                if (e.key === 'Enter') { promptConfig.onConfirm(e.currentTarget.value); setPromptConfig(null); }
-                                if (e.key === 'Escape') setPromptConfig(null);
-                            }}
-                            ref={(input) => { if (input) setTimeout(() => input.focus(), 10); }}
-                        />
-                        <div className="flex justify-end gap-3">
-                            <button onClick={() => setPromptConfig(null)} className="px-4 py-2 text-elegant-text-muted hover:text-elegant-text-primary">Cancel</button>
-                            <button
-                                onClick={(e) => { const input = e.currentTarget.parentElement?.previousElementSibling as HTMLInputElement; promptConfig.onConfirm(input.value); setPromptConfig(null); }}
-                                className="px-4 py-2 bg-elegant-accent text-white rounded hover:bg-elegant-accent/90"
-                            >Confirm</button>
-                        </div>
-                    </div>
-                </div>
+                <PromptModal config={promptConfig} onClose={() => setPromptConfig(null)} />
             )}
 
             {/* Edit Album Modal - Refactored to use controlled inputs */}
@@ -163,6 +143,37 @@ const EditAlbumModal: React.FC<{ config: EditAlbumConfig; onClose: () => void }>
                     >
                         Save Changes
                     </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// Internal component for Prompt (State)
+const PromptModal: React.FC<{ config: PromptConfig; onClose: () => void }> = ({ config, onClose }) => {
+    const [value, setValue] = useState(config.defaultValue);
+
+    return (
+        <div className="fixed inset-0 z-[60] bg-black/80 flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
+            <div className="bg-elegant-card border border-elegant-border p-4 rounded-lg max-w-sm w-full shadow-2xl">
+                <h3 className="text-lg font-bold text-elegant-text-primary mb-4">{config.title}</h3>
+                <input
+                    autoFocus
+                    value={value}
+                    onChange={(e) => setValue(e.target.value)}
+                    className="w-full bg-elegant-bg border border-elegant-border rounded p-2 text-elegant-text-primary focus:border-elegant-accent outline-none mb-6"
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter') { config.onConfirm(value); onClose(); }
+                        if (e.key === 'Escape') onClose();
+                    }}
+                    ref={(input) => { if (input) setTimeout(() => input.focus(), 10); }}
+                />
+                <div className="flex justify-end gap-3">
+                    <button onClick={onClose} className="px-4 py-2 text-elegant-text-muted hover:text-elegant-text-primary">Cancel</button>
+                    <button
+                        onClick={() => { config.onConfirm(value); onClose(); }}
+                        className="px-4 py-2 bg-elegant-accent text-white rounded hover:bg-elegant-accent/90"
+                    >Confirm</button>
                 </div>
             </div>
         </div>

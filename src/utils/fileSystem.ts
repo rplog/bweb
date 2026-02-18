@@ -9,6 +9,8 @@ export interface FileSystemNode {
   author?: string;
 }
 
+export type FileSystem = { [key: string]: FileSystemNode };
+
 export const initialFileSystem: { [key: string]: FileSystemNode } = {
   home: {
     type: 'directory',

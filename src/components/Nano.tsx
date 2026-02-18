@@ -134,7 +134,7 @@ export const Nano: React.FC<NanoProps> = ({ filename: initialFilename, initialCo
             <div className="bg-elegant-accent text-elegant-bg px-2 py-1 relative flex items-center justify-center font-bold">
                 <span className="absolute left-2">GNU nano 5.4</span>
                 <span>{filename || 'New Buffer'}</span>
-                <span className="absolute right-2">{isPromptingSave ? 'Modified' : ''}</span>
+                <span className="absolute right-2">{isModified ? 'Modified' : ''}</span>
             </div>
 
             {/* Editor Area */}

@@ -13,7 +13,7 @@ const MultiColorBar: React.FC<MultiColorBarProps> = ({ label, segments, showMem 
     const barWidth = showMem ? (showMem.used / showMem.total * 100) : sum;
 
     return (
-        <div className="flex items-center font-mono text-xs leading-tight">
+        <div className="flex items-center font-mono text-sm leading-tight">
             <span className={`w-6 ${label.includes('Mem') || label.includes('Swp') ? 'text-elegant-accent' : 'text-elegant-text-primary'} font-bold`}>
                 {label}
             </span>
@@ -71,8 +71,9 @@ export const Htop: React.FC<HtopProps> = ({ onExit }) => {
         [18, 7, 4, 2],  // CPU 3
     ]);
     const [mem, setMem] = useState({ used: 154, total: 416 }); // in MB
-    const [swp] = useState({ used: 101, total: 416 }); // in MB
-    const [tasks] = useState({ total: 63, threads: 109, running: 1 });
+    const [swp, setSwp] = useState({ used: 101, total: 416 }); // in MB
+    const [tasks, setTasks] = useState({ total: 63, threads: 109, running: 1 });
+    const [loadAvg, setLoadAvg] = useState([0.84, 0.45, 1.12]);
     const [uptime, setUptime] = useState(45 * 24 * 3600 + 10 * 3600 + 38 * 60 + 51); // 45 days
     const [selectedIndex, setSelectedIndex] = useState(0);
     const scrollRef = useRef<HTMLDivElement>(null);
@@ -152,6 +153,28 @@ export const Htop: React.FC<HtopProps> = ({ onExit }) => {
                 used: Math.max(100, Math.min(prev.total - 10, prev.used + (Math.random() * 4 - 2)))
             }));
 
+            // Jitter swap slightly
+            setSwp(prev => ({
+                ...prev,
+                used: Math.max(50, Math.min(prev.total - 10, prev.used + (Math.random() * 2 - 1)))
+            }));
+
+            // Randomly change running tasks count
+            setTasks(prev => {
+                const running = Math.max(1, Math.min(5, prev.running + (Math.random() > 0.8 ? (Math.random() > 0.5 ? 1 : -1) : 0)));
+                return {
+                    ...prev,
+                    running,
+                    total: 63 + (running - 1)
+                };
+            });
+
+            // Update load average (random walk)
+            setLoadAvg(prev => {
+                const update = (val: number, factor: number) => Math.max(0.1, val + (Math.random() * 0.2 - 0.1) / factor);
+                return [update(prev[0], 1), update(prev[1], 2), update(prev[2], 5)];
+            });
+
             setUptime(prev => prev + 1);
         }, 1000);
 
@@ -166,10 +189,10 @@ export const Htop: React.FC<HtopProps> = ({ onExit }) => {
         return `${days} days, ${hours}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     };
 
-    const loadAvg = [0.84, 0.45, 1.12];
+
 
     return (
-        <div className="w-full h-full bg-elegant-bg text-elegant-text-secondary font-mono text-xs select-none overflow-hidden flex flex-col p-2">
+        <div className="w-full h-full bg-elegant-bg text-elegant-text-secondary font-mono text-sm select-none overflow-hidden flex flex-col p-2">
             {/* Header Section */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 mb-2 flex-shrink-0">
                 <div className="space-y-0">
@@ -183,14 +206,14 @@ export const Htop: React.FC<HtopProps> = ({ onExit }) => {
                     <MultiColorBar label="Mem" segments={[mem.used]} showMem={mem} />
                     <MultiColorBar label="Swp" segments={[swp.used]} showMem={swp} />
                 </div>
-                <div className="space-y-0 text-xs flex flex-col justify-center">
+                <div className="space-y-0 text-sm flex flex-col justify-center">
                     <div className="text-elegant-text-muted">
                         Tasks: <span className="text-elegant-accent font-bold">{tasks.total}</span>,{' '}
                         <span className="text-elegant-text-primary font-bold">{tasks.threads}</span> thr;{' '}
                         <span className="text-elegant-text-primary font-bold">{tasks.running}</span> running
                     </div>
                     <div className="text-elegant-text-muted">
-                        Load average: <span className="text-elegant-accent font-bold">{loadAvg.join(' ')}</span>
+                        Load average: <span className="text-elegant-accent font-bold">{loadAvg.map(n => n.toFixed(2)).join(' ')}</span>
                     </div>
                     <div className="text-elegant-text-muted">
                         Uptime: <span className="text-elegant-accent font-bold">{formatUptime(uptime)}</span>
@@ -213,7 +236,7 @@ export const Htop: React.FC<HtopProps> = ({ onExit }) => {
                         <span className="w-8">S</span>
                         <span className="w-12 text-right">CPU%</span>
                         <span className="w-12 text-right">MEM%</span>
-                        <span className="w-20">TIME+</span>
+                        <span className="w-20 ml-2">TIME+</span>
                         <span className="flex-1">Command</span>
                     </div>
 
@@ -244,7 +267,7 @@ export const Htop: React.FC<HtopProps> = ({ onExit }) => {
                                         {p.cpu.toFixed(1)}
                                     </span>
                                     <span className="w-12 text-right">{p.mem.toFixed(1)}</span>
-                                    <span className="w-20">{p.time}</span>
+                                    <span className="w-20 ml-2">{p.time}</span>
                                     <span className={`flex-1 truncate ${isHighlighted ? 'text-elegant-bg' : 'text-elegant-text-primary'}`}>{p.cmd}</span>
                                 </div>
                             );

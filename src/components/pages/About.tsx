@@ -17,6 +17,7 @@ export const About: React.FC<AboutProps> = ({ onExit, onNavigate }) => {
     const handleNavigate = createNavigationHandler(onExit, onNavigate);
 
     const [showProfile, setShowProfile] = useState(false);
+    const [hasImageError, setHasImageError] = useState(false);
 
     return (
         <div className="h-full w-full bg-elegant-bg text-elegant-text-secondary font-mono selection:bg-elegant-accent/20 overflow-y-auto">
@@ -48,16 +49,16 @@ export const About: React.FC<AboutProps> = ({ onExit, onNavigate }) => {
                                         onClick={() => setShowProfile(true)}
                                     >
                                         <div className="w-full h-full rounded-full bg-elegant-bg flex items-center justify-center overflow-hidden">
-                                            <img
-                                                src="/assets/me.jpg"
-                                                alt="Profile"
-                                                className="w-full h-full object-cover"
-                                                onError={(e) => {
-                                                    e.currentTarget.style.display = 'none';
-                                                    const parent = e.currentTarget.parentElement!;
-                                                    parent.innerHTML = '<span class="text-4xl font-bold text-elegant-text-muted">N</span>';
-                                                }}
-                                            />
+                                            {!hasImageError ? (
+                                                <img
+                                                    src="/assets/me.jpg"
+                                                    alt="Profile"
+                                                    className="w-full h-full object-cover"
+                                                    onError={() => setHasImageError(true)}
+                                                />
+                                            ) : (
+                                                <span className="text-4xl font-bold text-elegant-text-muted">N</span>
+                                            )}
                                         </div>
                                     </div>
 

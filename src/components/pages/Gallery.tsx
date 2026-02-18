@@ -13,7 +13,10 @@ import { GalleryAdmin } from '../gallery/GalleryAdmin';
 import { GalleryModals } from '../gallery/GalleryModals';
 import type { PromptConfig, AlertConfig, EditAlbumConfig, ConfirmConfig } from '../gallery/GalleryModals';
 
-// Resolve a URL path like /gallery/Travel/Japan/photo.jpg into { album, photoFilename }
+const PHOTO_EXT = /\.(jpg|jpeg|png|webp|gif)$/i;
+
+// Resolve a URL path like /gallery/Travel/Japan/nicephoto into { album, photoFilename }
+// photoFilename will be extensionless (as it appears in the URL bar)
 const resolveNestedPath = (parts: string[], albums: Album[]): { album: Album | null; photoFilename: string | null } => {
     // Try progressively longer album paths: "Travel", "Travel/Japan", "Travel/Japan/Tokyo", etc.
     for (let i = parts.length; i >= 1; i--) {
@@ -107,7 +110,10 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                             if (album) {
                                 setActiveAlbumTitle(album.title);
                                 if (photoFilename) {
-                                    const foundPhoto = album.photos.find(p => p.key.toLowerCase().endsWith(photoFilename.toLowerCase()));
+                                    const foundPhoto = album.photos.find(p => {
+                                        const basename = (p.key.split('/').pop() || '').replace(PHOTO_EXT, '');
+                                        return basename.toLowerCase() === photoFilename.toLowerCase();
+                                    });
                                     if (foundPhoto) {
                                         setActivePhotoKey(foundPhoto.key);
                                     }
@@ -141,7 +147,10 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                 if (album) {
                     setActiveAlbumTitle(album.title);
                     if (photoFilename) {
-                        const foundPhoto = album.photos.find(p => p.key.toLowerCase().endsWith(photoFilename.toLowerCase()));
+                        const foundPhoto = album.photos.find(p => {
+                            const basename = (p.key.split('/').pop() || '').replace(PHOTO_EXT, '');
+                            return basename.toLowerCase() === photoFilename.toLowerCase();
+                        });
                         setActivePhotoKey(foundPhoto ? foundPhoto.key : null);
                     } else {
                         setActivePhotoKey(null);
@@ -177,7 +186,12 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
 
     const buildPhotoUrl = useCallback((photo: Photo) => {
         const parts = photo.key.split('/');
-        return `/gallery/${parts.map(p => encodeURIComponent(p)).join('/')}`;
+        const encoded = parts.map((p, i) =>
+            i === parts.length - 1
+                ? encodeURIComponent(p.replace(PHOTO_EXT, ''))
+                : encodeURIComponent(p)
+        );
+        return `/gallery/${encoded.join('/')}`;
     }, []);
 
     const openPhoto = useCallback((photo: Photo, replace = false) => {
@@ -334,7 +348,7 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                 const { key } = resBody;
 
                 uploadedPhotos.push({
-                    url: `/r2/${key}`,
+                    url: `/gallery/${key}`,
                     caption: uploadCaption,
                     key
                 });
@@ -529,14 +543,14 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                 const { newKey } = resBody;
                 setAlbums(prev => prev.map(a => {
                     if (a.title === activeAlbumTitle) {
-                        return { ...a, photos: a.photos.map(p => p.key === key ? { ...p, key: newKey, url: `/r2/${newKey}` } : p) };
+                        return { ...a, photos: a.photos.map(p => p.key === key ? { ...p, key: newKey, url: `/gallery/${newKey}` } : p) };
                     }
                     return a;
                 }));
                 if (activePhotoKey === key) {
                     setActivePhotoKey(newKey ?? null);
                     if (activeAlbumTitle) {
-                        window.history.replaceState({}, '', `/gallery/${encodeAlbumPath(activeAlbumTitle)}/${encodeURIComponent(newName)}`);
+                        window.history.replaceState({}, '', `/gallery/${encodeAlbumPath(activeAlbumTitle)}/${encodeURIComponent(newName.replace(PHOTO_EXT, ''))}`);
                     }
                 }
             } catch (err: unknown) {
@@ -625,7 +639,7 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                             {activePhoto && (
                                 <>
                                     <span>/</span>
-                                    <span className="text-elegant-accent font-bold">{activePhoto.key.split('/').pop()}</span>
+                                    <span className="text-elegant-accent font-bold">{(activePhoto.key.split('/').pop() || '').replace(PHOTO_EXT, '')}</span>
                                 </>
                             )}
                         </div>

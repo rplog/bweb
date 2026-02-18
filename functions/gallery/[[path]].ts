@@ -5,6 +5,8 @@ interface Env {
 
 const IMAGE_EXT = /\.(jpg|jpeg|png|webp|gif)$/i;
 
+const encodeKey = (k: string) => k.split('/').map(s => encodeURIComponent(s)).join('/');
+
 export const onRequest: PagesFunction<Env> = async (context) => {
     const { request, env, params } = context;
     const pathParts = params.path;
@@ -14,39 +16,58 @@ export const onRequest: PagesFunction<Env> = async (context) => {
     }
 
     const key = Array.isArray(pathParts) ? pathParts.join('/') : pathParts;
-    const isPhotoUrl = IMAGE_EXT.test(key) || !key.includes('.');
+    // R2 keys are stored decoded; decode URL-encoded segments for R2 operations
+    const r2Key = key.split('/').map(p => decodeURIComponent(p)).join('/');
 
+    // Image request (has extension) → serve directly from R2
+    if (IMAGE_EXT.test(key)) {
+        const object = await env.neosphere_assets.get(r2Key);
+        if (!object) return new Response('Not Found', { status: 404 });
+        const headers = new Headers();
+        object.writeHttpMetadata(headers);
+        headers.set('etag', object.httpEtag);
+        headers.set('Cache-Control', 'public, max-age=31536000, immutable');
+        return new Response(object.body, { headers });
+    }
+
+    // Extensionless URL → SPA page with OG tags
     const escHtml = (s: string) =>
         s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-    let ogTitle: string;
-    let ogDescription: string;
+    let ogTitle = '';
+    let ogDescription = '';
     let coverUrl = '';
 
-    if (isPhotoUrl && key.includes('/')) {
-        // Direct photo URL e.g. gallery/Arch/SugarFactoryyes.jpg or gallery/Arch/SugarFactoryyes
-        const rawFilename = decodeURIComponent(key.split('/').pop() || key).replace(IMAGE_EXT, '');
-        const albumParts = key.split('/').slice(0, -1).map(p => decodeURIComponent(p));
-        const albumName = escHtml(albumParts.join(' / '));
-        const filename = escHtml(rawFilename);
-        coverUrl = new URL(`/r2/${key}`, request.url).href;
-        ogTitle = albumName ? `${filename} — ${albumName}` : filename;
-        ogDescription = albumName ? `Photo from the ${albumName} album` : 'View photo';
-    } else {
-        // Album URL e.g. gallery/Arch
+    // Try to resolve as a photo share URL (e.g. Arch/nicephoto → Arch/nicephoto.jpg)
+    let isPhoto = false;
+    if (r2Key.includes('/')) {
+        const photoListing = await env.neosphere_assets.list({ prefix: r2Key + '.', limit: 5 }).catch(() => null);
+        const match = photoListing?.objects.find(o => IMAGE_EXT.test(o.key));
+        if (match) {
+            isPhoto = true;
+            const rawFilename = decodeURIComponent(key.split('/').pop() || key);
+            const albumParts = key.split('/').slice(0, -1).map(p => decodeURIComponent(p));
+            const albumName = escHtml(albumParts.join(' / '));
+            const filename = escHtml(rawFilename);
+            coverUrl = new URL(`/gallery/${encodeKey(match.key)}`, request.url).href;
+            ogTitle = albumName ? `${filename} — ${albumName}` : filename;
+            ogDescription = albumName ? `Photo from the ${albumName} album` : 'View photo';
+        }
+    }
+
+    if (!isPhoto) {
+        // Album URL
         const albumTitle = escHtml(decodeURIComponent(key.split('/').pop() || key));
         ogTitle = `${albumTitle} — Gallery`;
         ogDescription = `Browse the ${albumTitle} album`;
-        try {
-            const listing = await env.neosphere_assets.list({ prefix: key + '/', limit: 10 });
+        const listing = await env.neosphere_assets.list({ prefix: r2Key + '/', limit: 10 }).catch(() => null);
+        if (listing) {
             for (const obj of listing.objects) {
-                if (IMAGE_EXT.test(obj.key) || !obj.key.split('/').pop()?.includes('.')) {
-                    coverUrl = new URL(`/r2/${obj.key}`, request.url).href;
+                if (IMAGE_EXT.test(obj.key)) {
+                    coverUrl = new URL(`/gallery/${encodeKey(obj.key)}`, request.url).href;
                     break;
                 }
             }
-        } catch {
-            // No cover found, continue without image
         }
     }
 
@@ -62,13 +83,8 @@ export const onRequest: PagesFunction<Env> = async (context) => {
         coverUrl ? `<meta name="twitter:image" content="${escHtml(coverUrl)}" />` : '',
     ].filter(Boolean).join('\n    ');
 
-    // Always serve the SPA shell via ASSETS (bypasses the static-file fallback
-    // issue where Cloudflare Pages won't serve index.html for .jpg extension paths)
     const spaResponse = await env.ASSETS.fetch(new URL('/', request.url));
 
-    // Use HTMLRewriter to inject OG tags for ALL requests — this is the
-    // Cloudflare-recommended approach and ensures every crawler (Telegram,
-    // Discord, etc.) gets correct tags regardless of user-agent string.
     return new HTMLRewriter()
         .on('head', {
             element(el) {

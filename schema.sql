@@ -23,6 +23,7 @@ CREATE TABLE note_edits (
   created_at INTEGER,
   commit_msg TEXT,
   author_name TEXT,
+  country TEXT,
   FOREIGN KEY(note_id) REFERENCES notes(id)
 );
 

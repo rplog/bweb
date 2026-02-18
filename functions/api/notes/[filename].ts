@@ -36,13 +36,13 @@ export const onRequestPut = async (context: any) => {
         if (currentNote) {
             const editId = crypto.randomUUID();
             await env.DB.prepare(
-                "INSERT INTO note_edits (id, note_id, previous_content, ip, city, created_at, commit_msg, author_name) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
-            ).bind(editId, currentNote.id, currentNote.content, ip, city, now, commit_msg || null, author_name || null).run();
+                "INSERT INTO note_edits (id, note_id, previous_content, ip, city, country, created_at, commit_msg, author_name) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+            ).bind(editId, currentNote.id, currentNote.content, ip, city, request.cf?.country || "unknown", now, commit_msg || null, author_name || null).run();
         }
 
         const info = await env.DB.prepare(
-            "UPDATE notes SET content = ?, updated_at = ?, ip = ?, city = ?, timezone = ? WHERE filename = ?"
-        ).bind(content, now, ip, city, timezone, filename).run();
+            "UPDATE notes SET content = ?, updated_at = ? WHERE filename = ?"
+        ).bind(content, now, filename).run();
 
         if (info.meta.changes === 0) {
             return new Response("File not found", { status: 404 });

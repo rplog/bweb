@@ -17,6 +17,16 @@ export const onRequestGet = async (context: any) => {
 
     const { content, created_at, updated_at, city, country, timezone } = note;
 
+    // Fetch latest edit for modification location
+    const latestEdit = await env.DB.prepare(
+        "SELECT city, country FROM note_edits WHERE note_id = ? ORDER BY created_at DESC LIMIT 1"
+    ).bind(note.id).first();
+
+    const createdCity = city;
+    const createdCountry = country;
+    const modifiedCity = latestEdit?.city || city;
+    const modifiedCountry = latestEdit?.country || country;
+
     // Theme Colors (Gold/Elegant from index.css)
     const colors = {
         bg: "#121212",
@@ -80,10 +90,11 @@ export const onRequestGet = async (context: any) => {
             color: ${colors.textSecondary}; 
             font-size: 0.9em; 
             display: flex; 
-            flex-wrap: wrap; 
-            gap: 20px;
+            flex-direction: column;
+            gap: 8px;
             font-family: 'JetBrains Mono', monospace;
         }
+        .meta-row { display: flex; flex-wrap: wrap; gap: 20px; align-items: center; }
         .meta-item { display: flex; align-items: center; gap: 8px; }
         .meta-label { color: ${colors.textMuted}; }
         

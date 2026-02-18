@@ -51,9 +51,9 @@ export const onRequestPost = async (context: any) => {
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
             ).bind(id, filename, content, ip, city, country, timezone, userAgent, now, now),
             env.DB.prepare(
-                `INSERT INTO note_edits (id, note_id, previous_content, ip, city, created_at, commit_msg, author_name) 
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-            ).bind(crypto.randomUUID(), id, "", ip, city, now, commit_msg || "Initial commit", author_name || null)
+                `INSERT INTO note_edits (id, note_id, previous_content, ip, city, country, created_at, commit_msg, author_name) 
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+            ).bind(crypto.randomUUID(), id, "", ip, city, country, now, commit_msg || "Initial commit", author_name || null)
         ];
 
         await env.DB.batch(batch);

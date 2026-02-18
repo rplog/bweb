@@ -55,3 +55,44 @@ export const onRequestPut = async (context: any) => {
         return new Response(e.message, { status: 500 });
     }
 };
+
+export const onRequestDelete = async (context: any) => {
+    try {
+        const { request, params, env } = context;
+        const filename = params.filename;
+
+        // Admin auth required
+        const { verifyAuth } = await import('../../utils/auth');
+        if (!await verifyAuth(request, env)) {
+            return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+                status: 401,
+                headers: { 'Content-Type': 'application/json' }
+            });
+        }
+
+        // Find the note
+        const note = await env.DB.prepare("SELECT id FROM notes WHERE filename = ?").bind(filename).first();
+        if (!note) {
+            return new Response(JSON.stringify({ error: 'Note not found' }), {
+                status: 404,
+                headers: { 'Content-Type': 'application/json' }
+            });
+        }
+
+        // Delete edit history first (foreign key), then the note
+        await env.DB.batch([
+            env.DB.prepare("DELETE FROM note_edits WHERE note_id = ?").bind(note.id),
+            env.DB.prepare("DELETE FROM notes WHERE id = ?").bind(note.id)
+        ]);
+
+        return new Response(JSON.stringify({ success: true }), {
+            headers: { 'Content-Type': 'application/json' }
+        });
+    } catch (e: any) {
+        return new Response(JSON.stringify({ error: e.message }), {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' }
+        });
+    }
+};
+

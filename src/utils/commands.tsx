@@ -488,6 +488,72 @@ export const commands: Record<string, Command> = {
             );
         }
     },
+    rm: {
+        description: 'Remove a visitor note (Admin only)',
+        usage: 'rm <filename>',
+        execute: async (args, { currentPath, user, setFileSystem }) => {
+            if (!args[0]) return 'rm: missing file operand';
+
+            if (user !== 'root') {
+                return 'rm: permission denied. Admin login required. Use "login <password>" first.';
+            }
+
+            const token = localStorage.getItem('admin_token');
+            if (!token) {
+                return 'rm: permission denied. Admin login required. Use "login <password>" first.';
+            }
+
+            let filename = args[0];
+            let isVisitorNote = false;
+
+            const isVisitorsNotesDir = (path: string[]) => path[path.length - 1] === 'visitors_notes';
+
+            if (isVisitorsNotesDir(currentPath)) {
+                isVisitorNote = true;
+            } else if (filename.includes('visitors_notes/')) {
+                isVisitorNote = true;
+                filename = filename.split('visitors_notes/')[1];
+            }
+
+            if (!isVisitorNote) {
+                return 'rm: can only remove files from visitors_notes directory';
+            }
+
+            try {
+                const res = await fetch(`/api/notes/${filename}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (res.status === 401) {
+                    return 'rm: permission denied. Session expired, please login again.';
+                }
+                if (res.status === 404) {
+                    return `rm: cannot remove '${filename}': No such file`;
+                }
+                if (!res.ok) {
+                    const data = await res.json();
+                    throw new Error(data.error || 'Failed to delete');
+                }
+
+                // Update local fileSystem to remove the file from ls
+                if (setFileSystem) {
+                    setFileSystem((prev: Record<string, any>) => {
+                        const updated = JSON.parse(JSON.stringify(prev));
+                        const visitorsDir = updated.home?.children?.neo?.children?.visitors_notes;
+                        if (visitorsDir?.children?.[filename]) {
+                            delete visitorsDir.children[filename];
+                        }
+                        return updated;
+                    });
+                }
+
+                return `removed '${filename}'`;
+            } catch (e: any) {
+                return `rm: error: ${e.message}`;
+            }
+        }
+    },
     fastfetch: {
         description: 'Display system information (fast)',
         execute: () => {

@@ -239,7 +239,7 @@ export const useTerminal = () => {
             return input;
         }
 
-        if (['cd', 'cat', 'ls', 'nano', 'share'].includes(cmd)) {
+        if (['cd', 'cat', 'ls', 'nano', 'share', 'rm'].includes(cmd)) {
             const partialName = args[args.length - 1] || '';
             const node = resolvePath(fileSystem, currentPath, '.');
 

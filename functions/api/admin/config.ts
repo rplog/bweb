@@ -1,17 +1,8 @@
-import { jwtVerify } from 'jose';
+import { verifyAuth } from '../../utils/auth';
 
 export const onRequest: PagesFunction<{ DB: D1Database, JWT_SECRET: string, ADMIN_PASSWORD: string }> = async (context) => {
     // 1. Verify Auth
-    const authHeader = context.request.headers.get('Authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return new Response('Unauthorized', { status: 401 });
-    }
-    const token = authHeader.split(' ')[1];
-    const secret = new TextEncoder().encode(context.env.JWT_SECRET || context.env.ADMIN_PASSWORD);
-
-    try {
-        await jwtVerify(token, secret);
-    } catch {
+    if (!await verifyAuth(context.request, context.env)) {
         return new Response('Unauthorized', { status: 401 });
     }
 

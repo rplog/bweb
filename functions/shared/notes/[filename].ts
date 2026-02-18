@@ -40,13 +40,23 @@ export const onRequestGet = async (context: any) => {
         danger: "#ff5555"
     };
 
+    const escapeHtml = (text: string) => {
+        return text
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    };
+    const safeFilename = escapeHtml(filename);
+
     const html = `
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${filename} - NeoSphere Notes</title>
+    <title>${safeFilename} - NeoSphere Notes</title>
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <link rel="icon" type="image/png" href="/favicon.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -356,7 +366,7 @@ export const onRequestGet = async (context: any) => {
         </nav>
         <header>
             <h1>
-                <span>${filename}</span>
+                <span>${safeFilename}</span>
                 <button class="btn" onclick="copyContent()">Copy</button>
             </h1>
             <div class="meta">

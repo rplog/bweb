@@ -27,8 +27,15 @@ async function withRetry<T>(
     throw lastError;
 }
 
+function escapeMarkdown(text: string): string {
+    return text.replace(/[_*[\]()~`>#+\-=|{}.!]/g, '\\$&');
+}
+
 async function sendTelegram(env: any, name: string, email: string, message: string): Promise<void> {
-    const text = `*New Message from* ${name}\nEmail: ${email}\n\n${message}`;
+    const safeName = escapeMarkdown(name);
+    const safeEmail = escapeMarkdown(email);
+    const safeMessage = escapeMarkdown(message);
+    const text = `*New Message from* ${safeName}\nEmail: ${safeEmail}\n\n${safeMessage}`;
     const telegramUrl = `https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/sendMessage`;
 
     const res = await fetch(telegramUrl, {

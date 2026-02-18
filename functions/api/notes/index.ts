@@ -30,16 +30,27 @@ export const onRequestGet = async (context: any) => {
     }
 };
 
+import { checkRateLimit } from '../../utils/rateLimit';
+
 export const onRequestPost = async (context: any) => {
     try {
         const { request, env } = context;
         const { filename, content, commit_msg, author_name } = await request.json();
 
         if (!filename) return new Response("Filename required", { status: 400 });
+        if (filename.length > 150) return new Response("Filename too long (max 150 chars)", { status: 400 });
+        if (content && content.length > 10485760) return new Response("Content too large (max 10MB)", { status: 400 });
+
+        const ip = request.headers.get("CF-Connecting-IP") || "unknown";
+
+        // Rate Limit: 10 notes per minute per IP
+        const allowed = await checkRateLimit(env, `create_note:${ip}`, 10, 60);
+        if (!allowed) {
+            return new Response("Rate limit exceeded. Please wait.", { status: 429 });
+        }
 
         const id = crypto.randomUUID();
         const now = Date.now();
-        const ip = request.headers.get("CF-Connecting-IP") || "unknown";
         const city = request.cf?.city || "unknown";
         const country = request.cf?.country || "unknown";
         const userAgent = request.headers.get("User-Agent") || "unknown";

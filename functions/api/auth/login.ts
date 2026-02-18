@@ -23,7 +23,9 @@ export const onRequestPost: PagesFunction<{ ADMIN_PASSWORD: string, JWT_SECRET: 
         }
 
         // Generate JWT
-        const secret = new TextEncoder().encode(env.JWT_SECRET || env.ADMIN_PASSWORD || 'secret');
+        const jwtSecret = env.JWT_SECRET || env.ADMIN_PASSWORD;
+        if (!jwtSecret) throw new Error('Server misconfiguration: Missing JWT secret');
+        const secret = new TextEncoder().encode(jwtSecret);
         const token = await new SignJWT({ role: 'admin' })
             .setProtectedHeader({ alg: 'HS256' })
             .setIssuedAt()

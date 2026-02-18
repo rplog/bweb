@@ -8,6 +8,11 @@ interface TypewriterProps {
 
 export const Typewriter: React.FC<TypewriterProps> = ({ text, speed = 10, onComplete }) => {
     const [currentLength, setCurrentLength] = useState(0);
+    const onCompleteRef = React.useRef(onComplete);
+
+    useEffect(() => {
+        onCompleteRef.current = onComplete;
+    }, [onComplete]);
 
     useEffect(() => {
         setCurrentLength(0);
@@ -20,14 +25,14 @@ export const Typewriter: React.FC<TypewriterProps> = ({ text, speed = 10, onComp
                     return prev + 1;
                 } else {
                     clearInterval(timer);
-                    onComplete?.();
+                    onCompleteRef.current?.();
                     return prev;
                 }
             });
         }, speed);
 
         return () => clearInterval(timer);
-    }, [text, speed, onComplete]);
+    }, [text, speed]);
 
     return <span>{text.substring(0, currentLength)}</span>;
 };

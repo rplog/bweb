@@ -29,5 +29,12 @@ export const optimizeImage = (url: string, options: ImageOptions = {}): string =
     // Clean URL ensuring leading slash
     const cleanUrl = url.startsWith('/') ? url : `/${url}`;
 
+    // Cloudflare Image Resizing requires a recognizable image extension to process
+    // the source URL. Skip optimization for extensionless paths (e.g. /r2/Arch/SugarFactoryyes).
+    const IMAGE_EXT = /\.(jpg|jpeg|png|webp|gif|avif|svg)$/i;
+    if (!IMAGE_EXT.test(cleanUrl)) {
+        return cleanUrl;
+    }
+
     return `/cdn-cgi/image/${optionsStr}${cleanUrl}`;
 };

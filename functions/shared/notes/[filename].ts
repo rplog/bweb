@@ -357,17 +357,25 @@ export const onRequestGet = async (context: any) => {
                 <button class="btn" onclick="copyContent()">Copy</button>
             </h1>
             <div class="meta">
-                <div class="meta-item">
-                    <span class="meta-label">Created:</span>
-                    <span id="created-date">...</span>
+                <div class="meta-row">
+                    <div class="meta-item">
+                        <span class="meta-label">Created:</span>
+                        <span id="created-date">...</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-label">From:</span>
+                        <span>${createdCity}, ${createdCountry}</span>
+                    </div>
                 </div>
-                <div class="meta-item">
-                    <span class="meta-label">Last Modified:</span>
-                    <span id="updated-date">...</span>
-                </div>
-                <div class="meta-item">
-                    <span class="meta-label">From:</span>
-                    <span>${city}, ${country}</span>
+                <div class="meta-row">
+                    <div class="meta-item">
+                        <span class="meta-label">Last Modified:</span>
+                        <span id="updated-date">...</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-label">From:</span>
+                        <span>${modifiedCity}, ${modifiedCountry}</span>
+                    </div>
                 </div>
             </div>
         </header>

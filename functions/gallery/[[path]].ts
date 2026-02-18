@@ -16,8 +16,9 @@ export const onRequest: PagesFunction<Env> = async (context) => {
 
     const key = Array.isArray(pathParts) ? pathParts.join('/') : pathParts;
 
-    // 1. Image file — serve raw from R2
-    if (IMAGE_EXT.test(key)) {
+    // 1. Image file — serve raw from R2 ONLY if not navigating (HTML request)
+    const accept = request.headers.get('Accept') || '';
+    if (IMAGE_EXT.test(key) && !accept.includes('text/html')) {
         const object = await env.neosphere_assets.get(key);
         if (!object) return context.next();
 

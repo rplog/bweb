@@ -494,8 +494,11 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
 
                 // Refresh data
                 fetch('/api/gallery')
-                    .then(res => res.json())
-                    .then(data => {
+                    .then(res => {
+                        if (!res.ok) throw new Error('Failed to refresh gallery');
+                        return res.json();
+                    })
+                    .then((data: Album[]) => {
                         setAlbums(data);
                         if (activeAlbumTitle === oldName && currentName !== oldName) {
                             // Determine navigation if current album was renamed
@@ -503,6 +506,9 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                             if (newAlbum) openAlbum(newAlbum);
                             else closeAlbum();
                         }
+                    })
+                    .catch((err: unknown) => {
+                        showAlert(err instanceof Error ? err.message : 'Failed to refresh gallery', 'error');
                     });
             }
         });
@@ -590,14 +596,28 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                                 onClick={() => { if (activeAlbum) closeAlbum(); }}
                             >gallery</span>
                             {activeAlbum && breadcrumbSegments.map((segment, idx) => {
-                                const isLast = idx === breadcrumbSegments.length - 1 && !activePhoto;
+                                const isLastSegment = idx === breadcrumbSegments.length - 1;
+                                const isLast = isLastSegment && !activePhoto;
                                 const isClickable = !isLast;
                                 return (
                                     <React.Fragment key={idx}>
                                         <span>/</span>
                                         <span
                                             className={isLast ? "text-elegant-accent font-bold" : "hover:text-elegant-text-primary transition-colors cursor-pointer hover:underline decoration-elegant-text-muted underline-offset-4"}
-                                            onClick={() => { if (isClickable) { if (activePhoto) { closePhoto(); } else { navigateToBreadcrumb(idx); } } }}
+                                            onClick={() => {
+                                                if (!isClickable) return;
+                                                if (activePhoto) {
+                                                    if (isLastSegment) {
+                                                        // Current album segment - just close photo, stay in album
+                                                        closePhoto();
+                                                    } else {
+                                                        // Parent album segment - navigate there (openAlbum also clears activePhotoKey)
+                                                        navigateToBreadcrumb(idx);
+                                                    }
+                                                } else {
+                                                    navigateToBreadcrumb(idx);
+                                                }
+                                            }}
                                         >{segment.toLowerCase()}</span>
                                     </React.Fragment>
                                 );

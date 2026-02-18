@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { commands } from '../utils/commands';
 import { resolvePath, resolvePathArray } from '../utils/fileSystemUtils';
 import { ROUTES } from '../utils/routes';
@@ -15,7 +15,8 @@ export const useTerminal = () => {
     const { history, addToHistory, clearHistory, inputHistory, setInputHistory } = useCommandHistory(user, getPromptPath);
     const { activeComponent, activeComponentRef, isInputVisible, setIsInputVisible, setFullScreenWithRoute, setActiveComponent } = useRouting();
 
-    const [initialized, setInitialized] = useState(false);
+    const initializedRef = useRef(false);
+    const executeRef = useRef<(commandStr: string, isInitialLoad?: boolean) => Promise<void>>(async () => {});
 
     const execute = useCallback(async (commandStr: string, isInitialLoad = false) => {
         const trimmed = commandStr.trim();
@@ -92,36 +93,44 @@ export const useTerminal = () => {
         }
     }, [addToHistory, clearHistory, currentPath, fileSystem, setFullScreenWithRoute, setInputHistory, setCurrentPath, setFileSystem, user, setUser, setIsInputVisible]);
 
-    // Handle initial routing and popstate
+    // Keep executeRef current so the popstate handler never captures a stale closure
     useEffect(() => {
-        if (!initialized) {
-            setTimeout(() => {
-                const path = window.location.pathname;
-                const command = ROUTES[path];
-                if (command) {
-                    execute(command, true);
-                } else if (path.startsWith('/gallery')) {
-                    execute('gallery', true);
-                } else if (path !== '/' && path !== '/index.html') {
-                    addToHistory(`access ${path}`, (
-                        <div className="flex flex-col">
-                            <span className="text-red-500 font-bold">404 ERROR: ROUTE NOT FOUND</span>
-                            <span className="text-elegant-text-primary">The requested path '{path}' does not exist in this sector.</span>
-                            <span className="text-elegant-text-secondary italic">Redirecting to safe harbor...</span>
-                        </div>
-                    ));
-                    window.history.replaceState({}, '', '/');
-                }
-                const params = new URLSearchParams(window.location.search);
-                const dir = params.get('dir');
-                if (dir) {
-                    execute(`cd ${dir}`, true);
-                    window.history.replaceState({}, '', '/');
-                }
-                setInitialized(true);
-            }, 0);
+        executeRef.current = execute;
+    });
+
+    // Handle initial routing - runs once on mount
+    useEffect(() => {
+        if (initializedRef.current) return;
+        initializedRef.current = true;
+
+        const path = window.location.pathname;
+        const command = ROUTES[path];
+        if (command) {
+            executeRef.current(command, true);
+        } else if (path.startsWith('/gallery')) {
+            executeRef.current('gallery', true);
+        } else if (path !== '/' && path !== '/index.html') {
+            addToHistory(`access ${path}`, (
+                <div className="flex flex-col">
+                    <span className="text-red-500 font-bold">404 ERROR: ROUTE NOT FOUND</span>
+                    <span className="text-elegant-text-primary">The requested path '{path}' does not exist in this sector.</span>
+                    <span className="text-elegant-text-secondary italic">Redirecting to safe harbor...</span>
+                </div>
+            ));
+            window.history.replaceState({}, '', '/');
         }
 
+        const params = new URLSearchParams(window.location.search);
+        const dir = params.get('dir');
+        if (dir) {
+            executeRef.current(`cd ${dir}`, true);
+            window.history.replaceState({}, '', '/');
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    // Popstate handler - registered once, uses ref to always call current execute
+    useEffect(() => {
         const handlePopState = () => {
             const path = window.location.pathname;
             if (path === '/') {
@@ -130,10 +139,10 @@ export const useTerminal = () => {
             } else {
                 const command = ROUTES[path];
                 if (command) {
-                    execute(command, true);
+                    executeRef.current(command, true);
                 } else if (path.startsWith('/gallery')) {
                     if (!activeComponentRef.current) {
-                        execute('gallery', true);
+                        executeRef.current('gallery', true);
                     }
                 }
             }
@@ -141,7 +150,7 @@ export const useTerminal = () => {
 
         window.addEventListener('popstate', handlePopState);
         return () => window.removeEventListener('popstate', handlePopState);
-    }, [initialized, execute, setActiveComponent, activeComponentRef, addToHistory]);
+    }, [setActiveComponent, activeComponentRef]);
 
     const handleTabCompletion = (input: string): string => {
         if (!input) return '';

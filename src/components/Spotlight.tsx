@@ -23,24 +23,31 @@ export const Spotlight: React.FC<SpotlightProps> = ({ onNavigate }) => {
     const handleSelect = useCallback((dest: string) => {
         setIsOpen(false);
         setQuery('');
-        // Small delay to ensure UI updates before nav (optional, but good for UX)
         requestAnimationFrame(() => onNavigate(dest));
     }, [onNavigate]);
+
+    const openSpotlight = () => {
+        setIsOpen(true);
+        setSelectedIndex(0);
+    };
+
+    const closeSpotlight = () => {
+        setIsOpen(false);
+        setQuery('');
+    };
 
     // Toggle on 'L' key
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (!isOpen && e.key.toLowerCase() === 'l' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
-                // Ignore if typing in an input (though pages are mostly read-only)
                 if (document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA') return;
                 e.preventDefault();
-                setIsOpen(true);
+                openSpotlight();
             }
 
             if (isOpen) {
                 if (e.key === 'Escape') {
-                    setIsOpen(false);
-                    setQuery('');
+                    closeSpotlight();
                 } else if (e.key === 'ArrowDown') {
                     e.preventDefault();
                     setSelectedIndex(prev => (prev + 1) % filtered.length);
@@ -60,27 +67,20 @@ export const Spotlight: React.FC<SpotlightProps> = ({ onNavigate }) => {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [isOpen, selectedIndex, filtered, handleSelect]);
 
+    // Focus the input when spotlight opens
     useEffect(() => {
         if (isOpen && inputRef.current) {
             inputRef.current.focus();
-            // eslint-disable-next-line react-hooks/set-state-in-effect
-            setSelectedIndex(0);
         }
     }, [isOpen]);
-
-    // Reset selection when query changes
-    useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setSelectedIndex(0);
-    }, [query]);
 
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-[2px] z-50 flex items-center justify-center font-mono" onClick={() => setIsOpen(false)}>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-[2px] z-50 flex items-center justify-center font-mono" onClick={closeSpotlight}>
             <div
                 className="w-full max-w-xl bg-black border border-[#333] rounded-xl shadow-2xl overflow-hidden flex flex-col box-border ring-1 ring-white/10"
-                onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside
+                onClick={(e) => e.stopPropagation()}
             >
                 <div className="flex items-center p-4 border-b border-[#333]">
                     <Search className="text-gray-500 mr-3" size={20} />
@@ -90,7 +90,10 @@ export const Spotlight: React.FC<SpotlightProps> = ({ onNavigate }) => {
                         className="bg-transparent border-none outline-none text-gray-200 text-xl flex-grow placeholder-gray-600 font-normal"
                         placeholder="Where to?"
                         value={query}
-                        onChange={e => setQuery(e.target.value)}
+                        onChange={e => {
+                            setQuery(e.target.value);
+                            setSelectedIndex(0);
+                        }}
                     />
                     <div className="text-xs text-gray-600 border border-gray-800 rounded px-2 py-1">ESC to close</div>
                 </div>

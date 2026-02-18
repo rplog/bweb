@@ -58,7 +58,6 @@ export const GalleryModals: React.FC<GalleryModalsProps> = ({
     return (
         <>
             {/* Prompt Modal */}
-            {/* Prompt Modal */}
             {promptConfig && (
                 <PromptModal config={promptConfig} onClose={() => setPromptConfig(null)} />
             )}

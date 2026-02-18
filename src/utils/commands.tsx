@@ -452,7 +452,6 @@ export const commands: Record<string, Command> = {
                 try {
                     const response = await fetch(`/api/notes/${filename}`);
                     if (response.status === 404) return `cat: ${filename}: No such file or directory`;
-                    if (response.status === 404) return `cat: ${filename}: No such file or directory`;
                     if (!response.ok) {
                         const err = await response.json();
                         throw new Error(err.error || 'Failed to fetch note');

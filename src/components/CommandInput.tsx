@@ -62,8 +62,8 @@ export const CommandInput = forwardRef<CommandInputHandle, CommandInputProps>(({
             }
         } else if (e.key === 'c' && e.ctrlKey) {
             e.preventDefault();
-            setInput(prev => prev + '^C');
-            onSubmit(input + '^C');
+            const ctrlCCmd = input + '^C';
+            onSubmit(ctrlCCmd);
             setInput('');
         }
     };

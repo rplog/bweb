@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, ChevronLeft, ChevronRight, Hand, Trash2, Edit2 } from 'lucide-react';
 import type { Photo } from './types';
 import { optimizeImage } from '../../utils/imageOptimizer';
@@ -30,7 +30,6 @@ export const Lightbox: React.FC<LightboxProps> = ({ activePhoto, onClose, onNext
     const [touchStart, setTouchStart] = useState<number | null>(null);
     const [touchEnd, setTouchEnd] = useState<number | null>(null);
     const minSwipeDistance = 50;
-    const hasShownSwipeHint = useRef(false);
     const [showSwipeHint, setShowSwipeHint] = useState(false);
 
     const onTouchStart = (e: React.TouchEvent) => { setTouchEnd(null); setTouchStart(e.targetTouches[0].clientX); };
@@ -43,13 +42,10 @@ export const Lightbox: React.FC<LightboxProps> = ({ activePhoto, onClose, onNext
     };
 
     useEffect(() => {
-        if (!hasShownSwipeHint.current) {
-            hasShownSwipeHint.current = true;
-            const t1 = setTimeout(() => setShowSwipeHint(true), 500);
-            const t2 = setTimeout(() => setShowSwipeHint(false), 3500);
-            return () => { clearTimeout(t1); clearTimeout(t2); };
-        }
-    }, [activePhoto]);
+        const t1 = setTimeout(() => setShowSwipeHint(true), 500);
+        const t2 = setTimeout(() => setShowSwipeHint(false), 3500);
+        return () => { clearTimeout(t1); clearTimeout(t2); };
+    }, []);
 
     return (
         <div

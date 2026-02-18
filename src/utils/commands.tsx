@@ -751,6 +751,23 @@ export const commands: Record<string, Command> = {
                                 if (!res.ok) {
                                     throw new Error(await res.text());
                                 }
+                                // Update local fileSystem so ls reflects the new/updated note immediately
+                                if (setFileSystem) {
+                                    setFileSystem((prev: Record<string, any>) => {
+                                        const updated = JSON.parse(JSON.stringify(prev));
+                                        const visitorsDir = updated.home?.children?.neo?.children?.visitors_notes;
+                                        if (visitorsDir && visitorsDir.children) {
+                                            visitorsDir.children[cleanName] = {
+                                                type: 'file',
+                                                content: '',
+                                                size: newContent.length,
+                                                lastModified: Date.now(),
+                                                author: authorName || 'visitor'
+                                            };
+                                        }
+                                        return updated;
+                                    });
+                                }
                             } else {
                                 if (setFileSystem) {
                                     const newFS = writeFile(fileSystem, currentPath, newFilename, newContent);

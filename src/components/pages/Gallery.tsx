@@ -1,48 +1,17 @@
-
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { optimizeImage } from '../../utils/imageOptimizer';
 import { Spotlight } from '../Spotlight';
 import { PageHeader } from '../PageHeader';
 import { PageFooter } from '../PageFooter';
-import { Maximize2, ArrowLeft, X, ChevronLeft, ChevronRight, Hand, Loader2, Trash2, Edit2, Plus, FileEdit, FolderPlus, ImagePlus, ChevronDown } from 'lucide-react';
+import { ArrowLeft, FolderPlus } from 'lucide-react';
 import { createNavigationHandler } from '../../utils/navigation';
-
-interface Photo {
-    url: string;
-    caption: string;
-    key: string;
-}
-
-interface GalleryProps {
-    onExit: () => void;
-    onNavigate: (path: string) => void;
-}
-
-interface Album {
-    title: string;
-    count: number;
-    cover: string[];
-    photos: Photo[];
-    category: string;
-}
-
-// Custom tooltip component matching elegant theme
-const Tooltip: React.FC<{ text: string; children: React.ReactNode; position?: 'top' | 'bottom' | 'left' }> = ({ text, children, position = 'top' }) => {
-    const posClasses = {
-        top: 'bottom-full left-1/2 -translate-x-1/2 mb-2',
-        bottom: 'top-full left-1/2 -translate-x-1/2 mt-2',
-        left: 'right-full top-1/2 -translate-y-1/2 mr-2'
-    };
-    return (
-        <div className="relative group/tip">
-            {children}
-            <div className={`absolute ${posClasses[position]} px-2.5 py-1 bg-elegant-card border border-elegant-border rounded text-[11px] text-elegant-text-secondary font-mono whitespace-nowrap opacity-0 scale-95 group-hover/tip:opacity-100 group-hover/tip:scale-100 transition-all duration-200 pointer-events-none z-[100] shadow-lg`}>
-                {text}
-                <div className={`absolute ${position === 'top' ? 'top-full left-1/2 -translate-x-1/2 border-t-elegant-border border-l-transparent border-r-transparent border-b-transparent border-4' : position === 'bottom' ? 'bottom-full left-1/2 -translate-x-1/2 border-b-elegant-border border-l-transparent border-r-transparent border-t-transparent border-4' : ''}`} />
-            </div>
-        </div>
-    );
-};
+import type { Album, Photo } from '../gallery/types';
+import { AlbumGrid } from '../gallery/AlbumGrid';
+import { PhotoGrid } from '../gallery/PhotoGrid';
+import { Lightbox } from '../gallery/Lightbox';
+import { GalleryAdmin } from '../gallery/GalleryAdmin';
+import { GalleryModals } from '../gallery/GalleryModals';
+import type { PromptConfig, AlertConfig, EditAlbumConfig, ConfirmConfig } from '../gallery/GalleryModals';
 
 // Resolve a URL path like /gallery/Travel/Japan/photo.jpg into { album, photoFilename }
 const resolveNestedPath = (parts: string[], albums: Album[]): { album: Album | null; photoFilename: string | null } => {
@@ -59,75 +28,10 @@ const resolveNestedPath = (parts: string[], albums: Album[]): { album: Album | n
     return { album: null, photoFilename: null };
 };
 
-// Extracted album card component to eliminate duplication
-const AlbumCard: React.FC<{
-    album: Album;
-    displayTitle: string;
-    isAdmin: boolean;
-    onOpen: (album: Album) => void;
-    onEditAlbum: (album: Album) => void;
-    onDelete: (title: string, isAlbum?: boolean) => void;
-}> = ({ album, displayTitle, isAdmin, onOpen, onEditAlbum, onDelete }) => (
-    <div
-        className="group relative bg-elegant-card border border-elegant-border rounded-sm overflow-hidden hover:border-elegant-text-muted transition-all duration-300 cursor-pointer"
-        onClick={() => onOpen(album)}
-    >
-        <div className="aspect-video bg-black relative overflow-hidden grid grid-cols-2 grid-rows-2">
-            {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="relative w-full h-full overflow-hidden border-r border-b border-black/10 last:border-0">
-                    {album.cover[i] ? (
-                        <img
-                            src={optimizeImage(album.cover[i], { width: 400, height: 400, fit: 'cover', quality: 80 })}
-                            alt={`${album.title} cover ${i + 1}`}
-                            loading="lazy"
-                            decoding="async"
-                            className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-100 grayscale group-hover:grayscale-0"
-                            onError={(e) => { e.currentTarget.style.opacity = '0'; }}
-                        />
-                    ) : (
-                        <div className="w-full h-full bg-elegant-bg/50" />
-                    )}
-                </div>
-            ))}
-            <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-all duration-300 pointer-events-none" />
-            <div className="absolute top-3 right-3 pointer-events-none">
-                <span className="px-3 py-1 bg-black/80 border border-elegant-border rounded text-xs text-elegant-text-secondary backdrop-blur-sm">
-                    {album.count} items
-                </span>
-            </div>
-        </div>
-        <div className="p-5 flex justify-between items-start">
-            <div className="min-w-0 flex-1">
-                <h3 className="text-lg font-bold text-elegant-text-primary mb-1 group-hover:text-elegant-accent transition-colors truncate">
-                    {displayTitle}
-                </h3>
-                <p className="text-sm text-elegant-text-muted truncate">
-                    {album.category}
-                </p>
-            </div>
-            {isAdmin && (
-                <div className="flex gap-1 ml-2 flex-shrink-0">
-                    <Tooltip text="Edit Album">
-                        <button
-                            onClick={(e) => { e.stopPropagation(); onEditAlbum(album); }}
-                            className="text-elegant-text-muted hover:text-elegant-accent p-1.5 rounded hover:bg-white/5 transition-all"
-                        >
-                            <FileEdit size={15} />
-                        </button>
-                    </Tooltip>
-                    <Tooltip text="Delete Album">
-                        <button
-                            onClick={(e) => { e.stopPropagation(); onDelete(album.title, true); }}
-                            className="text-elegant-text-muted hover:text-red-400 p-1.5 rounded hover:bg-white/5 transition-all"
-                        >
-                            <Trash2 size={15} />
-                        </button>
-                    </Tooltip>
-                </div>
-            )}
-        </div>
-    </div>
-);
+interface GalleryProps {
+    onExit: () => void;
+    onNavigate: (path: string) => void;
+}
 
 export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
     const [albums, setAlbums] = useState<Album[]>([]);
@@ -144,8 +48,6 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
     const [uploadFiles, setUploadFiles] = useState<File[]>([]);
     const [uploadCaption, setUploadCaption] = useState('');
     const [uploadAlbumName, setUploadAlbumName] = useState('');
-    const [isAlbumDropdownOpen, setIsAlbumDropdownOpen] = useState(false);
-    const albumDropdownRef = useRef<HTMLDivElement>(null);
     const [isProcessing, setIsProcessing] = useState(false);
     const [uploadProgress, setUploadProgress] = useState<{
         current: number;
@@ -156,32 +58,10 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
     } | null>(null);
 
     // Custom Prompts/Alerts State
-    const [promptConfig, setPromptConfig] = useState<{
-        isOpen: boolean;
-        title: string;
-        message?: string;
-        defaultValue: string;
-        onConfirm: (value: string) => void;
-    } | null>(null);
-
-    const [alertConfig, setAlertConfig] = useState<{
-        isOpen: boolean;
-        message: string;
-        type: 'error' | 'success' | 'info';
-    } | null>(null);
-
-    const [editAlbumConfig, setEditAlbumConfig] = useState<{
-        album: Album;
-        onConfirm: (newName: string, newCategory: string) => void;
-    } | null>(null);
-
-    const [confirmConfig, setConfirmConfig] = useState<{
-        isOpen: boolean;
-        title: string;
-        message: string;
-        confirmLabel: string;
-        onConfirm: () => void;
-    } | null>(null);
+    const [promptConfig, setPromptConfig] = useState<PromptConfig | null>(null);
+    const [alertConfig, setAlertConfig] = useState<AlertConfig | null>(null);
+    const [editAlbumConfig, setEditAlbumConfig] = useState<EditAlbumConfig | null>(null);
+    const [confirmConfig, setConfirmConfig] = useState<ConfirmConfig | null>(null);
 
     const showConfirm = (title: string, message: string, onConfirm: () => void, confirmLabel = 'Confirm') => {
         setConfirmConfig({ isOpen: true, title, message, onConfirm, confirmLabel });
@@ -237,20 +117,7 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
             });
     }, []);
 
-    const [showSwipeHint, setShowSwipeHint] = useState(false);
-    const hasShownSwipeHint = useRef(false);
-    useEffect(() => {
-        if (activePhoto && !hasShownSwipeHint.current) {
-            hasShownSwipeHint.current = true;
-            setShowSwipeHint(true);
-            const timer = setTimeout(() => setShowSwipeHint(false), 3000);
-            return () => clearTimeout(timer);
-        }
-        if (!activePhoto) {
-            setShowSwipeHint(false);
-        }
-    }, [activePhoto]);
-
+    // Popstate handling
     useEffect(() => {
         const handlePopState = () => {
             const path = window.location.pathname;
@@ -353,20 +220,6 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [activePhoto, activeAlbum, closePhoto, closeAlbum, onExit, handleNext, handlePrev]);
 
-    // Swipe
-    const [touchStart, setTouchStart] = useState<number | null>(null);
-    const [touchEnd, setTouchEnd] = useState<number | null>(null);
-    const minSwipeDistance = 50;
-
-    const onTouchStart = (e: React.TouchEvent) => { setTouchEnd(null); setTouchStart(e.targetTouches[0].clientX); };
-    const onTouchMove = (e: React.TouchEvent) => { setTouchEnd(e.targetTouches[0].clientX); };
-    const onTouchEnd = () => {
-        if (!touchStart || !touchEnd) return;
-        const distance = touchStart - touchEnd;
-        if (distance > minSwipeDistance) handleNext();
-        if (distance < -minSwipeDistance) handlePrev();
-    };
-
     // Preload
     const preloadedRef = useRef<Set<string>>(new Set());
     useEffect(() => {
@@ -392,20 +245,8 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
         setUploadFiles([]);
         setUploadCaption('');
         setUploadAlbumName('');
-        setIsAlbumDropdownOpen(false);
         setUploadProgress(null);
     };
-
-    // Close dropdown on click outside
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (albumDropdownRef.current && !albumDropdownRef.current.contains(event.target as Node)) {
-                setIsAlbumDropdownOpen(false);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
 
     // Process a single file: strip metadata via canvas, return blob
     const processImage = async (file: File): Promise<Blob> => {
@@ -590,8 +431,6 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
         });
     };
 
-
-
     const handleEditAlbum = (album: Album) => {
         setEditAlbumConfig({
             album,
@@ -620,8 +459,6 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                         }
 
                         currentName = fullNewName;
-
-                        // Optimistic update for rename (partial, full reload comes after category update)
                     } catch (err: unknown) {
                         showAlert(err instanceof Error ? err.message : 'Unknown error', 'error');
                         return; // Stop if rename fails
@@ -692,6 +529,20 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
         });
     };
 
+    const handleNewAlbumClick = () => {
+        showPrompt(
+            activeAlbumTitle ? `Create New Album in ${activeAlbumTitle.split('/').pop()}` : 'Create New Album',
+            '',
+            (name) => {
+                if (name) {
+                    const finalName = activeAlbumTitle ? `${activeAlbumTitle}/${name}` : name;
+                    setUploadAlbumName(finalName);
+                    setShowUploadModal(true);
+                }
+            }
+        );
+    };
+
     const subAlbums = useMemo(() => {
         if (!activeAlbum) return [];
         const prefix = activeAlbum.title + '/';
@@ -748,42 +599,6 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                                 </>
                             )}
                         </div>
-                        {/* Mobile admin buttons — inline in top bar */}
-                        {isAdmin && !activePhoto && (
-                            <div className="flex gap-2 flex-shrink-0 md:hidden">
-                                <Tooltip text="New Album">
-                                    <button
-                                        onClick={() => {
-                                            showPrompt(
-                                                activeAlbumTitle ? `Create New Album in ${activeAlbumTitle.split('/').pop()}` : 'Create New Album',
-                                                '',
-                                                (name) => {
-                                                    if (name) {
-                                                        const finalName = activeAlbumTitle ? `${activeAlbumTitle}/${name}` : name;
-                                                        setUploadAlbumName(finalName);
-                                                        setShowUploadModal(true);
-                                                    }
-                                                }
-                                            );
-                                        }}
-                                        className="p-2 bg-elegant-card border border-elegant-border text-elegant-text-primary rounded-lg transition-all active:scale-95"
-                                    >
-                                        <FolderPlus size={18} />
-                                    </button>
-                                </Tooltip>
-                                <Tooltip text="Upload Photos">
-                                    <button
-                                        onClick={() => {
-                                            if (activeAlbumTitle) setUploadAlbumName(activeAlbumTitle);
-                                            setShowUploadModal(true);
-                                        }}
-                                        className="p-2 bg-elegant-card border border-elegant-border text-elegant-text-primary rounded-lg transition-all active:scale-95"
-                                    >
-                                        <ImagePlus size={18} />
-                                    </button>
-                                </Tooltip>
-                            </div>
-                        )}
                     </div>
 
                     {loading ? (
@@ -796,19 +611,13 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                             </div>
                         ) : (
                             /* ---- Album Grid ---- */
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {albums.filter(a => !a.title.includes('/')).map((album) => (
-                                    <AlbumCard
-                                        key={album.title}
-                                        album={album}
-                                        displayTitle={album.title}
-                                        isAdmin={isAdmin}
-                                        onOpen={openAlbum}
-                                        onEditAlbum={handleEditAlbum}
-                                        onDelete={handleDelete}
-                                    />
-                                ))}
-                            </div>
+                            <AlbumGrid
+                                albums={albums.filter(a => !a.title.includes('/'))}
+                                isAdmin={isAdmin}
+                                onOpen={openAlbum}
+                                onEditAlbum={handleEditAlbum}
+                                onDelete={handleDelete}
+                            />
                         )
                     ) : (
                         /* ---- Photo Grid ---- */
@@ -836,455 +645,80 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                             {subAlbums.length > 0 && (
                                 <div className="mb-8">
                                     <h3 className="text-elegant-text-primary font-bold mb-4 flex items-center gap-2"><FolderPlus size={18} /> Sub-Albums</h3>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                                        {subAlbums.map((album) => (
-                                            <AlbumCard
-                                                key={album.title}
-                                                album={album}
-                                                displayTitle={album.title.split('/').pop() || album.title}
-                                                isAdmin={isAdmin}
-                                                onOpen={openAlbum}
-                                                onEditAlbum={handleEditAlbum}
-                                                onDelete={handleDelete}
-                                            />
-                                        ))}
-                                    </div>
+                                    <AlbumGrid
+                                        albums={subAlbums}
+                                        isAdmin={isAdmin}
+                                        onOpen={openAlbum}
+                                        onEditAlbum={handleEditAlbum}
+                                        onDelete={handleDelete}
+                                    />
                                 </div>
                             )}
+
                             {activeAlbum.photos.length === 0 ? (
                                 <div className="text-center py-20 text-elegant-text-muted">
                                     <p className="text-lg mb-2">This album is empty</p>
                                     <p className="text-sm">Upload photos to get started.</p>
                                 </div>
                             ) : (
-                                <div className="columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4">
-                                    {activeAlbum.photos.map((photo, i) => (
-                                        <div
-                                            key={photo.key}
-                                            className="group bg-elegant-card border border-elegant-border rounded-sm overflow-hidden hover:border-elegant-text-muted transition-all relative cursor-pointer break-inside-avoid"
-                                            onClick={() => openPhoto(photo)}
-                                        >
-                                            <img
-                                                src={optimizeImage(photo.url, { width: 600, quality: 80 })}
-                                                alt={photo.caption || `Photo ${i + 1}`}
-                                                loading="lazy"
-                                                decoding="async"
-                                                className="w-full h-auto object-contain group-hover:scale-[1.02] transition-transform duration-300"
-                                                onError={(e) => {
-                                                    e.currentTarget.style.display = 'none';
-                                                    const parent = e.currentTarget.parentElement;
-                                                    if (parent) { const ph = parent.querySelector('.placeholder'); if (ph) ph.classList.remove('hidden'); }
-                                                }}
-                                            />
-                                            <div className="placeholder hidden w-full aspect-video flex items-center justify-center bg-elegant-card">
-                                                <span className="text-xs text-elegant-text-muted font-mono">IMG_{i + 1}.RAW</span>
-                                            </div>
-
-                                            {/* Desktop hover overlay */}
-                                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity hidden md:flex items-center justify-center gap-4">
-                                                <Maximize2 size={20} className="text-elegant-text-primary" />
-                                                {isAdmin && (
-                                                    <button
-                                                        onClick={(e) => { e.stopPropagation(); handleDelete(photo.key); }}
-                                                        className="p-2 bg-red-500/80 rounded-full hover:bg-red-500 text-white transition-colors"
-                                                    >
-                                                        <Trash2 size={16} />
-                                                    </button>
-                                                )}
-                                            </div>
-
-                                            {/* Mobile: always-visible delete button */}
-                                            {isAdmin && (
-                                                <div className="absolute top-2 right-2 md:hidden z-10">
-                                                    <button
-                                                        onClick={(e) => { e.stopPropagation(); handleDelete(photo.key); }}
-                                                        className="p-1.5 bg-black/70 backdrop-blur-sm rounded-full text-red-400 active:bg-red-500/30 transition-colors"
-                                                    >
-                                                        <Trash2 size={13} />
-                                                    </button>
-                                                </div>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
+                                <PhotoGrid
+                                    photos={activeAlbum.photos}
+                                    isAdmin={isAdmin}
+                                    onOpenPhoto={(photo) => openPhoto(photo)}
+                                    onDeletePhoto={(key) => handleDelete(key, false)}
+                                />
                             )}
                         </>
                     )}
                 </main>
 
+                <PageFooter />
+
                 {/* Lightbox */}
                 {activePhoto && (
-                    <div
-                        className="fixed inset-0 z-50 bg-black/95 flex flex-col"
-                        onClick={closePhoto}
-                        onTouchStart={onTouchStart}
-                        onTouchMove={onTouchMove}
-                        onTouchEnd={onTouchEnd}
-                    >
-                        <div className="flex items-center justify-between p-4 flex-shrink-0 z-50">
-                            <span
-                                className={`text-elegant-text-primary font-mono text-sm truncate max-w-[70%] ${isAdmin ? 'cursor-pointer hover:text-elegant-accent hover:underline decoration-dashed underline-offset-4' : ''}`}
-                                onClick={(e) => { e.stopPropagation(); if (isAdmin) handleRenamePhoto(activePhoto.key); }}
-                            >
-                                {decodeURIComponent(activePhoto.key.split('/').pop() || '')}
-                            </span>
-                            <button onClick={closePhoto} className="p-2 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors">
-                                <X size={20} />
-                            </button>
-                        </div>
-
-                        <div className="flex-1 flex items-center justify-center p-4 min-h-0 relative group">
-                            <div className="absolute inset-y-0 left-0 w-1/4 z-10 cursor-pointer" onClick={(e) => { e.stopPropagation(); handlePrev(); }} />
-                            <div className="absolute inset-y-0 right-0 w-1/4 z-10 cursor-pointer" onClick={(e) => { e.stopPropagation(); handleNext(); }} />
-
-                            <button onClick={handlePrev} className="absolute left-4 p-3 bg-black/50 hover:bg-white/20 text-white rounded-full transition-all opacity-0 group-hover:opacity-100 hidden md:flex z-20">
-                                <ChevronLeft size={32} />
-                            </button>
-
-                            <img
-                                src={optimizeImage(activePhoto.url, { width: 1920, quality: 90 })}
-                                alt={activePhoto.caption || "Full view"}
-                                className="max-w-full max-h-full object-contain relative z-0"
-                                decoding="async"
-                                onClick={(e) => e.stopPropagation()}
-                            />
-
-                            <div className="absolute bottom-8 left-0 right-0 flex justify-center pointer-events-none z-30">
-                                {activePhoto.caption && (
-                                    <div className="bg-black/30 backdrop-blur-md border border-white/10 rounded-full px-6 py-3 max-w-[80vw]">
-                                        <p className="text-white/90 font-medium text-sm sm:text-base drop-shadow-md text-center truncate">{activePhoto.caption}</p>
-                                    </div>
-                                )}
-                            </div>
-
-                            <button onClick={handleNext} className="absolute right-4 p-3 bg-black/50 hover:bg-white/20 text-white rounded-full transition-all opacity-0 group-hover:opacity-100 hidden md:flex z-20">
-                                <ChevronRight size={32} />
-                            </button>
-
-                            {showSwipeHint && (
-                                <div className="absolute inset-0 flex items-center justify-center pointer-events-none md:hidden">
-                                    <div className="bg-black/60 text-white px-4 py-3 rounded-full flex items-center gap-3 backdrop-blur-sm animate-fade-out">
-                                        <Hand size={24} className="animate-swipe-hint" />
-                                        <span className="text-sm font-medium">Swipe to navigate</span>
-                                    </div>
-                                    <style>{`
-                                        @keyframes swipe-hint { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-10px); } 75% { transform: translateX(10px); } }
-                                        .animate-swipe-hint { animation: swipe-hint 1.5s ease-in-out infinite; }
-                                        @keyframes fade-out { 0% { opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; } }
-                                        .animate-fade-out { animation: fade-out 3s forwards; }
-                                    `}</style>
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Lightbox admin actions */}
-                        {isAdmin && (
-                            <div className="absolute bottom-6 right-6 z-50 flex gap-3" onClick={(e) => e.stopPropagation()}>
-                                <Tooltip text="Delete Photo">
-                                    <button
-                                        onClick={() => handleDelete(activePhoto.key)}
-                                        className="p-3 bg-elegant-card/80 border border-elegant-border backdrop-blur-md text-red-400 rounded-full hover:bg-red-500/20 hover:border-red-500/50 transition-all shadow-lg"
-                                    >
-                                        <Trash2 size={20} />
-                                    </button>
-                                </Tooltip>
-                                <Tooltip text="Edit Caption">
-                                    <button
-                                        onClick={handleUpdateCaption}
-                                        className="p-3 bg-elegant-card/80 border border-elegant-border backdrop-blur-md text-elegant-text-primary rounded-full hover:bg-elegant-accent hover:text-white transition-all shadow-lg"
-                                    >
-                                        <Edit2 size={20} />
-                                    </button>
-                                </Tooltip>
-                            </div>
-                        )}
-                    </div>
+                    <Lightbox
+                        activePhoto={activePhoto}
+                        onClose={closePhoto}
+                        onNext={handleNext}
+                        onPrev={handlePrev}
+                        isAdmin={isAdmin}
+                        onDelete={(key) => handleDelete(key, false)}
+                        onRename={handleRenamePhoto}
+                        onUpdateCaption={handleUpdateCaption}
+                    />
                 )}
 
-                {/* Desktop-only Admin FABs */}
-                {isAdmin && !activePhoto && (
-                    <div className="fixed bottom-24 right-8 hidden md:flex flex-col gap-4 z-40">
-                        <Tooltip text="New Album" position="left">
-                            <button
-                                onClick={() => {
-                                    showPrompt(
-                                        activeAlbumTitle ? `Create New Album in ${activeAlbumTitle.split('/').pop()}` : 'Create New Album',
-                                        '',
-                                        (name) => {
-                                            if (name) {
-                                                const finalName = activeAlbumTitle ? `${activeAlbumTitle}/${name}` : name;
-                                                setUploadAlbumName(finalName);
-                                                setShowUploadModal(true);
-                                            }
-                                        }
-                                    );
-                                }}
-                                className="p-4 bg-elegant-card border border-elegant-border text-elegant-text-primary rounded-full shadow-lg transition-all duration-300 hover:bg-elegant-accent hover:text-white hover:border-elegant-accent hover:scale-110 hover:shadow-elegant-accent/20 hover:shadow-xl active:scale-95"
-                            >
-                                <FolderPlus size={24} />
-                            </button>
-                        </Tooltip>
-                        <Tooltip text="Upload Photos" position="left">
-                            <button
-                                onClick={() => {
-                                    if (activeAlbumTitle) setUploadAlbumName(activeAlbumTitle);
-                                    setShowUploadModal(true);
-                                }}
-                                className="p-4 bg-elegant-card border border-elegant-border text-elegant-text-primary rounded-full shadow-lg transition-all duration-300 hover:bg-elegant-accent hover:text-white hover:border-elegant-accent hover:scale-110 hover:rotate-90 hover:shadow-elegant-accent/20 hover:shadow-xl active:scale-95"
-                            >
-                                <Plus size={24} />
-                            </button>
-                        </Tooltip>
-                    </div>
-                )}
+                {/* Admin FABs & Upload Modal */}
+                <GalleryAdmin
+                    isAdmin={isAdmin}
+                    activeAlbumTitle={activeAlbumTitle}
+                    showUploadModal={showUploadModal}
+                    setShowUploadModal={setShowUploadModal}
+                    uploadFiles={uploadFiles}
+                    setUploadFiles={setUploadFiles}
+                    uploadCaption={uploadCaption}
+                    setUploadCaption={setUploadCaption}
+                    uploadAlbumName={uploadAlbumName}
+                    setUploadAlbumName={setUploadAlbumName}
+                    uploadProgress={uploadProgress}
+                    isProcessing={isProcessing}
+                    handleUpload={handleUpload}
+                    resetUploadForm={resetUploadForm}
+                    albums={albums}
+                    onNewAlbumClick={handleNewAlbumClick}
+                />
 
-                {/* --- CUSTOM MODALS --- */}
-
-                {/* Prompt Modal */}
-                {promptConfig && (
-                    <div className="fixed inset-0 z-[60] bg-black/80 flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
-                        <div className="bg-elegant-card border border-elegant-border p-4 rounded-lg max-w-sm w-full shadow-2xl">
-                            <h3 className="text-lg font-bold text-elegant-text-primary mb-4">{promptConfig.title}</h3>
-                            <input
-                                autoFocus
-                                defaultValue={promptConfig.defaultValue}
-                                className="w-full bg-elegant-bg border border-elegant-border rounded p-2 text-elegant-text-primary focus:border-elegant-accent outline-none mb-6"
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter') { promptConfig.onConfirm(e.currentTarget.value); setPromptConfig(null); }
-                                    if (e.key === 'Escape') setPromptConfig(null);
-                                }}
-                                ref={(input) => { if (input) setTimeout(() => input.focus(), 10); }}
-                            />
-                            <div className="flex justify-end gap-3">
-                                <button onClick={() => setPromptConfig(null)} className="px-4 py-2 text-elegant-text-muted hover:text-elegant-text-primary">Cancel</button>
-                                <button
-                                    onClick={(e) => { const input = e.currentTarget.parentElement?.previousElementSibling as HTMLInputElement; promptConfig.onConfirm(input.value); setPromptConfig(null); }}
-                                    className="px-4 py-2 bg-elegant-accent text-white rounded hover:bg-elegant-accent/90"
-                                >Confirm</button>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Edit Album Modal */}
-                {editAlbumConfig && (
-                    <div className="fixed inset-0 z-[60] bg-black/80 flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
-                        <div className="bg-elegant-card border border-elegant-border p-4 rounded-lg max-w-sm w-full shadow-2xl">
-                            <h3 className="text-lg font-bold text-elegant-text-primary mb-4">Edit Album</h3>
-                            <div className="space-y-4">
-                                <div>
-                                    <label className="block text-xs font-medium text-elegant-text-muted mb-1">Album Name</label>
-                                    <input
-                                        autoFocus
-                                        defaultValue={editAlbumConfig.album.title.split('/').pop()}
-                                        className="w-full bg-elegant-bg border border-elegant-border rounded p-2 text-elegant-text-primary focus:border-elegant-accent outline-none"
-                                        id="edit-album-name"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-medium text-elegant-text-muted mb-1">Category / Subtitle</label>
-                                    <input
-                                        defaultValue={editAlbumConfig.album.category}
-                                        className="w-full bg-elegant-bg border border-elegant-border rounded p-2 text-elegant-text-primary focus:border-elegant-accent outline-none"
-                                        id="edit-album-category"
-                                    />
-                                </div>
-                            </div>
-                            <div className="flex justify-end gap-2 mt-6">
-                                <button onClick={() => setEditAlbumConfig(null)} className="px-4 py-2 text-elegant-text-muted hover:text-elegant-text-primary text-sm font-medium">Cancel</button>
-                                <button
-                                    onClick={() => {
-                                        const nameInput = document.getElementById('edit-album-name') as HTMLInputElement;
-                                        const catInput = document.getElementById('edit-album-category') as HTMLInputElement;
-                                        if (nameInput && catInput) {
-                                            editAlbumConfig.onConfirm(nameInput.value, catInput.value);
-                                            setEditAlbumConfig(null);
-                                        }
-                                    }}
-                                    className="px-4 py-2 bg-elegant-accent text-white rounded hover:bg-elegant-accent/90 text-sm font-medium"
-                                >
-                                    Save Changes
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Confirm Modal */}
-                {confirmConfig && (
-                    <div className="fixed inset-0 z-[60] bg-black/80 flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
-                        <div className="bg-elegant-card border border-elegant-border p-4 rounded-lg max-w-sm w-full shadow-2xl">
-                            <h3 className="text-lg font-bold text-elegant-text-primary mb-2">{confirmConfig.title}</h3>
-                            <p className="text-elegant-text-muted mb-6">{confirmConfig.message}</p>
-                            <div className="flex justify-end gap-3">
-                                <button onClick={() => setConfirmConfig(null)} className="px-4 py-2 text-elegant-text-muted hover:text-elegant-text-primary">Cancel</button>
-                                <button
-                                    onClick={() => { confirmConfig.onConfirm(); setConfirmConfig(null); }}
-                                    className={`px-4 py-2 text-white rounded transition-colors ${confirmConfig.confirmLabel === 'Delete' ? 'bg-red-500 hover:bg-red-600' : 'bg-elegant-accent hover:bg-elegant-accent/90'}`}
-                                >{confirmConfig.confirmLabel}</button>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Toast */}
-                {alertConfig && (
-                    <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[70]">
-                        <div className={`px-4 py-2 rounded border shadow-lg flex items-center gap-2 text-sm font-mono backdrop-blur-sm ${alertConfig.type === 'error' ? 'bg-red-500/10 border-red-500/40 text-red-400' :
-                            alertConfig.type === 'success' ? 'bg-elegant-accent/10 border-elegant-accent/40 text-elegant-accent' :
-                                'bg-elegant-card border-elegant-border text-elegant-text-primary'
-                            }`}>
-                            <span>{alertConfig.message}</span>
-                            <button onClick={() => setAlertConfig(null)} className="ml-1 opacity-60 hover:opacity-100 transition-opacity"><X size={12} /></button>
-                        </div>
-                    </div>
-                )}
-
-                {/* Upload Modal */}
-                {showUploadModal && (
-                    <div className="fixed inset-0 z-[60] bg-black/90 flex items-center justify-center p-4 backdrop-blur-sm">
-                        <div className="bg-elegant-card border border-elegant-border rounded-lg max-w-lg w-full p-4 shadow-2xl relative">
-                            <button onClick={() => { setShowUploadModal(false); resetUploadForm(); }} className="absolute top-4 right-4 text-elegant-text-muted hover:text-white">
-                                <X size={20} />
-                            </button>
-
-                            <h2 className="text-xl font-bold text-elegant-text-primary mb-6 flex items-center gap-2">
-                                <ImagePlus className="text-elegant-accent" size={22} /> Upload Photos
-                            </h2>
-
-                            <form onSubmit={handleUpload} className="space-y-5">
-                                <div className="space-y-2">
-                                    <label className="text-sm text-elegant-text-muted">Album Name</label>
-                                    <div className="relative" ref={albumDropdownRef}>
-                                        <div className="relative">
-                                            <input
-                                                value={uploadAlbumName}
-                                                onChange={(e) => {
-                                                    setUploadAlbumName(e.target.value);
-                                                    setIsAlbumDropdownOpen(true);
-                                                }}
-                                                onFocus={() => setIsAlbumDropdownOpen(true)}
-                                                className="w-full bg-elegant-bg border border-elegant-border rounded p-3 pr-10 text-elegant-text-primary focus:border-elegant-accent outline-none appearance-none"
-                                                placeholder="e.g. Summer 2024"
-                                                required
-                                                disabled={isProcessing}
-                                            />
-                                            <button
-                                                type="button"
-                                                onClick={() => setIsAlbumDropdownOpen(!isAlbumDropdownOpen)}
-                                                className="absolute right-3 top-1/2 -translate-y-1/2 text-elegant-text-muted hover:text-elegant-text-primary transition-colors"
-                                                disabled={isProcessing}
-                                            >
-                                                <ChevronDown size={16} className={`transition-transform duration-200 ${isAlbumDropdownOpen ? 'rotate-180' : ''}`} />
-                                            </button>
-                                        </div>
-
-                                        {isAlbumDropdownOpen && albums.length > 0 && (
-                                            <div className="absolute left-0 right-0 top-full mt-1 bg-elegant-card border border-elegant-border rounded-sm shadow-xl z-50 max-h-48 overflow-y-auto">
-                                                {albums
-                                                    .filter(a => !uploadAlbumName || a.title.toLowerCase().includes(uploadAlbumName.toLowerCase()))
-                                                    .map(a => (
-                                                        <button
-                                                            key={a.title}
-                                                            type="button"
-                                                            onClick={() => {
-                                                                setUploadAlbumName(a.title);
-                                                                setIsAlbumDropdownOpen(false);
-                                                            }}
-                                                            className="w-full text-left px-4 py-2 hover:bg-white/10 transition-colors text-elegant-text-secondary hover:text-elegant-text-primary text-sm"
-                                                        >
-                                                            {a.title}
-                                                        </button>
-                                                    ))}
-                                                {uploadAlbumName && !albums.some(a => a.title.toLowerCase() === uploadAlbumName.toLowerCase()) && (
-                                                    <div className="px-4 py-2 text-elegant-text-muted text-xs italic border-t border-elegant-border">
-                                                        Create new album "{uploadAlbumName}"
-                                                    </div>
-                                                )}
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-
-                                <div className="space-y-2">
-                                    <label className="text-sm text-elegant-text-muted">Caption (Optional, applies to all)</label>
-                                    <textarea
-                                        value={uploadCaption}
-                                        onChange={(e) => setUploadCaption(e.target.value)}
-                                        className="w-full bg-elegant-bg border border-elegant-border rounded p-3 text-elegant-text-primary focus:border-elegant-accent outline-none resize-none h-20"
-                                        placeholder="Add a description..."
-                                        disabled={isProcessing}
-                                    />
-                                </div>
-
-                                <div className="relative group">
-                                    <input
-                                        type="file"
-                                        multiple
-                                        onChange={(e) => {
-                                            if (e.target.files && e.target.files.length > 0) {
-                                                setUploadFiles(Array.from(e.target.files));
-                                            }
-                                        }}
-                                        accept="image/png, image/jpeg, image/webp"
-                                        className="absolute inset-0 opacity-0 cursor-pointer z-10"
-                                        required
-                                        disabled={isProcessing}
-                                    />
-                                    <div className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${isProcessing ? 'opacity-50' : 'group-hover:border-elegant-text-muted'} ${uploadFiles.length > 0 ? 'bg-elegant-accent/5 border-elegant-accent/40' : 'bg-elegant-bg border-elegant-border'}`}>
-                                        {uploadFiles.length > 0 ? (
-                                            <div>
-                                                <p className="text-elegant-accent font-medium">{uploadFiles.length} file{uploadFiles.length > 1 ? 's' : ''} selected</p>
-                                                <p className="text-xs text-elegant-text-muted mt-1 truncate">
-                                                    {uploadFiles.map(f => f.name).join(', ')}
-                                                </p>
-                                            </div>
-                                        ) : (
-                                            <div className="text-elegant-text-muted">
-                                                <p className="font-medium">Click to select photos</p>
-                                                <p className="text-xs mt-1">JPG, PNG, WebP &middot; Multiple files supported</p>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-
-                                {/* Upload Progress */}
-                                {uploadProgress && (
-                                    <div className="space-y-2 text-sm font-mono">
-                                        <div className="flex justify-between text-elegant-text-muted">
-                                            <span>
-                                                {uploadProgress.stage === 'stripping' ? 'Removing metadata' : 'Uploading'} ({uploadProgress.current}/{uploadProgress.total})
-                                            </span>
-                                            <span>{uploadProgress.stage === 'uploading' ? `${uploadProgress.percent}%` : ''}</span>
-                                        </div>
-                                        <div className="w-full h-1.5 bg-elegant-bg rounded-full overflow-hidden">
-                                            <div
-                                                className={`h-full rounded-full transition-all duration-300 ${uploadProgress.stage === 'stripping' ? 'bg-elegant-text-muted animate-pulse w-full' : 'bg-elegant-accent'}`}
-                                                style={uploadProgress.stage === 'uploading' ? { width: `${uploadProgress.percent}%` } : undefined}
-                                            />
-                                        </div>
-                                        <p className="text-elegant-text-muted text-xs truncate">{uploadProgress.fileName}</p>
-                                    </div>
-                                )}
-
-                                <button
-                                    type="submit"
-                                    disabled={isProcessing}
-                                    className="w-full bg-elegant-accent hover:bg-elegant-accent/90 text-white font-bold py-3 rounded transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                                >
-                                    {isProcessing ? (
-                                        <><Loader2 size={18} className="animate-spin" /> Processing...</>
-                                    ) : (
-                                        `Upload ${uploadFiles.length > 0 ? uploadFiles.length : ''} Photo${uploadFiles.length !== 1 ? 's' : ''}`
-                                    )}
-                                </button>
-                            </form>
-                        </div>
-                    </div>
-                )}
-
-                {/* Footer */}
-                <PageFooter />
+                {/* Modals */}
+                <GalleryModals
+                    promptConfig={promptConfig}
+                    setPromptConfig={setPromptConfig}
+                    alertConfig={alertConfig}
+                    setAlertConfig={setAlertConfig}
+                    editAlbumConfig={editAlbumConfig}
+                    setEditAlbumConfig={setEditAlbumConfig}
+                    confirmConfig={confirmConfig}
+                    setConfirmConfig={setConfirmConfig}
+                />
             </div>
         </div>
     );

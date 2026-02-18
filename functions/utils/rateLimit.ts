@@ -1,4 +1,4 @@
-export async function checkRateLimit(env: any, key: string, limit: number, windowSeconds: number): Promise<boolean> {
+export async function checkRateLimit(env: { RATE_LIMITER?: KVNamespace }, key: string, limit: number, windowSeconds: number): Promise<boolean> {
     if (!env.RATE_LIMITER) {
         console.warn('RATE_LIMITER KV not bound');
         return true;

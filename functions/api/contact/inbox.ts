@@ -13,7 +13,7 @@ export const onRequestGet: PagesFunction<{ DB: D1Database, ADMIN_PASSWORD: strin
         const date = url.searchParams.get('date');
 
         let query = 'SELECT * FROM messages';
-        const params: any[] = [];
+        const params: string[] = [];
         const conditions: string[] = [];
 
         if (date) {
@@ -21,7 +21,7 @@ export const onRequestGet: PagesFunction<{ DB: D1Database, ADMIN_PASSWORD: strin
             params.push(date);
         } else if (period) {
             const now = new Date();
-            let past = new Date();
+            const past = new Date();
             if (period === 'day') past.setDate(now.getDate() - 1);
             if (period === 'week') past.setDate(now.getDate() - 7);
             if (period === 'month') past.setMonth(now.getMonth() - 1);
@@ -40,8 +40,8 @@ export const onRequestGet: PagesFunction<{ DB: D1Database, ADMIN_PASSWORD: strin
         const { results } = await env.DB.prepare(query).bind(...params).all();
         return new Response(JSON.stringify(results), { headers: { 'Content-Type': 'application/json' } });
 
-    } catch (e: any) {
-        return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+    } catch (e: unknown) {
+        return new Response(JSON.stringify({ error: e instanceof Error ? e.message : 'Unknown error' }), { status: 500, headers: { 'Content-Type': 'application/json' } });
     }
 };
 
@@ -68,7 +68,7 @@ export const onRequestDelete: PagesFunction<{ DB: D1Database, ADMIN_PASSWORD: st
 
         return new Response(JSON.stringify({ success: true }), { status: 200, headers: { 'Content-Type': 'application/json' } });
 
-    } catch (e: any) {
-        return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+    } catch (e: unknown) {
+        return new Response(JSON.stringify({ error: e instanceof Error ? e.message : 'Unknown error' }), { status: 500, headers: { 'Content-Type': 'application/json' } });
     }
 };

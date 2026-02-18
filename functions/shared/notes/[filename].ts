@@ -1,4 +1,4 @@
-export const onRequestGet = async (context: any) => {
+export const onRequestGet: PagesFunction<{ DB: D1Database }> = async (context) => {
     const { params, env } = context;
     const filename = params.filename;
 
@@ -48,7 +48,7 @@ export const onRequestGet = async (context: any) => {
             .replace(/"/g, "&quot;")
             .replace(/'/g, "&#039;");
     };
-    const safeFilename = escapeHtml(filename);
+    const safeFilename = escapeHtml(String(filename));
 
     const html = `
 <!DOCTYPE html>

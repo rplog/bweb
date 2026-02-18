@@ -1,6 +1,6 @@
 import { jwtVerify } from 'jose';
 
-export async function verifyAuth(request: Request, env: any): Promise<boolean> {
+export async function verifyAuth(request: Request, env: { JWT_SECRET?: string; ADMIN_PASSWORD?: string }): Promise<boolean> {
     const authHeader = request.headers.get('Authorization');
 
 

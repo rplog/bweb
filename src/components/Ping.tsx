@@ -136,21 +136,22 @@ export const Ping: React.FC<PingProps> = ({ host, onComplete, count }) => {
                 if (mounted && isRunningRef.current) {
                     timeoutId = setTimeout(doPing, 1000);
                 }
-            } catch (e: any) {
+            } catch (e: unknown) {
                 if (!mounted) return;
-                if (e.name === 'AbortError') return;
+                if (e instanceof Error && e.name === 'AbortError') return;
 
                 let errorMsg = `Request timeout for icmp_seq=${currentSeq}`;
-                if (e.message?.includes('DNS') || e.message?.includes('ENOTFOUND')) {
+                const errMsg = e instanceof Error ? e.message : '';
+                if (errMsg?.includes('DNS') || errMsg?.includes('ENOTFOUND')) {
                     errorMsg = `ping: ${host}: Name or service not known`;
                     setIsRunning(false);
-                } else if (e.message?.includes('Network') || e.message?.includes('Failed to fetch')) {
+                } else if (errMsg?.includes('Network') || errMsg?.includes('Failed to fetch')) {
                     errorMsg = `From ${ipRef.current || 'unknown'}: icmp_seq=${currentSeq} Destination Host Unreachable`;
                 }
 
                 setLines(prev => [...prev, errorMsg]);
 
-                if (!e.message?.includes('DNS') && !e.message?.includes('ENOTFOUND') && mounted && isRunningRef.current) {
+                if (!errMsg?.includes('DNS') && !errMsg?.includes('ENOTFOUND') && mounted && isRunningRef.current) {
                     timeoutId = setTimeout(doPing, 1000);
                 } else {
                     finalizePing(false);
@@ -178,6 +179,7 @@ export const Ping: React.FC<PingProps> = ({ host, onComplete, count }) => {
             if (abortControllerRef.current) abortControllerRef.current.abort();
             window.removeEventListener('keydown', handleKeyDown);
         };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [host, count, isValidHost, finalizePing]);
 
     return (

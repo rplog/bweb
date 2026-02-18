@@ -40,13 +40,13 @@ export const useTerminal = () => {
         if (notesPreloaded) return;
         fetch('/api/notes')
             .then(res => res.ok ? res.json() : Promise.reject())
-            .then((notes: any[]) => {
+            .then((notes: { filename: string; size?: number; updated_at?: number; author?: string }[]) => {
                 setFileSystem(prev => {
                     const updated = JSON.parse(JSON.stringify(prev));
                     const visitorsDir = updated.home?.children?.neo?.children?.visitors_notes;
                     if (visitorsDir) {
-                        const children: { [key: string]: any } = {};
-                        notes.forEach((note: any) => {
+                        const children: Record<string, { type: string; content: string; size: number; lastModified?: number; author?: string }> = {};
+                        notes.forEach((note) => {
                             children[note.filename] = {
                                 type: 'file',
                                 content: '',
@@ -69,6 +69,7 @@ export const useTerminal = () => {
     // Check login status on mount
     useEffect(() => {
         const token = localStorage.getItem('admin_token');
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         if (token) setUser('root');
     }, []);
 
@@ -201,6 +202,7 @@ export const useTerminal = () => {
             const path = window.location.pathname;
             const command = ROUTES[path];
             if (command) {
+                // eslint-disable-next-line react-hooks/set-state-in-effect
                 execute(command, true);
             } else if (path.startsWith('/gallery')) {
                 execute('gallery', true);

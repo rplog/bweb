@@ -48,7 +48,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
                 'Cache-Control': 'public, max-age=600'
             }
         });
-    } catch (e: any) {
-        return new Response(`Internal Error: ${e.message}`, { status: 500 });
+    } catch (e: unknown) {
+        return new Response(`Internal Error: ${e instanceof Error ? e.message : 'Unknown error'}`, { status: 500 });
     }
 };

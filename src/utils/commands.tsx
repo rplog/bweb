@@ -1,18 +1,41 @@
-import { resolvePath, getDirectoryContents, writeFile } from './fileSystemUtils';
+import { resolvePath, getDirectoryContents, writeFile, isVisitorsNotesDir } from './fileSystemUtils';
+import type { FileSystemNode } from './fileSystem';
 import { Htop } from '../components/Htop';
 import { Ping } from '../components/Ping';
 import { Nano } from '../components/Nano';
 import { createNavigator } from './navigation';
 import React from 'react';
 
+export interface CommandContext {
+    currentPath: string[];
+    fileSystem: Record<string, FileSystemNode>;
+    user: string;
+    setUser?: (user: string) => void;
+    setFileSystem?: (updater: ((prev: Record<string, FileSystemNode>) => Record<string, FileSystemNode>) | Record<string, FileSystemNode>) => void;
+    setFullScreenWithRoute?: (component: React.ReactNode, route: string) => void;
+    setFullScreen?: (component: React.ReactNode | null) => void;
+    setIsInputVisible: (visible: boolean) => void;
+    onSaveNote?: (filename: string, content: string, commitMsg: string, authorName: string) => Promise<void>;
+    addToHistory?: (command: string, output: string | React.ReactNode) => void;
+}
+
 export interface Command {
     description: string;
     usage?: string;
-    execute: (args: string[], context: any) => string | React.ReactNode | Promise<string | React.ReactNode>;
+    execute: (args: string[], context: CommandContext) => string | React.ReactNode | Promise<string | React.ReactNode>;
 }
 
 // Helper component for inbox message item
-const InboxMessageItem = ({ msg }: { msg: any }) => {
+interface InboxMessage {
+    id: number;
+    name: string;
+    email: string;
+    message: string;
+    timestamp: string;
+}
+
+// eslint-disable-next-line react-refresh/only-export-components
+const InboxMessageItem = ({ msg }: { msg: InboxMessage }) => {
     const [copied, setCopied] = React.useState(false);
 
     const handleCopyId = (e: React.MouseEvent) => {
@@ -48,7 +71,7 @@ const InboxMessageItem = ({ msg }: { msg: any }) => {
 export const commands: Record<string, Command> = {
     help: {
         description: 'List all available commands',
-        execute: (_args) => {
+        execute: () => {
             const hiddenCommands = ['login', 'inbox', 'alerts', 'admin'];
             const commandList = Object.keys(commands)
                 .filter(cmd => !hiddenCommands.includes(cmd))
@@ -132,8 +155,8 @@ export const commands: Record<string, Command> = {
                 localStorage.setItem('admin_token', data.token);
                 if (setUser) setUser('root');
                 return 'Logged in successfully as root.';
-            } catch (e: any) {
-                return `Error: ${e.message}`;
+            } catch (e: unknown) {
+                return `Error: ${e instanceof Error ? e.message : 'Unknown error'}`;
             }
         }
     },
@@ -196,8 +219,8 @@ export const commands: Record<string, Command> = {
                     });
                     if (!res.ok) throw new Error('Failed to delete message');
                     return `Message ${id} deleted successfully.`;
-                } catch (e: any) {
-                    return `Error: ${e.message}`;
+                } catch (e: unknown) {
+                    return `Error: ${e instanceof Error ? e.message : 'Unknown error'}`;
                 }
             }
 
@@ -228,13 +251,13 @@ export const commands: Record<string, Command> = {
                 return (
                     <div className="flex flex-col gap-4 font-mono text-sm">
                         <div className="text-elegant-accent font-bold mb-2">Inbox ({messages.length})</div>
-                        {messages.map((msg: any) => (
+                        {messages.map((msg: InboxMessage) => (
                             <InboxMessageItem key={msg.id} msg={msg} />
                         ))}
                     </div>
                 );
-            } catch (e: any) {
-                return `Error: ${e.message}`;
+            } catch (e: unknown) {
+                return `Error: ${e instanceof Error ? e.message : 'Unknown error'}`;
             }
         }
     },
@@ -293,8 +316,8 @@ export const commands: Record<string, Command> = {
                     const config = await res.json();
                     const current = config['notification_channels'] || 'telegram,email';
                     return `Current alerts: ${current.replace(',', ' & ')}`;
-                } catch (e: any) {
-                    return `Error fetching config: ${e.message}`;
+                } catch (e: unknown) {
+                    return `Error fetching config: ${e instanceof Error ? e.message : 'Unknown error'}`;
                 }
             }
 
@@ -322,8 +345,8 @@ export const commands: Record<string, Command> = {
                     return `Error: ${data.error || 'Failed to update settings'}`;
                 }
                 return `Alerts updated to: ${mode}`;
-            } catch (e: any) {
-                return `Error: ${e.message}`;
+            } catch (e: unknown) {
+                return `Error: ${e instanceof Error ? e.message : 'Unknown error'}`;
             }
         }
     },
@@ -422,7 +445,6 @@ export const commands: Record<string, Command> = {
             if (args.length === 0) return 'cat: missing operand';
 
             const pathParts = args[0].split('/');
-            const isVisitorsNotesDir = (path: string[]) => path[path.length - 1] === 'visitors_notes';
             const isInVisitorsNotes = isVisitorsNotesDir(currentPath) || pathParts.includes('visitors_notes');
 
             if (isInVisitorsNotes) {
@@ -430,11 +452,15 @@ export const commands: Record<string, Command> = {
                 try {
                     const response = await fetch(`/api/notes/${filename}`);
                     if (response.status === 404) return `cat: ${filename}: No such file or directory`;
-                    if (!response.ok) throw new Error('Failed to fetch note');
+                    if (response.status === 404) return `cat: ${filename}: No such file or directory`;
+                    if (!response.ok) {
+                        const err = await response.json();
+                        throw new Error(err.error || 'Failed to fetch note');
+                    }
                     const note = await response.json();
                     return note.content;
-                } catch (e: any) {
-                    return `Error: ${e.message}`;
+                } catch (e: unknown) {
+                    return `Error: ${e instanceof Error ? e.message : 'Unknown error'}`;
                 }
             }
 
@@ -460,8 +486,6 @@ export const commands: Record<string, Command> = {
             // Check if target is in visitors_notes
             let filename = args[0];
             let isVisitorNote = false;
-
-            const isVisitorsNotesDir = (path: string[]) => path[path.length - 1] === 'visitors_notes';
 
             if (isVisitorsNotesDir(currentPath)) {
                 isVisitorNote = true;
@@ -504,8 +528,6 @@ export const commands: Record<string, Command> = {
             let filename = args[0];
             let isVisitorNote = false;
 
-            const isVisitorsNotesDir = (path: string[]) => path[path.length - 1] === 'visitors_notes';
-
             if (isVisitorsNotesDir(currentPath)) {
                 isVisitorNote = true;
             } else if (filename.includes('visitors_notes/')) {
@@ -536,7 +558,7 @@ export const commands: Record<string, Command> = {
 
                 // Update local fileSystem to remove the file from ls
                 if (setFileSystem) {
-                    setFileSystem((prev: Record<string, any>) => {
+                    setFileSystem((prev: Record<string, unknown>) => {
                         const updated = JSON.parse(JSON.stringify(prev));
                         const visitorsDir = updated.home?.children?.neo?.children?.visitors_notes;
                         if (visitorsDir?.children?.[filename]) {
@@ -547,8 +569,8 @@ export const commands: Record<string, Command> = {
                 }
 
                 return `removed '${filename}'`;
-            } catch (e: any) {
-                return `rm: error: ${e.message}`;
+            } catch (e: unknown) {
+                return `rm: error: ${e instanceof Error ? e.message : 'Unknown error'}`;
             }
         }
     },
@@ -686,7 +708,10 @@ export const commands: Record<string, Command> = {
                 const res = await fetch(`/api/weather?city=${encodeURIComponent(city)}`);
 
                 if (res.status === 404) return `Error: City '${city}' not found.`;
-                if (!res.ok) return `Error: ${await res.text()}`;
+                if (!res.ok) {
+                    const err = await res.json();
+                    return `Error: ${err.error || res.statusText}`;
+                }
 
                 const data = await res.json();
                 const temp = Math.round(data.main.temp);
@@ -707,7 +732,7 @@ export const commands: Record<string, Command> = {
                         </div>
                     </div>
                 );
-            } catch (e) {
+            } catch {
                 return `Error fetching weather for ${city}`;
             }
         }
@@ -742,7 +767,7 @@ export const commands: Record<string, Command> = {
                 return currentPath[currentPath.length - 1] === 'visitors_notes' || name?.includes('visitors_notes/');
             };
 
-            let loadFilename = filenameArg;
+            const loadFilename = filenameArg;
             let contentToEdit = '';
 
             if (loadFilename) {
@@ -755,7 +780,7 @@ export const commands: Record<string, Command> = {
                                 const data = await res.json();
                                 contentToEdit = data.content;
                             }
-                        } catch (e) {
+                        } catch {
                             // Ignore error, assume new file
                         }
                     }
@@ -813,11 +838,12 @@ export const commands: Record<string, Command> = {
                                 }
 
                                 if (!res.ok) {
-                                    throw new Error(await res.text());
+                                    const err = await res.json();
+                                    throw new Error(err.error || res.statusText);
                                 }
                                 // Update local fileSystem so ls reflects the new/updated note immediately
                                 if (setFileSystem) {
-                                    setFileSystem((prev: Record<string, any>) => {
+                                    setFileSystem((prev: Record<string, FileSystemNode>) => {
                                         const updated = JSON.parse(JSON.stringify(prev));
                                         const visitorsDir = updated.home?.children?.neo?.children?.visitors_notes;
                                         if (visitorsDir && visitorsDir.children) {
@@ -890,7 +916,10 @@ export const commands: Record<string, Command> = {
             const pattern = args[0];
             try {
                 const response = await fetch(`/api/notes?search=${encodeURIComponent(pattern)}`);
-                if (!response.ok) throw new Error('Search failed');
+                if (!response.ok) {
+                    const err = await response.json();
+                    return `grep: error fetching notes: ${err.error || response.statusText}`;
+                }
                 const results = await response.json();
                 if (results.length === 0) {
                     return <span className="text-elegant-text-muted">No notes matching "{pattern}"</span>;
@@ -901,7 +930,7 @@ export const commands: Record<string, Command> = {
                             Found {results.length} note{results.length !== 1 ? 's' : ''} matching "{pattern}":
                         </div>
                         <div className="grid grid-cols-2 gap-2">
-                            {results.map((note: any) => (
+                            {results.map((note: { filename: string; updated_at: string }) => (
                                 <div key={note.filename} className="flex justify-between">
                                     <span className="text-elegant-text-primary">{note.filename}</span>
                                     <span className="text-elegant-text-muted text-xs">{new Date(note.updated_at).toLocaleDateString()}</span>
@@ -910,8 +939,9 @@ export const commands: Record<string, Command> = {
                         </div>
                     </div>
                 );
-            } catch (e: any) {
-                return `grep: error: ${e.message}`;
+            } catch (e) {
+                const msg = e instanceof Error ? e.message : String(e);
+                return `grep: error: ${msg}`;
             }
         }
     }

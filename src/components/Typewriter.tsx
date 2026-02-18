@@ -15,6 +15,7 @@ export const Typewriter: React.FC<TypewriterProps> = ({ text, speed = 10, onComp
     }, [onComplete]);
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setCurrentLength(0);
     }, [text]);
 

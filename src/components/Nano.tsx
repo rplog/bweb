@@ -115,8 +115,8 @@ export const Nano: React.FC<NanoProps> = ({ filename: initialFilename, initialCo
                     setIsPromptingSave(false);
                     setIsModified(false); // Reset modified state on successful save
                     setMessage(`[ Wrote ${content.split('\n').length} lines ]`);
-                } catch (e: any) {
-                    setMessage(`[ Error: ${e.message} ]`);
+                } catch (e: unknown) {
+                    setMessage(`[ Error: ${e instanceof Error ? e.message : 'Unknown error'} ]`);
                 }
                 setTimeout(() => setMessage(''), 2000);
             }

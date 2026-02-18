@@ -17,8 +17,8 @@ export const onRequest: PagesFunction<{ DB: D1Database, JWT_SECRET: string, ADMI
                 .run();
 
             return new Response(JSON.stringify({ success: true }), { headers: { 'Content-Type': 'application/json' } });
-        } catch (e: any) {
-            return new Response(JSON.stringify({ error: e.message }), { status: 500 });
+        } catch (e: unknown) {
+            return new Response(JSON.stringify({ error: e instanceof Error ? e.message : 'Unknown error' }), { status: 500 });
         }
     }
 
@@ -28,7 +28,7 @@ export const onRequest: PagesFunction<{ DB: D1Database, JWT_SECRET: string, ADMI
         // Convert array of {key, value} to object
         const config: Record<string, string> = {};
         if (results) {
-            results.forEach((row: any) => {
+            (results as { key: string; value: string }[]).forEach((row) => {
                 config[row.key] = row.value;
             });
         }

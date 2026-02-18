@@ -104,3 +104,7 @@ export const getDirectoryContents = (node: FileSystemNode): string[] => {
     if (node.type !== 'directory' || !node.children) return [];
     return Object.keys(node.children);
 };
+
+export const isVisitorsNotesDir = (path: string[]): boolean => {
+    return path[path.length - 1] === 'visitors_notes';
+};

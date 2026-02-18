@@ -28,7 +28,10 @@ export const Contact: React.FC<ContactProps> = ({ onExit, onNavigate }) => {
                 body: JSON.stringify(formData),
             });
 
-            if (!res.ok) throw new Error('Failed to send message');
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.error || 'Failed to send message');
+            }
 
             setStatus('success');
             setFormData({ name: '', email: '', message: '' });

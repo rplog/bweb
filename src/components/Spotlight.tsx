@@ -63,12 +63,14 @@ export const Spotlight: React.FC<SpotlightProps> = ({ onNavigate }) => {
     useEffect(() => {
         if (isOpen && inputRef.current) {
             inputRef.current.focus();
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setSelectedIndex(0);
         }
     }, [isOpen]);
 
     // Reset selection when query changes
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setSelectedIndex(0);
     }, [query]);
 

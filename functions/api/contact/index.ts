@@ -13,9 +13,9 @@ async function withRetry<T>(
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
         try {
             return await fn();
-        } catch (err: any) {
-            lastError = err;
-            console.error(`[${label}] Attempt ${attempt}/${maxAttempts} failed:`, err.message || err);
+        } catch (err: unknown) {
+            lastError = err instanceof Error ? err : new Error(String(err));
+            console.error(`[${label}] Attempt ${attempt}/${maxAttempts} failed:`, lastError.message);
 
             if (attempt < maxAttempts) {
                 const delay = baseDelayMs * Math.pow(2, attempt - 1); // 500, 1000, 2000
@@ -31,18 +31,18 @@ function escapeMarkdown(text: string): string {
     return text.replace(/[_*[\]()~`>#+\-=|{}.!]/g, '\\$&');
 }
 
-async function sendTelegram(env: any, name: string, email: string, message: string): Promise<void> {
+async function sendTelegram(env: Record<string, unknown>, name: string, email: string, message: string): Promise<void> {
     const safeName = escapeMarkdown(name);
     const safeEmail = escapeMarkdown(email);
     const safeMessage = escapeMarkdown(message);
     const text = `*New Message from* ${safeName}\nEmail: ${safeEmail}\n\n${safeMessage}`;
-    const telegramUrl = `https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/sendMessage`;
+    const telegramUrl = `https://api.telegram.org/bot${String(env.TELEGRAM_BOT_TOKEN)}/sendMessage`;
 
     const res = await fetch(telegramUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-            chat_id: env.TELEGRAM_CHAT_ID,
+            chat_id: String(env.TELEGRAM_CHAT_ID),
             text: text,
             parse_mode: 'Markdown'
         })
@@ -54,21 +54,21 @@ async function sendTelegram(env: any, name: string, email: string, message: stri
     }
 }
 
-async function sendEmail(env: any, name: string, email: string, message: string): Promise<void> {
-    const port = parseInt(env.SMTP_PORT || '587');
+async function sendEmail(env: Record<string, unknown>, name: string, email: string, message: string): Promise<void> {
+    const port = parseInt(String(env.SMTP_PORT || '587'));
 
     await WorkerMailer.send({
-        host: env.SMTP_HOST,
+        host: String(env.SMTP_HOST),
         port: port,
         credentials: {
-            username: env.SMTP_USER,
-            password: env.SMTP_PASS
+            username: String(env.SMTP_USER),
+            password: String(env.SMTP_PASS)
         },
         startTls: port === 587,
         secure: port === 465
     }, {
-        from: env.SMTP_FROM || env.SMTP_USER,
-        to: env.SMTP_FROM || env.SMTP_USER,
+        from: String(env.SMTP_FROM || env.SMTP_USER),
+        to: String(env.SMTP_FROM || env.SMTP_USER),
         subject: `New Contact: ${name}`,
         text: `Name: ${name}\nEmail: ${email}\n\n${message}`,
         reply: email
@@ -132,7 +132,7 @@ export const onRequestPost: PagesFunction<{
 
         return new Response(JSON.stringify({ success: true }), { status: 200, headers: { 'Content-Type': 'application/json' } });
 
-    } catch (e: any) {
-        return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+    } catch (e: unknown) {
+        return new Response(JSON.stringify({ error: e instanceof Error ? e.message : 'Unknown error' }), { status: 500, headers: { 'Content-Type': 'application/json' } });
     }
 };

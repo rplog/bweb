@@ -1,4 +1,4 @@
-export const onRequestGet = async (context: any) => {
+export const onRequestGet: PagesFunction<{ DB: D1Database }> = async (context) => {
     try {
         const url = new URL(context.request.url);
         const search = url.searchParams.get('search');
@@ -25,28 +25,28 @@ export const onRequestGet = async (context: any) => {
         return new Response(JSON.stringify(results), {
             headers: { "Content-Type": "application/json" },
         });
-    } catch (e: any) {
-        return new Response(e.message, { status: 500 });
+    } catch (e: unknown) {
+        return new Response(JSON.stringify({ error: e instanceof Error ? e.message : 'Unknown error' }), { status: 500, headers: { "Content-Type": "application/json" } });
     }
 };
 
 import { checkRateLimit } from '../../utils/rateLimit';
 
-export const onRequestPost = async (context: any) => {
+export const onRequestPost: PagesFunction<{ DB: D1Database; RATE_LIMITER: KVNamespace }> = async (context) => {
     try {
         const { request, env } = context;
-        const { filename, content, commit_msg, author_name } = await request.json();
+        const { filename, content, commit_msg, author_name } = await request.json() as { filename?: string; content?: string; commit_msg?: string; author_name?: string };
 
-        if (!filename) return new Response("Filename required", { status: 400 });
-        if (filename.length > 150) return new Response("Filename too long (max 150 chars)", { status: 400 });
-        if (content && content.length > 10485760) return new Response("Content too large (max 10MB)", { status: 400 });
+        if (!filename) return new Response(JSON.stringify({ error: "Filename required" }), { status: 400, headers: { "Content-Type": "application/json" } });
+        if (filename.length > 150) return new Response(JSON.stringify({ error: "Filename too long (max 150 chars)" }), { status: 400, headers: { "Content-Type": "application/json" } });
+        if (content && content.length > 10485760) return new Response(JSON.stringify({ error: "Content too large (max 10MB)" }), { status: 400, headers: { "Content-Type": "application/json" } });
 
         const ip = request.headers.get("CF-Connecting-IP") || "unknown";
 
         // Rate Limit: 10 notes per minute per IP
         const allowed = await checkRateLimit(env, `create_note:${ip}`, 10, 60);
         if (!allowed) {
-            return new Response("Rate limit exceeded. Please wait.", { status: 429 });
+            return new Response(JSON.stringify({ error: "Rate limit exceeded. Please wait." }), { status: 429, headers: { "Content-Type": "application/json" } });
         }
 
         const id = crypto.randomUUID();
@@ -72,10 +72,10 @@ export const onRequestPost = async (context: any) => {
         return new Response(JSON.stringify({ success: true, filename }), {
             headers: { "Content-Type": "application/json" },
         });
-    } catch (e: any) {
-        if (e.message.includes("UNIQUE constraint failed")) {
-            return new Response("File already exists", { status: 409 });
+    } catch (e: unknown) {
+        if (e instanceof Error && e.message.includes("UNIQUE constraint failed")) {
+            return new Response(JSON.stringify({ error: "File already exists" }), { status: 409, headers: { "Content-Type": "application/json" } });
         }
-        return new Response(e.message, { status: 500 });
+        return new Response(JSON.stringify({ error: e instanceof Error ? e.message : 'Unknown error' }), { status: 500, headers: { "Content-Type": "application/json" } });
     }
 };

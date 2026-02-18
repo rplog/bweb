@@ -53,7 +53,7 @@ export const onRequestPost: PagesFunction<{ ADMIN_PASSWORD: string, JWT_SECRET: 
 
         return new Response(JSON.stringify({ token }), { status: 200, headers: { 'Content-Type': 'application/json' } });
 
-    } catch (e: any) {
-        return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+    } catch (e: unknown) {
+        return new Response(JSON.stringify({ error: e instanceof Error ? e.message : 'Unknown error' }), { status: 500, headers: { 'Content-Type': 'application/json' } });
     }
 };

@@ -1,5 +1,5 @@
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 interface Env {
-    // Add environment variables here if needed
 }
 
 export const onRequest: PagesFunction<Env> = async (context) => {
@@ -46,16 +46,16 @@ export const onRequest: PagesFunction<Env> = async (context) => {
         status = pingStatus;
 
         if (dnsRes.ok) {
-            const dnsData = await dnsRes.json() as any;
+            const dnsData = await dnsRes.json() as { Answer?: { type: number; data: string }[] };
             if (dnsData.Answer && dnsData.Answer.length > 0) {
                 // Get the first A record
-                const record = dnsData.Answer.find((a: any) => a.type === 1);
+                const record = dnsData.Answer.find((a) => a.type === 1);
                 if (record) ip = record.data;
             }
         }
-    } catch (e: any) {
+    } catch (e: unknown) {
         return new Response(JSON.stringify({
-            error: e.message,
+            error: e instanceof Error ? e.message : 'Unknown error',
             time: 0
         }), {
             status: 502,

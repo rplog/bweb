@@ -202,7 +202,13 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
 
     useEffect(() => {
         fetch('/api/gallery')
-            .then(res => res.json())
+            .then(async res => {
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.error || 'Failed to load gallery');
+                }
+                return res.json();
+            })
             .then((data: Album[]) => {
                 setAlbums(data);
                 setLoading(false);
@@ -421,7 +427,7 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
     };
 
     // Upload with XHR for progress tracking
-    const uploadWithProgress = (formData: FormData): Promise<any> => {
+    const uploadWithProgress = (formData: FormData): Promise<{ success: boolean; key: string }> => {
         return new Promise((resolve, reject) => {
             const xhr = new XMLHttpRequest();
             xhr.open('POST', '/api/gallery');
@@ -512,9 +518,9 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
             resetUploadForm();
             setShowUploadModal(false);
 
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error(err);
-            showAlert(`Upload Error: ${err.message}`, 'error');
+            showAlert(`Upload Error: ${err instanceof Error ? err.message : 'Unknown error'}`, 'error');
         } finally {
             setIsProcessing(false);
             setUploadProgress(null);
@@ -532,7 +538,10 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('admin_token')}` },
                         body: JSON.stringify(isAlbum ? { album: key } : { key })
                     });
-                    if (!res.ok) throw new Error('Delete failed');
+                    if (!res.ok) {
+                        const err = await res.json();
+                        throw new Error(err.error || 'Delete failed');
+                    }
 
                     if (isAlbum) {
                         setAlbums(prev => prev.filter(a => a.title !== key && !a.title.startsWith(key + '/')));
@@ -547,8 +556,8 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                         }));
                         if (activePhotoKey === key) closePhoto();
                     }
-                } catch (err: any) {
-                    showAlert(err.message, 'error');
+                } catch (err: unknown) {
+                    showAlert(err instanceof Error ? err.message : 'Unknown error', 'error');
                 }
             },
             'Delete'
@@ -564,15 +573,18 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('admin_token')}` },
                     body: JSON.stringify({ action: 'update-caption', key: activePhoto.key, caption: newCaption })
                 });
-                if (!res.ok) throw new Error('Update failed');
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.error || 'Update failed');
+                }
                 setAlbums(prev => prev.map(a => {
                     if (a.title === activeAlbumTitle) {
                         return { ...a, photos: a.photos.map(p => p.key === activePhoto.key ? { ...p, caption: newCaption } : p) };
                     }
                     return a;
                 }));
-            } catch (err: any) {
-                showAlert(err.message, 'error');
+            } catch (err: unknown) {
+                showAlert(err instanceof Error ? err.message : 'Unknown error', 'error');
             }
         });
     };
@@ -602,15 +614,15 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                         });
 
                         if (!res.ok) {
-                            const resBody = await res.json() as any;
+                            const resBody = await res.json() as { error?: string };
                             throw new Error(resBody.error || 'Rename failed');
                         }
 
                         currentName = fullNewName;
 
                         // Optimistic update for rename (partial, full reload comes after category update)
-                    } catch (err: any) {
-                        showAlert(err.message, 'error');
+                    } catch (err: unknown) {
+                        showAlert(err instanceof Error ? err.message : 'Unknown error', 'error');
                         return; // Stop if rename fails
                     }
                 }
@@ -623,9 +635,12 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('admin_token')}` },
                             body: JSON.stringify({ action: 'update-category', album: currentName, category: newCategory })
                         });
-                        if (!res.ok) throw new Error('Update category failed');
-                    } catch (err: any) {
-                        showAlert(err.message, 'error');
+                        if (!res.ok) {
+                            const err = await res.json();
+                            throw new Error(err.error || 'Update category failed');
+                        }
+                    } catch (err: unknown) {
+                        showAlert(err instanceof Error ? err.message : 'Unknown error', 'error');
                     }
                 }
 
@@ -636,7 +651,7 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                         setAlbums(data);
                         if (activeAlbumTitle === oldName && currentName !== oldName) {
                             // Determine navigation if current album was renamed
-                            const newAlbum = data.find((a: any) => a.title === currentName);
+                            const newAlbum = data.find((a: Album) => a.title === currentName);
                             if (newAlbum) openAlbum(newAlbum);
                             else closeAlbum();
                         }
@@ -655,7 +670,7 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('admin_token')}` },
                     body: JSON.stringify({ action: 'rename-photo', key, newName })
                 });
-                const resBody = await res.json() as any;
+                const resBody = await res.json() as { error?: string; newKey: string };
                 if (!res.ok) throw new Error(resBody.error || 'Rename failed');
                 const { newKey } = resBody;
                 setAlbums(prev => prev.map(a => {
@@ -665,13 +680,13 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                     return a;
                 }));
                 if (activePhotoKey === key) {
-                    setActivePhotoKey(newKey);
+                    setActivePhotoKey(newKey ?? null);
                     if (activeAlbumTitle) {
                         window.history.replaceState({}, '', `/gallery/${encodeAlbumPath(activeAlbumTitle)}/${encodeURIComponent(newName)}`);
                     }
                 }
-            } catch (err: any) {
-                showAlert(err.message, 'error');
+            } catch (err: unknown) {
+                showAlert(err instanceof Error ? err.message : 'Unknown error', 'error');
             }
         });
     };

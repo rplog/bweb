@@ -1,8 +1,48 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-interface HtopProps {
-    onExit: () => void;
+interface MultiColorBarProps {
+    label: string;
+    segments: number[];
+    showMem?: { used: number; total: number };
 }
+
+const MultiColorBar: React.FC<MultiColorBarProps> = ({ label, segments, showMem }) => {
+    // Elegant gold/grey palette for bars
+    const colors = ['bg-elegant-accent', 'bg-elegant-text-primary', 'bg-elegant-text-secondary', 'bg-elegant-text-muted', 'bg-[#8a7a5a]', 'bg-[#5a4a3a]'];
+    const sum = segments.reduce((a, b) => a + b, 0);
+    const barWidth = showMem ? (showMem.used / showMem.total * 100) : sum;
+
+    return (
+        <div className="flex items-center font-mono text-xs leading-tight">
+            <span className={`w-6 ${label.includes('Mem') || label.includes('Swp') ? 'text-elegant-accent' : 'text-elegant-text-primary'} font-bold`}>
+                {label}
+            </span>
+            <span className="text-gray-500 mx-1">[</span>
+            <div className="flex-1 flex items-center">
+                <div className="flex w-full h-3 relative">
+                    {segments.map((seg, i) => {
+                        const width = showMem ? (seg / showMem.total * 100) : seg;
+                        return seg > 0 ? (
+                            <div
+                                key={i}
+                                className={`h-full ${colors[i % colors.length]}`}
+                                style={{ width: `${width}%` }}
+                            />
+                        ) : null;
+                    })}
+                </div>
+            </div>
+            <span className="text-elegant-text-muted ml-1">]</span>
+            {showMem ? (
+                <span className="ml-2 text-elegant-text-muted w-24 text-right">
+                    {showMem.used.toFixed(0)}M/{showMem.total.toFixed(0)}M
+                </span>
+            ) : (
+                <span className="ml-2 text-elegant-text-muted w-12 text-right">{barWidth.toFixed(1)}%</span>
+            )}
+        </div>
+    );
+};
 
 interface Process {
     pid: number;
@@ -17,6 +57,10 @@ interface Process {
     mem: number;
     time: string;
     cmd: string;
+}
+
+interface HtopProps {
+    onExit: () => void;
 }
 
 export const Htop: React.FC<HtopProps> = ({ onExit }) => {
@@ -113,48 +157,6 @@ export const Htop: React.FC<HtopProps> = ({ onExit }) => {
 
         return () => clearInterval(interval);
     }, []);
-
-    const MultiColorBar = ({ label, segments, showMem }: {
-        label: string;
-        segments: number[];
-        showMem?: { used: number; total: number };
-    }) => {
-        // Elegant gold/grey palette for bars
-        const colors = ['bg-elegant-accent', 'bg-elegant-text-primary', 'bg-elegant-text-secondary', 'bg-elegant-text-muted', 'bg-[#8a7a5a]', 'bg-[#5a4a3a]'];
-        const sum = segments.reduce((a, b) => a + b, 0);
-        const barWidth = showMem ? (showMem.used / showMem.total * 100) : sum;
-
-        return (
-            <div className="flex items-center font-mono text-xs leading-tight">
-                <span className={`w-6 ${label.includes('Mem') || label.includes('Swp') ? 'text-elegant-accent' : 'text-elegant-text-primary'} font-bold`}>
-                    {label}
-                </span>
-                <span className="text-gray-500 mx-1">[</span>
-                <div className="flex-1 flex items-center">
-                    <div className="flex w-full h-3 relative">
-                        {segments.map((seg, i) => {
-                            const width = showMem ? (seg / showMem.total * 100) : seg;
-                            return seg > 0 ? (
-                                <div
-                                    key={i}
-                                    className={`h-full ${colors[i % colors.length]}`}
-                                    style={{ width: `${width}%` }}
-                                />
-                            ) : null;
-                        })}
-                    </div>
-                </div>
-                <span className="text-elegant-text-muted ml-1">]</span>
-                {showMem ? (
-                    <span className="ml-2 text-elegant-text-muted w-24 text-right">
-                        {showMem.used.toFixed(0)}M/{showMem.total.toFixed(0)}M
-                    </span>
-                ) : (
-                    <span className="ml-2 text-elegant-text-muted w-12 text-right">{barWidth.toFixed(1)}%</span>
-                )}
-            </div>
-        );
-    };
 
     const formatUptime = (sec: number) => {
         const days = Math.floor(sec / 86400);

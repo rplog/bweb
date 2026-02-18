@@ -1,6 +1,6 @@
 import { checkRateLimit } from '../../utils/rateLimit';
 
-export const onRequestGet = async (context: any) => {
+export const onRequestGet: PagesFunction<{ DB: D1Database }> = async (context) => {
     try {
         const { params, env } = context;
         const filename = params.filename;
@@ -10,18 +10,18 @@ export const onRequestGet = async (context: any) => {
         ).bind(filename).first();
 
         if (!note) {
-            return new Response("Not found", { status: 404 });
+            return new Response(JSON.stringify({ error: "Not found" }), { status: 404, headers: { "Content-Type": "application/json" } });
         }
 
         return new Response(JSON.stringify(note), {
             headers: { "Content-Type": "application/json" },
         });
-    } catch (e: any) {
-        return new Response(e.message, { status: 500 });
+    } catch (e: unknown) {
+        return new Response(JSON.stringify({ error: e instanceof Error ? e.message : 'Unknown error' }), { status: 500, headers: { "Content-Type": "application/json" } });
     }
 };
 
-export const onRequestPut = async (context: any) => {
+export const onRequestPut: PagesFunction<{ DB: D1Database; RATE_LIMITER: KVNamespace }> = async (context) => {
     try {
         const { request, params, env } = context;
         const filename = params.filename;
@@ -31,16 +31,15 @@ export const onRequestPut = async (context: any) => {
         // Rate Limit: 10 updates per minute per IP
         const allowed = await checkRateLimit(env, `update_note:${ip}`, 10, 60);
         if (!allowed) {
-            return new Response("Rate limit exceeded. Please wait.", { status: 429 });
+            return new Response(JSON.stringify({ error: "Rate limit exceeded. Please wait." }), { status: 429, headers: { "Content-Type": "application/json" } });
         }
 
-        const { content, commit_msg, author_name } = await request.json(); // Extract commit_msg and author_name
+        const { content, commit_msg, author_name } = await request.json() as { content?: string; commit_msg?: string; author_name?: string }; // Extract commit_msg and author_name
 
-        if (content && content.length > 10485760) return new Response("Content too large (max 10MB)", { status: 400 });
+        if (content && content.length > 10485760) return new Response(JSON.stringify({ error: "Content too large (max 10MB)" }), { status: 400, headers: { "Content-Type": "application/json" } });
 
         const now = Date.now();
         const city = request.cf?.city || "unknown";
-        const timezone = request.cf?.timezone || "UTC";
 
         // Get current content for history
         const currentNote = await env.DB.prepare("SELECT id, content FROM notes WHERE filename = ?").bind(filename).first();
@@ -57,18 +56,18 @@ export const onRequestPut = async (context: any) => {
         ).bind(content, now, filename).run();
 
         if (info.meta.changes === 0) {
-            return new Response("File not found", { status: 404 });
+            return new Response(JSON.stringify({ error: "File not found" }), { status: 404, headers: { "Content-Type": "application/json" } });
         }
 
         return new Response(JSON.stringify({ success: true }), {
             headers: { "Content-Type": "application/json" },
         });
-    } catch (e: any) {
-        return new Response(e.message, { status: 500 });
+    } catch (e: unknown) {
+        return new Response(JSON.stringify({ error: e instanceof Error ? e.message : 'Unknown error' }), { status: 500, headers: { "Content-Type": "application/json" } });
     }
 };
 
-export const onRequestDelete = async (context: any) => {
+export const onRequestDelete: PagesFunction<{ DB: D1Database; JWT_SECRET: string; ADMIN_PASSWORD: string }> = async (context) => {
     try {
         const { request, params, env } = context;
         const filename = params.filename;
@@ -100,8 +99,8 @@ export const onRequestDelete = async (context: any) => {
         return new Response(JSON.stringify({ success: true }), {
             headers: { 'Content-Type': 'application/json' }
         });
-    } catch (e: any) {
-        return new Response(JSON.stringify({ error: e.message }), {
+    } catch (e: unknown) {
+        return new Response(JSON.stringify({ error: e instanceof Error ? e.message : 'Unknown error' }), {
             status: 500,
             headers: { 'Content-Type': 'application/json' }
         });

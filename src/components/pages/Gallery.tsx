@@ -3,6 +3,7 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { optimizeImage } from '../../utils/imageOptimizer';
 import { Spotlight } from '../Spotlight';
 import { PageHeader } from '../PageHeader';
+import { PageFooter } from '../PageFooter';
 import { Maximize2, ArrowLeft, X, ChevronLeft, ChevronRight, Hand, Loader2, Trash2, Edit2, Plus, FileEdit, FolderPlus, ImagePlus, ChevronDown } from 'lucide-react';
 import { createNavigationHandler } from '../../utils/navigation';
 
@@ -1283,11 +1284,7 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                 )}
 
                 {/* Footer */}
-                <footer className="border-t border-elegant-border bg-elegant-bg py-2 mt-auto">
-                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                        <p className="text-sm font-bold text-elegant-text-muted text-center font-mono">&copy; Neosphere v2.0</p>
-                    </div>
-                </footer>
+                <PageFooter />
             </div>
         </div>
     );

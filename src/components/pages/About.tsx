@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Spotlight } from '../Spotlight';
 import { PageHeader } from '../PageHeader';
 import { Code, X } from 'lucide-react';
+import { PageFooter } from '../PageFooter';
 import { SiGithub, SiX, SiLinkedin, SiReact, SiTypescript, SiRust, SiTailwindcss, SiPython, SiTelegram, SiNodedotjs } from 'react-icons/si';
 import { createNavigationHandler } from '../../utils/navigation';
 
@@ -21,10 +22,10 @@ export const About: React.FC<AboutProps> = ({ onExit, onNavigate }) => {
         <div className="h-full w-full bg-elegant-bg text-elegant-text-secondary font-mono selection:bg-elegant-accent/20 overflow-y-auto">
             <div className="min-h-full flex flex-col">
                 <Spotlight onNavigate={handleNavigate} />
-                <PageHeader currentPath="about" onNavigate={handleNavigate} className="shrink-0" />
+                <PageHeader currentPath="about" onNavigate={handleNavigate} className="shrink-0" maxWidth="max-w-7xl" />
 
                 {/* Main Content */}
-                <main className="flex-1 max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 flex flex-col">
+                <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 flex flex-col">
                     {/* Breadcrumbs */}
                     <div className="mb-6 text-base font-semibold text-elegant-text-muted flex items-center gap-2 shrink-0">
                         <button
@@ -148,13 +149,7 @@ export const About: React.FC<AboutProps> = ({ onExit, onNavigate }) => {
                 </main>
 
                 {/* Footer */}
-                <footer className="border-t border-elegant-border bg-elegant-bg py-2 mt-auto shrink-0">
-                    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-                        <p className="text-sm font-bold text-elegant-text-muted text-center font-mono">
-                            &copy; Neosphere v2.0
-                        </p>
-                    </div>
-                </footer>
+                <PageFooter />
 
                 {/* Profile Lightbox */}
                 {showProfile && (

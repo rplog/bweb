@@ -296,9 +296,14 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
         return `/gallery/${parts.map(p => encodeURIComponent(p)).join('/')}`;
     }, []);
 
-    const openPhoto = useCallback((photo: Photo) => {
+    const openPhoto = useCallback((photo: Photo, replace = false) => {
         setActivePhotoKey(photo.key);
-        window.history.pushState({}, '', buildPhotoUrl(photo));
+        const url = buildPhotoUrl(photo);
+        if (replace) {
+            window.history.replaceState({}, '', url);
+        } else {
+            window.history.pushState({}, '', url);
+        }
     }, [buildPhotoUrl]);
 
     const closePhoto = useCallback(() => {
@@ -314,7 +319,7 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
         const currentIndex = activeAlbum.photos.findIndex(p => p.key === activePhoto.key);
         if (currentIndex === -1) return;
         const nextIndex = (currentIndex + 1) % activeAlbum.photos.length;
-        openPhoto(activeAlbum.photos[nextIndex]);
+        openPhoto(activeAlbum.photos[nextIndex], true);
     }, [activeAlbum, activePhoto, openPhoto]);
 
     const handlePrev = useCallback((e?: React.MouseEvent) => {
@@ -323,7 +328,7 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
         const currentIndex = activeAlbum.photos.findIndex(p => p.key === activePhoto.key);
         if (currentIndex === -1) return;
         const prevIndex = (currentIndex - 1 + activeAlbum.photos.length) % activeAlbum.photos.length;
-        openPhoto(activeAlbum.photos[prevIndex]);
+        openPhoto(activeAlbum.photos[prevIndex], true);
     }, [activeAlbum, activePhoto, openPhoto]);
 
     useEffect(() => {

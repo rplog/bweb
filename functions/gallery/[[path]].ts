@@ -16,7 +16,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
 
     const key = Array.isArray(pathParts) ? pathParts.join('/') : pathParts;
 
-    // 1. Image file — serve raw from R2 ONLY if not navigating (HTML request)
+    // 1. Image file — serve raw from R2 only for non-navigation requests (e.g. <img> tags)
     const accept = request.headers.get('Accept') || '';
     if (IMAGE_EXT.test(key) && !accept.includes('text/html')) {
         const object = await env.neosphere_assets.get(key);
@@ -41,7 +41,8 @@ export const onRequest: PagesFunction<Env> = async (context) => {
             const spaResponse = await env.ASSETS.fetch(new URL('/', request.url));
             let html = await spaResponse.text();
 
-            const albumTitle = decodeURIComponent(key.split('/').pop() || key);
+            const escHtml = (s: string) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            const albumTitle = escHtml(decodeURIComponent(key.split('/').pop() || key));
 
             // Find a cover image: list objects with this prefix and pick the first image
             const listing = await env.neosphere_assets.list({ prefix: key + '/', limit: 10 });

@@ -529,7 +529,7 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
     };
 
     const handleRenamePhoto = (key: string) => {
-        const oldName = key.split('/').pop() || '';
+        const oldName = (key.split('/').pop() || '').replace(PHOTO_EXT, '');
         showPrompt('Rename Photo', oldName, async (newName) => {
             if (!newName || newName === oldName) return;
             try {

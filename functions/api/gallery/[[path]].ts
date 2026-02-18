@@ -204,7 +204,9 @@ async function handlePut(context: EventContext<Env, string, unknown>) {
 
         const parts = key.split('/');
         const album = parts.slice(0, -1).join('/');
-        const newKey = `${album}/${safeName}`;
+        // Always preserve the original extension — the user only controls the base name
+        const originalExt = key.match(/\.(jpg|jpeg|png|webp|gif)$/i)?.[0] ?? '';
+        const newKey = `${album}/${safeName}${originalExt}`;
 
         await env.neosphere_assets.put(newKey, object.body, {
             customMetadata: object.customMetadata,

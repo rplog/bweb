@@ -78,7 +78,7 @@ export const writeFile = (
     content: string
 ): Record<string, FileSystemNode> => {
     // Deep clone to avoid mutation
-    const fs = JSON.parse(JSON.stringify(fileSystem));
+    const fs = structuredClone(fileSystem);
 
     // Resolve location (parent dir)
     // For now we only support writing to current directory or simplistic filenames

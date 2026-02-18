@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { commands } from '../utils/commands';
-import { initialFileSystem } from '../utils/fileSystem';
+import { initialFileSystem, type FileSystemNode } from '../utils/fileSystem';
 import { resolvePath, resolvePathArray } from '../utils/fileSystemUtils';
 import { ROUTES } from '../utils/routes';
 import React from 'react';
@@ -42,10 +42,10 @@ export const useTerminal = () => {
             .then(res => res.ok ? res.json() : Promise.reject())
             .then((notes: { filename: string; size?: number; updated_at?: number; author?: string }[]) => {
                 setFileSystem(prev => {
-                    const updated = JSON.parse(JSON.stringify(prev));
+                    const updated = structuredClone(prev);
                     const visitorsDir = updated.home?.children?.neo?.children?.visitors_notes;
                     if (visitorsDir) {
-                        const children: Record<string, { type: string; content: string; size: number; lastModified?: number; author?: string }> = {};
+                        const children: Record<string, FileSystemNode> = {};
                         notes.forEach((note) => {
                             children[note.filename] = {
                                 type: 'file',

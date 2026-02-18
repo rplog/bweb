@@ -558,8 +558,8 @@ export const commands: Record<string, Command> = {
 
                 // Update local fileSystem to remove the file from ls
                 if (setFileSystem) {
-                    setFileSystem((prev: Record<string, unknown>) => {
-                        const updated = JSON.parse(JSON.stringify(prev));
+                    setFileSystem((prev: Record<string, FileSystemNode>) => {
+                        const updated = structuredClone(prev);
                         const visitorsDir = updated.home?.children?.neo?.children?.visitors_notes;
                         if (visitorsDir?.children?.[filename]) {
                             delete visitorsDir.children[filename];
@@ -844,7 +844,7 @@ export const commands: Record<string, Command> = {
                                 // Update local fileSystem so ls reflects the new/updated note immediately
                                 if (setFileSystem) {
                                     setFileSystem((prev: Record<string, FileSystemNode>) => {
-                                        const updated = JSON.parse(JSON.stringify(prev));
+                                        const updated = structuredClone(prev);
                                         const visitorsDir = updated.home?.children?.neo?.children?.visitors_notes;
                                         if (visitorsDir && visitorsDir.children) {
                                             visitorsDir.children[cleanName] = {

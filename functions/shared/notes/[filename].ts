@@ -15,7 +15,7 @@ export const onRequestGet = async (context: any) => {
         "SELECT * FROM note_edits WHERE note_id = ? ORDER BY created_at DESC"
     ).bind(note.id).all();
 
-    const { content, created_at, city, country, timezone } = note;
+    const { content, created_at, updated_at, city, country, timezone } = note;
 
     // Theme Colors (Gold/Elegant from index.css)
     const colors = {
@@ -351,6 +351,10 @@ export const onRequestGet = async (context: any) => {
                     <span id="created-date">...</span>
                 </div>
                 <div class="meta-item">
+                    <span class="meta-label">Last Modified:</span>
+                    <span id="updated-date">...</span>
+                </div>
+                <div class="meta-item">
                     <span class="meta-label">From:</span>
                     <span>${city}, ${country}</span>
                 </div>
@@ -383,6 +387,7 @@ export const onRequestGet = async (context: any) => {
 
     <script>
         const createdAt = ${created_at};
+        const updatedAt = ${updated_at};
         const writerTimezone = "${timezone || 'UTC'}";
         const latestContent = ${JSON.stringify(content)};
         const edits = ${JSON.stringify(edits)}; // Contains previous_content
@@ -421,6 +426,7 @@ export const onRequestGet = async (context: any) => {
         }
 
         document.getElementById('created-date').textContent = formatGitDate(createdAt, writerTimezone);
+        document.getElementById('updated-date').textContent = formatGitDate(updatedAt, writerTimezone);
 
         // History Logic
         const editList = document.getElementById('edit-list');

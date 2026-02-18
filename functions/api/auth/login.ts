@@ -18,7 +18,26 @@ export const onRequestPost: PagesFunction<{ ADMIN_PASSWORD: string, JWT_SECRET: 
             return new Response(JSON.stringify({ error: 'Password required' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
         }
 
-        if (password !== env.ADMIN_PASSWORD) {
+        // Constant-time comparison to prevent timing attacks
+        const encoder = new TextEncoder();
+        const inputHash = await crypto.subtle.digest('SHA-256', encoder.encode(password));
+        const storedHash = await crypto.subtle.digest('SHA-256', encoder.encode(env.ADMIN_PASSWORD));
+
+        const inputBuffer = new Uint8Array(inputHash);
+        const storedBuffer = new Uint8Array(storedHash);
+
+        let isEqual = true;
+        if (inputBuffer.length !== storedBuffer.length) {
+            isEqual = false;
+        } else {
+            let result = 0;
+            for (let i = 0; i < inputBuffer.length; i++) {
+                result |= inputBuffer[i] ^ storedBuffer[i];
+            }
+            isEqual = result === 0;
+        }
+
+        if (!isEqual) {
             return new Response(JSON.stringify({ error: 'Invalid password' }), { status: 401, headers: { 'Content-Type': 'application/json' } });
         }
 

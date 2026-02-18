@@ -103,11 +103,13 @@ export const useTerminal = () => {
                 } else if (path.startsWith('/gallery')) {
                     execute('gallery', true);
                 } else if (path !== '/' && path !== '/index.html') {
-                    addToHistory(`access ${path}`, [
-                        `\x1b[31;1m404 ERROR: ROUTE NOT FOUND\x1b[0m`,
-                        `The requested path '${path}' does not exist in this sector.`,
-                        `Redirecting to safe harbor...`
-                    ].join('\n'));
+                    addToHistory(`access ${path}`, (
+                        <div className="flex flex-col">
+                            <span className="text-red-500 font-bold">404 ERROR: ROUTE NOT FOUND</span>
+                            <span className="text-elegant-text-primary">The requested path '{path}' does not exist in this sector.</span>
+                            <span className="text-elegant-text-secondary italic">Redirecting to safe harbor...</span>
+                        </div>
+                    ));
                     window.history.replaceState({}, '', '/');
                 }
                 const params = new URLSearchParams(window.location.search);

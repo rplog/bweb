@@ -37,8 +37,8 @@ export const Contact: React.FC<ContactProps> = ({ onExit, onNavigate }) => {
             setStatus('success');
             setFormData({ name: '', email: '', message: '' });
             setTimeout(() => setStatus('idle'), 3000);
-        } catch (error: unknown) {
-            console.error(error);
+        } catch {
+            // Error handled by UI state through setStatus('error')
             setStatus('error');
             setTimeout(() => setStatus('idle'), 3000);
         }

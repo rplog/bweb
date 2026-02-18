@@ -1,4 +1,5 @@
 import { checkRateLimit } from '../../utils/rateLimit';
+import { verifyAuth } from '../../utils/auth';
 
 export const onRequestGet: PagesFunction<{ DB: D1Database }> = async (context) => {
     try {
@@ -73,7 +74,6 @@ export const onRequestDelete: PagesFunction<{ DB: D1Database; JWT_SECRET: string
         const filename = params.filename;
 
         // Admin auth required
-        const { verifyAuth } = await import('../../utils/auth');
         if (!await verifyAuth(request, env)) {
             return new Response(JSON.stringify({ error: 'Unauthorized' }), {
                 status: 401,

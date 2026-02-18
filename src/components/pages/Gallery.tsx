@@ -113,15 +113,15 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                                     }
                                 }
                             }
-                        } catch (e: unknown) {
-                            console.error('Deep link error:', e);
+                        } catch {
+                            // Deep link resolution failed, silently fall back to gallery root
                         }
                     }
                 }
             })
             .catch(err => {
                 if (err.name === 'AbortError') return;
-                console.error("Failed to load gallery:", err);
+                // Error handled by UI loading state
                 setLoading(false);
             });
 
@@ -372,7 +372,6 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
             setShowUploadModal(false);
 
         } catch (err: unknown) {
-            console.error(err);
             showAlert(`Upload Error: ${err instanceof Error ? err.message : 'Unknown error'}`, 'error');
         } finally {
             setIsProcessing(false);

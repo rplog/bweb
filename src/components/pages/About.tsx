@@ -3,6 +3,7 @@ import { Spotlight } from '../Spotlight';
 import { PageHeader } from '../PageHeader';
 import { Code, X } from 'lucide-react';
 import { SiGithub, SiX, SiLinkedin, SiReact, SiTypescript, SiRust, SiTailwindcss, SiPython, SiTelegram, SiNodedotjs } from 'react-icons/si';
+import { createNavigationHandler } from '../../utils/navigation';
 
 interface AboutProps {
     onExit: () => void;
@@ -11,10 +12,8 @@ interface AboutProps {
 
 export const About: React.FC<AboutProps> = ({ onExit, onNavigate }) => {
 
-    const handleNavigate = (dest: string) => {
-        if (dest === 'Terminal') onExit();
-        else if (onNavigate) onNavigate(dest);
-    };
+
+    const handleNavigate = createNavigationHandler(onExit, onNavigate);
 
     const [showProfile, setShowProfile] = useState(false);
 

@@ -2,9 +2,7 @@ import { resolvePath, getDirectoryContents, writeFile } from './fileSystemUtils'
 import { Htop } from '../components/Htop';
 import { Ping } from '../components/Ping';
 import { Nano } from '../components/Nano';
-import { Gallery } from '../components/pages/Gallery';
-import { About } from '../components/pages/About';
-import { Contact } from '../components/pages/Contact';
+import { createNavigator } from './navigation';
 import React from 'react';
 
 export interface Command {
@@ -853,12 +851,7 @@ export const commands: Record<string, Command> = {
         description: 'Open Gallery',
         execute: (_args, { setFullScreen }) => {
             if (setFullScreen) {
-                const navigate = (dest: string) => {
-                    if (dest === 'Terminal') setFullScreen(null);
-                    else if (dest === 'Gallery') setFullScreen(<Gallery onExit={() => setFullScreen(null)} onNavigate={navigate} />, '/gallery');
-                    else if (dest === 'About') setFullScreen(<About onExit={() => setFullScreen(null)} onNavigate={navigate} />, '/about');
-                    else if (dest === 'Contact') setFullScreen(<Contact onExit={() => setFullScreen(null)} onNavigate={navigate} />, '/contact');
-                };
+                const navigate = createNavigator(setFullScreen);
                 navigate('Gallery');
                 return '';
             }
@@ -869,12 +862,7 @@ export const commands: Record<string, Command> = {
         description: 'Open About page',
         execute: (_args, { setFullScreen }) => {
             if (setFullScreen) {
-                const navigate = (dest: string) => {
-                    if (dest === 'Terminal') setFullScreen(null);
-                    else if (dest === 'Gallery') setFullScreen(<Gallery onExit={() => setFullScreen(null)} onNavigate={navigate} />, '/gallery');
-                    else if (dest === 'About') setFullScreen(<About onExit={() => setFullScreen(null)} onNavigate={navigate} />, '/about');
-                    else if (dest === 'Contact') setFullScreen(<Contact onExit={() => setFullScreen(null)} onNavigate={navigate} />, '/contact');
-                };
+                const navigate = createNavigator(setFullScreen);
                 navigate('About');
                 return '';
             }
@@ -885,12 +873,7 @@ export const commands: Record<string, Command> = {
         description: 'Open Contact page',
         execute: (_args, { setFullScreen }) => {
             if (setFullScreen) {
-                const navigate = (dest: string) => {
-                    if (dest === 'Terminal') setFullScreen(null);
-                    else if (dest === 'Gallery') setFullScreen(<Gallery onExit={() => setFullScreen(null)} onNavigate={navigate} />, '/gallery');
-                    else if (dest === 'About') setFullScreen(<About onExit={() => setFullScreen(null)} onNavigate={navigate} />, '/about');
-                    else if (dest === 'Contact') setFullScreen(<Contact onExit={() => setFullScreen(null)} onNavigate={navigate} />, '/contact');
-                };
+                const navigate = createNavigator(setFullScreen);
                 navigate('Contact');
                 return '';
             }

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Spotlight } from '../Spotlight';
 import { PageHeader } from '../PageHeader';
 import { Send, User, Mail, MessageSquare } from 'lucide-react';
+import { createNavigationHandler } from '../../utils/navigation';
 
 interface ContactProps {
     onExit: () => void;
@@ -11,10 +12,8 @@ interface ContactProps {
 export const Contact: React.FC<ContactProps> = ({ onExit, onNavigate }) => {
     const [formData, setFormData] = useState({ name: '', email: '', message: '' });
 
-    const handleNavigate = (dest: string) => {
-        if (dest === 'Terminal') onExit();
-        else if (onNavigate) onNavigate(dest);
-    };
+
+    const handleNavigate = createNavigationHandler(onExit, onNavigate);
 
     const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
 
@@ -125,10 +124,10 @@ export const Contact: React.FC<ContactProps> = ({ onExit, onNavigate }) => {
                                 type="submit"
                                 disabled={status === 'loading' || status === 'success'}
                                 className={`w-full font-bold py-2.5 px-6 rounded-sm transition-all duration-300 flex items-center justify-center gap-2 border border-transparent text-sm ${status === 'success'
-                                        ? 'bg-green-500 text-white hover:bg-green-600'
-                                        : status === 'error'
-                                            ? 'bg-red-500 text-white hover:bg-red-600'
-                                            : 'bg-elegant-accent hover:bg-elegant-accent-hover text-elegant-bg'
+                                    ? 'bg-green-500 text-white hover:bg-green-600'
+                                    : status === 'error'
+                                        ? 'bg-red-500 text-white hover:bg-red-600'
+                                        : 'bg-elegant-accent hover:bg-elegant-accent-hover text-elegant-bg'
                                     }`}
                             >
                                 <Send size={16} className={status === 'loading' ? 'animate-pulse' : ''} />

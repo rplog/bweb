@@ -4,6 +4,7 @@ import { optimizeImage } from '../../utils/imageOptimizer';
 import { Spotlight } from '../Spotlight';
 import { PageHeader } from '../PageHeader';
 import { Maximize2, ArrowLeft, X, ChevronLeft, ChevronRight, Hand, Loader2, Trash2, Edit2, Plus, FileEdit, FolderPlus, ImagePlus, ChevronDown } from 'lucide-react';
+import { createNavigationHandler } from '../../utils/navigation';
 
 interface Photo {
     url: string;
@@ -270,10 +271,8 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
         return () => window.removeEventListener('popstate', handlePopState);
     }, [albums]);
 
-    const handleNavigate = (dest: string) => {
-        if (dest === 'Terminal') onExit();
-        else if (onNavigate) onNavigate(dest);
-    };
+
+    const handleNavigate = createNavigationHandler(onExit, onNavigate);
 
     const encodeAlbumPath = useCallback((title: string) => {
         return title.split('/').map(s => encodeURIComponent(s)).join('/');

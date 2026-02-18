@@ -292,12 +292,15 @@ export const onRequestGet = async (context: any) => {
         .commit-date { color: ${colors.textMuted}; font-size: 0.9em; display: block; margin-top: 4px; }
         
         .footer { 
-            margin-top: 60px; 
+            margin-top: auto;
             text-align: center; 
             color: ${colors.textMuted}; 
-            font-size: 0.85rem; 
+            font-size: 0.875rem; 
             border-top: 1px solid ${colors.border};
-            padding-top: 20px;
+            padding-top: 0.5rem;
+            padding-bottom: 0.5rem;
+            background-color: ${colors.bg};
+            font-weight: 700;
         }
         a { color: ${colors.textSecondary}; text-decoration: none; transition: color 0.2s;}
         a:hover { color: ${colors.accent}; }
@@ -400,7 +403,9 @@ export const onRequestGet = async (context: any) => {
         </div>` : ''}
 
         <div class="footer">
-            <a href="/">neosphere.pages.dev</a>
+            <div style="max-width: 80rem; margin: 0 auto; padding: 0 1rem;">
+                &copy; Neosphere v2.0
+            </div>
         </div>
     </div>
 

@@ -15,7 +15,7 @@ export async function verifyAuth(request: Request, env: { JWT_SECRET?: string; A
             const secret = new TextEncoder().encode(jwtSecret);
             await jwtVerify(token, secret);
             return true;
-        } catch (e) {
+        } catch (e: unknown) {
             console.error('JWT Verify Error:', e);
         }
     }

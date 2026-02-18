@@ -183,13 +183,13 @@ export const useTerminal = () => {
                     }
                     addToHistory(historyCommand, result);
                 }
-            } catch (e) {
+            } catch (e: unknown) {
                 // Also mask in error case
                 let historyCommand = trimmed;
                 if (cmdName === 'login' && args.length > 0) {
                     historyCommand = 'login *********';
                 }
-                addToHistory(historyCommand, `Error executing ${cmdName}: ${e}`);
+                addToHistory(historyCommand, `Error executing ${cmdName}: ${e instanceof Error ? e.message : String(e)}`);
             }
         } else {
             addToHistory(trimmed, `${cmdName}: command not found`);

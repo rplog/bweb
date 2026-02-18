@@ -3,6 +3,7 @@ interface Env {
 }
 
 const IMAGE_EXT = /\.(jpg|jpeg|png|webp|gif)$/i;
+const IMAGE_CONTENT_TYPES = /^image\/(jpeg|png|webp|gif|avif)/i;
 
 export const onRequest: PagesFunction<Env> = async (context) => {
     const { env, params } = context;
@@ -14,12 +15,15 @@ export const onRequest: PagesFunction<Env> = async (context) => {
 
     const key = Array.isArray(pathParts) ? pathParts.join('/') : pathParts;
 
-    if (!IMAGE_EXT.test(key)) {
+    const object = await env.neosphere_assets.get(key);
+    if (!object) {
         return new Response('Not Found', { status: 404 });
     }
 
-    const object = await env.neosphere_assets.get(key);
-    if (!object) {
+    // Accept if key has an image extension OR if the stored content-type is an image
+    const contentType = object.httpMetadata?.contentType || '';
+    const isImage = IMAGE_EXT.test(key) || IMAGE_CONTENT_TYPES.test(contentType);
+    if (!isImage) {
         return new Response('Not Found', { status: 404 });
     }
 

@@ -56,7 +56,7 @@ async function handleGet(context: EventContext<Env, string, unknown>) {
 
         while (truncated) {
             const listing = await env.neosphere_assets.list({
-                include: ['customMetadata'],
+                include: ['customMetadata', 'httpMetadata'],
                 cursor
             } as R2ListOptions);
 
@@ -76,7 +76,9 @@ async function handleGet(context: EventContext<Env, string, unknown>) {
                     continue;
                 }
 
-                if (!filename.match(/\.(jpg|jpeg|png|webp|gif)$/i)) continue;
+                const hasImageExt = /\.(jpg|jpeg|png|webp|gif)$/i.test(filename);
+                const hasImageContentType = /^image\//i.test(object.httpMetadata?.contentType || '');
+                if (!hasImageExt && !hasImageContentType) continue;
 
                 if (!albums[albumPath]) {
                     albums[albumPath] = { title: albumPath, count: 0, cover: [], photos: [], category: 'Gallery' };

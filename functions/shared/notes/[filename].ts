@@ -56,6 +56,7 @@ export const onRequestGet: PagesFunction<{ DB: D1Database }> = async (context) =
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     ${edits.length > 0 ? '<script async src="https://cdn.jsdelivr.net/npm/diff@8.0.3/dist/diff.min.js"><' + '/script>' : ''}
+    <script async src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"><${''}/script>
     <style>
         body {
             background-color: ${colors.bg};
@@ -125,6 +126,25 @@ export const onRequestGet: PagesFunction<{ DB: D1Database }> = async (context) =
         .breadcrumb a:hover { opacity: 0.8; text-decoration: underline; }
         .breadcrumb .sep { margin: 0 8px; color: ${colors.border}; }
         .breadcrumb .current { color: ${colors.textPrimary}; }
+        .markdown-body { white-space: normal; line-height: 1.8; }
+        .markdown-body h1, .markdown-body h2, .markdown-body h3, .markdown-body h4, .markdown-body h5, .markdown-body h6 { color: ${colors.accent}; margin: 1.2em 0 0.6em; line-height: 1.3; }
+        .markdown-body h1 { font-size: 1.6em; border-bottom: 1px solid ${colors.border}; padding-bottom: 0.3em; }
+        .markdown-body h2 { font-size: 1.35em; border-bottom: 1px solid ${colors.border}; padding-bottom: 0.3em; }
+        .markdown-body h3 { font-size: 1.15em; }
+        .markdown-body p { margin: 0.8em 0; }
+        .markdown-body ul, .markdown-body ol { padding-left: 2em; margin: 0.8em 0; }
+        .markdown-body li { margin: 0.3em 0; }
+        .markdown-body blockquote { border-left: 3px solid ${colors.accent}; margin: 0.8em 0; padding: 0.4em 1em; color: ${colors.textSecondary}; background: rgba(255,255,255,0.03); }
+        .markdown-body code { background: rgba(255,255,255,0.08); padding: 0.15em 0.4em; border-radius: 3px; font-size: 0.9em; }
+        .markdown-body pre { background: rgba(0,0,0,0.3); border: 1px solid ${colors.border}; border-radius: 4px; padding: 1em; overflow-x: auto; margin: 0.8em 0; }
+        .markdown-body pre code { background: none; padding: 0; border-radius: 0; font-size: 0.9em; }
+        .markdown-body table { border-collapse: collapse; width: 100%; margin: 0.8em 0; }
+        .markdown-body th, .markdown-body td { border: 1px solid ${colors.border}; padding: 0.5em 0.8em; text-align: left; }
+        .markdown-body th { background: rgba(255,255,255,0.05); color: ${colors.accent}; }
+        .markdown-body hr { border: none; border-top: 1px solid ${colors.border}; margin: 1.5em 0; }
+        .markdown-body a { color: ${colors.accent}; text-decoration: underline; text-underline-offset: 3px; }
+        .markdown-body a:hover { color: ${colors.accentHover}; }
+        .markdown-body img { max-width: 100%; border-radius: 4px; }
         @media (max-width: 600px) {
             body { padding: 20px 15px; }
             h1 { font-size: 1.2rem; flex-direction: column; align-items: flex-start; gap: 10px; }
@@ -147,7 +167,10 @@ export const onRequestGet: PagesFunction<{ DB: D1Database }> = async (context) =
         <header>
             <h1>
                 <span>${safeFilename}</span>
-                <button id="copy-content-btn" class="btn" onclick="copyContent()">Copy</button>
+                <span style="display:flex;gap:8px;">
+                    <button id="md-toggle-btn" class="btn" onclick="toggleMarkdown()" style="background:${colors.accent};color:${colors.bg};">MD</button>
+                    <button id="copy-content-btn" class="btn" onclick="copyContent()">Copy</button>
+                </span>
             </h1>
             <div class="meta">
                 <div class="meta-row">
@@ -213,7 +236,45 @@ export const onRequestGet: PagesFunction<{ DB: D1Database }> = async (context) =
         }
 
         var contentEl = document.getElementById('note-content');
-        contentEl.innerHTML = escapeHtml(latestContent);
+        var isMarkdownOn = true;
+        var mdBtn = document.getElementById('md-toggle-btn');
+
+        function renderContent(text) {
+            if (isMarkdownOn && window.marked) {
+                contentEl.classList.add('markdown-body');
+                contentEl.innerHTML = window.marked.parse(String(text));
+            } else {
+                contentEl.classList.remove('markdown-body');
+                contentEl.innerHTML = escapeHtml(text);
+            }
+        }
+
+        function toggleMarkdown() {
+            isMarkdownOn = !isMarkdownOn;
+            if (isMarkdownOn) {
+                mdBtn.style.background = '${colors.accent}';
+                mdBtn.style.color = '${colors.bg}';
+            } else {
+                mdBtn.style.background = 'transparent';
+                mdBtn.style.color = '${colors.accent}';
+            }
+            if (currentViewedEdit && !isDiffView) {
+                renderCurrentView();
+            } else if (!currentViewedEdit) {
+                renderContent(latestContent);
+            }
+        }
+        window.toggleMarkdown = toggleMarkdown;
+
+        // Initial render — try marked, fall back to plain if not loaded yet
+        if (window.marked) {
+            renderContent(latestContent);
+        } else {
+            contentEl.innerHTML = escapeHtml(latestContent);
+            document.querySelector('script[src*="marked"]').addEventListener('load', function() {
+                if (isMarkdownOn && !currentViewedEdit) renderContent(latestContent);
+            });
+        }
 
         function formatDate(timestamp) {
             try {
@@ -299,7 +360,7 @@ export const onRequestGet: PagesFunction<{ DB: D1Database }> = async (context) =
                 }
             } else {
                 var newText2 = index === 0 ? latestContent : (edits[index - 1].previous_content != null ? edits[index - 1].previous_content : "");
-                contentEl.innerHTML = escapeHtml(newText2);
+                renderContent(newText2);
             }
         }
 
@@ -307,7 +368,7 @@ export const onRequestGet: PagesFunction<{ DB: D1Database }> = async (context) =
         window.viewFileContent = viewFileContent;
 
         function restoreLatest() {
-            contentEl.innerHTML = escapeHtml(latestContent);
+            renderContent(latestContent);
             banner.style.display = 'none';
             document.querySelectorAll('.git-entry').forEach(function(el) { el.classList.remove('active'); });
             currentViewedEdit = null;

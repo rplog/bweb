@@ -5,6 +5,7 @@ import { PageFooter } from '../PageFooter';
 import { createNavigationHandler } from '../../utils/navigation';
 import { FileText, Calendar, User, Search, X, Loader2, Maximize2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface Note {
     filename: string;
@@ -197,7 +198,7 @@ export const Notes: React.FC<NotesProps> = ({ onExit, onNavigate }) => {
                                         </div>
                                     ) : (
                                         <div className="prose prose-invert prose-sm md:prose-base max-w-none prose-headings:text-elegant-text-primary prose-a:text-elegant-accent prose-code:text-elegant-accent prose-code:bg-white/5 prose-code:px-1 prose-code:rounded prose-pre:bg-black/50 prose-pre:border prose-pre:border-white/10">
-                                            <ReactMarkdown>{noteContent || ''}</ReactMarkdown>
+                                            <ReactMarkdown remarkPlugins={[remarkGfm]}>{noteContent || ''}</ReactMarkdown>
                                         </div>
                                     )}
                                 </div>

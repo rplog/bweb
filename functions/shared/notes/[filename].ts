@@ -58,12 +58,6 @@ export const onRequestGet: PagesFunction<{ DB: D1Database }> = async (context) =
     ${edits.length > 0 ? '<script async src="https://cdn.jsdelivr.net/npm/diff@8.0.3/dist/diff.min.js"><' + '/script>' : ''}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github-dark.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16/dist/katex.min.css">
-    <script defer src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"><${''}/script>
-    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"><${''}/script>
-    <script defer src="https://cdn.jsdelivr.net/npm/marked-highlight/lib/index.umd.min.js"><${''}/script>
-    <script defer src="https://cdn.jsdelivr.net/npm/marked-footnote/dist/index.umd.min.js"><${''}/script>
-    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16/dist/katex.min.js"><${''}/script>
-    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16/dist/contrib/auto-render.min.js"><${''}/script>
     <style>
         body {
             background-color: ${colors.bg};
@@ -233,6 +227,12 @@ export const onRequestGet: PagesFunction<{ DB: D1Database }> = async (context) =
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"><${''}/script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"><${''}/script>
+    <script src="https://cdn.jsdelivr.net/npm/marked-highlight/lib/index.umd.min.js"><${''}/script>
+    <script src="https://cdn.jsdelivr.net/npm/marked-footnote/dist/index.umd.min.js"><${''}/script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16/dist/katex.min.js"><${''}/script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16/dist/contrib/auto-render.min.js"><${''}/script>
     <script>
         var createdAt = ${safeJson(created_at)};
         var updatedAt = ${safeJson(updated_at)};
@@ -251,10 +251,9 @@ export const onRequestGet: PagesFunction<{ DB: D1Database }> = async (context) =
         var contentEl = document.getElementById('note-content');
         var isMarkdownOn = true;
         var mdBtn = document.getElementById('md-toggle-btn');
-        var markedReady = false;
 
-        function initMarked() {
-            if (markedReady || !window.marked) return;
+        // Configure marked with extensions — all scripts loaded synchronously above
+        if (window.marked) {
             if (window.markedHighlight && window.hljs) {
                 window.marked.use(window.markedHighlight.markedHighlight({
                     langPrefix: 'hljs language-',
@@ -269,11 +268,10 @@ export const onRequestGet: PagesFunction<{ DB: D1Database }> = async (context) =
             if (window.markedFootnote) {
                 window.marked.use(window.markedFootnote.markedFootnote());
             }
-            markedReady = true;
         }
 
         function renderContent(text) {
-            if (isMarkdownOn && markedReady) {
+            if (isMarkdownOn && window.marked) {
                 contentEl.classList.add('markdown-body');
                 contentEl.innerHTML = window.marked.parse(String(text));
                 if (window.renderMathInElement) {
@@ -310,12 +308,8 @@ export const onRequestGet: PagesFunction<{ DB: D1Database }> = async (context) =
         }
         window.toggleMarkdown = toggleMarkdown;
 
-        // Show plain text immediately, then render markdown once defer scripts have loaded
-        contentEl.innerHTML = escapeHtml(latestContent);
-        document.addEventListener('DOMContentLoaded', function() {
-            initMarked();
-            if (isMarkdownOn && !currentViewedEdit) renderContent(latestContent);
-        });
+        // Initial render — all CDN scripts are loaded, render markdown directly
+        renderContent(latestContent);
 
         function formatDate(timestamp) {
             try {

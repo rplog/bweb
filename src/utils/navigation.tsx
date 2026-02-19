@@ -1,9 +1,9 @@
-import React from 'react';
-import { Gallery } from '../components/pages/Gallery';
-import { About } from '../components/pages/About';
-import { Contact } from '../components/pages/Contact';
-import { Projects } from '../components/pages/Projects';
-import { Notes } from '../components/pages/Notes';
+import React, { lazy } from 'react';
+const Gallery = lazy(() => import('../components/pages/Gallery').then(module => ({ default: module.Gallery })));
+const About = lazy(() => import('../components/pages/About').then(module => ({ default: module.About })));
+const Contact = lazy(() => import('../components/pages/Contact').then(module => ({ default: module.Contact })));
+const Projects = lazy(() => import('../components/pages/Projects').then(module => ({ default: module.Projects })));
+const Notes = lazy(() => import('../components/pages/Notes').then(module => ({ default: module.Notes })));
 
 export const createNavigator = (setFullScreen: (node: React.ReactNode | null, path?: string) => void) => {
     const navigate = (dest: string) => {

@@ -26,7 +26,7 @@ const items: DockItem[] = [
 export const Dock: React.FC<DockProps> = ({ onNavigate, currentPage, className = '' }) => {
     return (
         <nav className={`w-full px-3 ${className}`} aria-label="Navigation">
-            <div className="mx-auto max-w-fit bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl px-2 py-1.5 overflow-hidden">
+            <div className="mx-auto max-w-fit bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl px-3 py-2 overflow-hidden">
                 <div className="flex items-center overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
                     {items.map((item) => {
                         const isActive = currentPage === item.label;
@@ -40,7 +40,7 @@ export const Dock: React.FC<DockProps> = ({ onNavigate, currentPage, className =
                                 )}
                                 <button
                                     onClick={() => onNavigate(item.label)}
-                                    className={`group flex flex-col items-center gap-0.5 px-3 py-2 rounded-lg transition-all duration-200 shrink-0 ${
+                                    className={`group flex flex-col items-center gap-0.5 w-16 py-2.5 rounded-lg transition-all duration-200 shrink-0 ${
                                         isActive
                                             ? 'bg-white/10'
                                             : 'hover:bg-white/10'
@@ -49,7 +49,7 @@ export const Dock: React.FC<DockProps> = ({ onNavigate, currentPage, className =
                                     aria-current={isActive ? 'page' : undefined}
                                 >
                                     <item.icon
-                                        size={20}
+                                        size={22}
                                         className={`transition-all duration-200 ${
                                             isActive
                                                 ? 'text-elegant-accent'
@@ -58,7 +58,7 @@ export const Dock: React.FC<DockProps> = ({ onNavigate, currentPage, className =
                                                     : 'text-elegant-text-secondary group-hover:text-elegant-text-primary group-hover:scale-110'
                                         }`}
                                     />
-                                    <span className={`text-[10px] font-semibold leading-tight transition-colors ${
+                                    <span className={`text-[11px] font-semibold leading-tight transition-colors ${
                                         isActive
                                             ? 'text-elegant-accent'
                                             : item.accent

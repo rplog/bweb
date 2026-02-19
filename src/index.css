@@ -16,7 +16,7 @@
 :root {
   --term-color: var(--color-elegant-text-primary);
   --term-bg: var(--color-elegant-bg);
-  --term-font: 'JetBrains Mono', 'Consolas', 'Monaco', 'Andale Mono', 'Ubuntu Mono', monospace;
+  --term-font: 'Fira Code', 'Consolas', 'Monaco', 'Andale Mono', 'Ubuntu Mono', monospace;
   --term-prompt: var(--color-elegant-accent);
   --term-error: #ff5555;
   --term-link: var(--color-elegant-accent-hover);

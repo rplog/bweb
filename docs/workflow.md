@@ -19,7 +19,7 @@ graph TD
     External_API[OpenWeatherMap API]
 
     %% Interactions
-    User -->|Visits neosphere.pages.dev| CF_Pages
+    User -->|Visits bahauddin.in| CF_Pages
     User -->|Requests /media/avatars/me.jpg| CF_Functions
     User -->|Requests /api/weather| CF_Functions
     

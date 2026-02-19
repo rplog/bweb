@@ -53,7 +53,7 @@ export const Contact: React.FC<ContactProps> = ({ onExit, onNavigate }) => {
                 {/* Main Content */}
                 <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 flex flex-col">
                     {/* Breadcrumbs */}
-                    <div className="mb-6 text-base font-semibold text-elegant-text-muted flex items-center gap-2 shrink-0">
+                    <nav aria-label="Breadcrumb" className="mb-6 text-base font-semibold text-elegant-text-muted flex items-center gap-2 shrink-0">
                         <button
                             onClick={() => onExit()}
                             className="hover:text-elegant-text-primary transition-colors hover:underline decoration-elegant-text-muted underline-offset-4"
@@ -62,24 +62,26 @@ export const Contact: React.FC<ContactProps> = ({ onExit, onNavigate }) => {
                         </button>
                         <span>/</span>
                         <span className="text-elegant-text-primary font-bold">contact</span>
-                    </div>
+                    </nav>
 
-                    <div className="max-w-2xl mx-auto w-full">
+                    <section className="max-w-2xl mx-auto w-full" aria-labelledby="contact-heading">
                         <div className="bg-elegant-card border border-elegant-border rounded-sm p-6 shadow-2xl">
                             <div className="flex items-center gap-3 mb-6">
-                                <Send className="text-elegant-text-muted" size={20} />
-                                <h2 className="text-xl font-bold text-elegant-text-primary">Send Message</h2>
+                                <Send className="text-elegant-text-muted" size={20} aria-hidden="true" />
+                                <h1 id="contact-heading" className="text-xl font-bold text-elegant-text-primary">Send Message</h1>
                             </div>
 
-                            <form onSubmit={handleSubmit} className="space-y-4">
+                            <form onSubmit={handleSubmit} className="space-y-4" aria-label="Contact form">
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-xs text-elegant-text-secondary mb-1.5">
-                                            Name <span className="text-elegant-accent">*</span>
+                                        <label htmlFor="name" className="block text-xs text-elegant-text-secondary mb-1.5">
+                                            Name <span className="text-elegant-accent" aria-hidden="true">*</span>
                                         </label>
                                         <div className="relative">
-                                            <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-elegant-text-muted" />
+                                            <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-elegant-text-muted" aria-hidden="true" />
                                             <input
+                                                id="name"
+                                                name="name"
                                                 type="text"
                                                 required
                                                 value={formData.name}
@@ -91,12 +93,14 @@ export const Contact: React.FC<ContactProps> = ({ onExit, onNavigate }) => {
                                     </div>
 
                                     <div>
-                                        <label className="block text-xs text-elegant-text-secondary mb-1.5">
-                                            Email <span className="text-elegant-accent">*</span>
+                                        <label htmlFor="email" className="block text-xs text-elegant-text-secondary mb-1.5">
+                                            Email <span className="text-elegant-accent" aria-hidden="true">*</span>
                                         </label>
                                         <div className="relative">
-                                            <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-elegant-text-muted" />
+                                            <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-elegant-text-muted" aria-hidden="true" />
                                             <input
+                                                id="email"
+                                                name="email"
                                                 type="email"
                                                 required
                                                 value={formData.email}
@@ -109,12 +113,14 @@ export const Contact: React.FC<ContactProps> = ({ onExit, onNavigate }) => {
                                 </div>
 
                                 <div>
-                                    <label className="block text-xs text-elegant-text-secondary mb-1.5">
-                                        Message <span className="text-elegant-accent">*</span>
+                                    <label htmlFor="message" className="block text-xs text-elegant-text-secondary mb-1.5">
+                                        Message <span className="text-elegant-accent" aria-hidden="true">*</span>
                                     </label>
                                     <div className="relative">
-                                        <MessageSquare size={16} className="absolute left-3 top-3 text-elegant-text-muted" />
+                                        <MessageSquare size={16} className="absolute left-3 top-3 text-elegant-text-muted" aria-hidden="true" />
                                         <textarea
+                                            id="message"
+                                            name="message"
                                             required
                                             value={formData.message}
                                             onChange={(e) => setFormData({ ...formData, message: e.target.value })}
@@ -135,12 +141,12 @@ export const Contact: React.FC<ContactProps> = ({ onExit, onNavigate }) => {
                                             : 'bg-elegant-accent hover:bg-elegant-accent-hover text-elegant-bg'
                                         }`}
                                 >
-                                    <Send size={16} className={status === 'loading' ? 'animate-pulse' : ''} />
+                                    <Send size={16} className={status === 'loading' ? 'animate-pulse' : ''} aria-hidden="true" />
                                     {status === 'loading' ? 'Sending...' : status === 'success' ? 'Message Sent!' : status === 'error' ? 'Failed to Send' : 'Send Message'}
                                 </button>
                             </form>
                         </div>
-                    </div>
+                    </section>
                 </main>
 
                 {/* Footer */}

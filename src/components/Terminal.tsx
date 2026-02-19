@@ -1,11 +1,19 @@
 import React, { useRef, useEffect } from 'react';
 import { useTerminal } from '../hooks/useTerminal';
 import type { CommandInputHandle } from './CommandInput';
+import type { TerminalMode } from '../App';
 import { CommandInput } from './CommandInput';
 import { OutputDisplay } from './OutputDisplay';
-import { Minus, Square, X } from 'lucide-react';
+import { Minus, Square, Maximize2, X } from 'lucide-react';
 
-export const Terminal: React.FC = () => {
+interface TerminalProps {
+    terminalMode: TerminalMode;
+    onMinimize: () => void;
+    onMaximize: () => void;
+    onClose: () => void;
+}
+
+export const Terminal: React.FC<TerminalProps> = ({ terminalMode, onMinimize, onMaximize, onClose }) => {
     const {
         history,
         getPromptPath,
@@ -19,6 +27,9 @@ export const Terminal: React.FC = () => {
 
     const inputRef = useRef<CommandInputHandle>(null);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+    const isWindowed = terminalMode === 'windowed';
+    const isVisible = terminalMode !== 'hidden' && !activeComponent;
 
     // Auto-scroll on ANY content change (handles Ping, Htop, etc. internal updates)
     useEffect(() => {
@@ -41,15 +52,14 @@ export const Terminal: React.FC = () => {
         return () => observer.disconnect();
     }, [history]);
 
-    // Refocus input when activeComponent closes (e.g. exiting htop/nano)
+    // Refocus input when activeComponent closes or terminal becomes visible
     useEffect(() => {
-        if (!activeComponent) {
-            // Small timeout to ensure DOM update is complete
+        if (!activeComponent && terminalMode !== 'hidden') {
             setTimeout(() => {
                 inputRef.current?.focus();
             }, 10);
         }
-    }, [activeComponent]);
+    }, [activeComponent, terminalMode]);
 
     const handleContainerClick = () => {
         // Don't focus if user is selecting text
@@ -60,54 +70,78 @@ export const Terminal: React.FC = () => {
     };
 
     return (
-        <div className="w-full h-full relative">
-            {/* Full Screen Component Layer */}
+        <>
+            {/* Full Screen Component Layer - always rendered independently */}
             {activeComponent && (
                 <div className="fixed inset-0 z-50 bg-elegant-bg text-elegant-text-primary font-mono text-base p-4 overflow-hidden">
                     {activeComponent}
                 </div>
             )}
 
-            {/* Terminal Layer - Hidden but mounted when activeComponent exists */}
-            <div className={`flex flex-col h-full w-full ${activeComponent ? 'invisible' : ''}`}>
-                {/* Top Bar - KDE / Linux Style - Always visible, never scrolls */}
-                <div className="w-full h-10 bg-elegant-card flex items-center px-4 justify-end border-b border-elegant-border flex-shrink-0 select-none relative z-20">
-                    <div className="absolute left-4 transform-none md:left-1/2 md:-translate-x-1/2 text-gray-400 text-lg font-medium font-mono truncate max-w-[60%] md:max-w-none">
-                        {user}@neosphere:~
+            {/* Terminal Window */}
+            <div className={`fixed z-30 transition-all duration-300 ease-out ${
+                !isVisible
+                    ? 'opacity-0 invisible pointer-events-none scale-95'
+                    : 'opacity-100 scale-100'
+            } ${
+                isWindowed
+                    ? 'inset-3 md:inset-[8%] lg:inset-x-[12%] lg:inset-y-[8%] rounded-lg shadow-2xl shadow-black/60 border border-elegant-border'
+                    : 'inset-0'
+            }`}>
+                <div className={`w-full h-full flex flex-col overflow-hidden ${isWindowed ? 'rounded-lg' : ''} bg-elegant-bg`}>
+                    {/* Top Bar - KDE / Linux Style */}
+                    <div className={`w-full h-10 bg-elegant-card flex items-center px-4 justify-end border-b border-elegant-border flex-shrink-0 select-none relative z-20 ${
+                        isWindowed ? 'cursor-default' : ''
+                    }`}>
+                        <div className="absolute left-4 transform-none md:left-1/2 md:-translate-x-1/2 text-gray-400 text-lg font-medium font-mono truncate max-w-[60%] md:max-w-none">
+                            {user}@neosphere:~
+                        </div>
+                        <div className="flex gap-3 relative z-10">
+                            <div
+                                onClick={onMinimize}
+                                className="p-1.5 hover:bg-white/10 rounded-full transition-colors cursor-pointer text-gray-500 hover:text-white"
+                                title="Minimize"
+                            >
+                                <Minus size={14} />
+                            </div>
+                            <div
+                                onClick={isWindowed ? onMaximize : onMinimize}
+                                className="p-1.5 hover:bg-white/10 rounded-full transition-colors cursor-pointer text-gray-500 hover:text-white"
+                                title={isWindowed ? 'Maximize' : 'Restore'}
+                            >
+                                {isWindowed ? <Square size={12} /> : <Maximize2 size={12} />}
+                            </div>
+                            <div
+                                onClick={onClose}
+                                className="p-1.5 hover:bg-red-500 hover:text-white rounded-full transition-colors cursor-pointer text-gray-500"
+                                title="Close"
+                            >
+                                <X size={14} />
+                            </div>
+                        </div>
                     </div>
-                    <div className="flex gap-3 relative z-10">
-                        <div className="p-1.5 hover:bg-white/10 rounded-full transition-colors cursor-pointer text-gray-500 hover:text-white" title="Minimize">
-                            <Minus size={14} />
-                        </div>
-                        <div className="p-1.5 hover:bg-white/10 rounded-full transition-colors cursor-pointer text-gray-500 hover:text-white" title="Maximize">
-                            <Square size={12} />
-                        </div>
-                        <div className="p-1.5 hover:bg-red-500 hover:text-white rounded-full transition-colors cursor-pointer text-gray-500" title="Close">
-                            <X size={14} />
-                        </div>
-                    </div>
-                </div>
 
-                {/* Scrollable Terminal Content - scrollbar only in this area */}
-                <div
-                    ref={scrollContainerRef}
-                    className="flex-1 min-h-0 p-4 overflow-y-auto font-mono text-lg font-medium"
-                    onClick={handleContainerClick}
-                >
-                    <div className="max-w-5xl mx-auto">
-                        <OutputDisplay history={history} />
-                        {isInputVisible && (
-                            <CommandInput
-                                ref={inputRef}
-                                promptPath={getPromptPath()}
-                                user={user}
-                                onSubmit={execute}
-                                inputHistory={inputHistory}
-                                onTabComplete={handleTabCompletion} />
-                        )}
+                    {/* Scrollable Terminal Content */}
+                    <div
+                        ref={scrollContainerRef}
+                        className="flex-1 min-h-0 p-4 overflow-y-auto font-mono text-lg font-medium"
+                        onClick={handleContainerClick}
+                    >
+                        <div className="max-w-5xl mx-auto">
+                            <OutputDisplay history={history} />
+                            {isInputVisible && (
+                                <CommandInput
+                                    ref={inputRef}
+                                    promptPath={getPromptPath()}
+                                    user={user}
+                                    onSubmit={execute}
+                                    inputHistory={inputHistory}
+                                    onTabComplete={handleTabCompletion} />
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </>
     );
 };

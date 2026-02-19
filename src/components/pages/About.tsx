@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Spotlight } from '../Spotlight';
 import { PageHeader } from '../PageHeader';
 import { Code, X } from 'lucide-react';
-import { PageFooter } from '../PageFooter';
+import { Dock } from '../Dock';
 import { SiGithub, SiX, SiLinkedin, SiReact, SiTypescript, SiRust, SiTailwindcss, SiPython, SiTelegram, SiNodedotjs } from 'react-icons/si';
 import { createNavigationHandler } from '../../utils/navigation';
 
@@ -160,8 +160,8 @@ export const About: React.FC<AboutProps> = ({ onExit, onNavigate }) => {
                     </div>
                 </main>
 
-                {/* Footer */}
-                <PageFooter />
+                {/* Dock */}
+                <Dock onNavigate={handleNavigate} currentPage="About" className="py-3" />
 
                 {/* Profile Lightbox */}
                 {showProfile && (

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { optimizeImage } from '../../utils/imageOptimizer';
 import { Spotlight } from '../Spotlight';
 import { PageHeader } from '../PageHeader';
-import { PageFooter } from '../PageFooter';
+import { Dock } from '../Dock';
 import { ArrowLeft, FolderPlus } from 'lucide-react';
 import { createNavigationHandler } from '../../utils/navigation';
 import type { Album, Photo } from '../gallery/types';
@@ -716,7 +716,7 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
                     )}
                 </main>
 
-                <PageFooter />
+                <Dock onNavigate={handleNavigate} currentPage="Gallery" className="py-3" />
 
                 {/* Lightbox */}
                 {activePhoto && (

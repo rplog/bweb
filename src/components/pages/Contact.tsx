@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Spotlight } from '../Spotlight';
 import { PageHeader } from '../PageHeader';
 import { Send, User, Mail, MessageSquare } from 'lucide-react';
-import { PageFooter } from '../PageFooter';
+import { Dock } from '../Dock';
 import { createNavigationHandler } from '../../utils/navigation';
 
 interface ContactProps {
@@ -149,8 +149,8 @@ export const Contact: React.FC<ContactProps> = ({ onExit, onNavigate }) => {
                     </section>
                 </main>
 
-                {/* Footer */}
-                <PageFooter />
+                {/* Dock */}
+                <Dock onNavigate={handleNavigate} currentPage="Contact" className="py-3" />
             </div>
         </div>
     );

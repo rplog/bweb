@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Spotlight } from '../Spotlight';
 import { PageHeader } from '../PageHeader';
-import { PageFooter } from '../PageFooter';
+import { Dock } from '../Dock';
 import { createNavigationHandler } from '../../utils/navigation';
 import { FileText, Calendar, User, Search, X, Loader2, Maximize2, Plus, Edit, Trash2, Share2, AlertCircle } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
@@ -363,7 +363,7 @@ export const Notes: React.FC<NotesProps> = ({ onExit, onNavigate }) => {
                     )}
                 </main>
 
-                <PageFooter />
+                <Dock onNavigate={handleNavigate} currentPage="Notes" className="py-3" />
 
                 {/* Note Detail Modal */}
                 {

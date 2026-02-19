@@ -1,7 +1,7 @@
 import React from 'react';
 import { Spotlight } from '../Spotlight';
 import { PageHeader } from '../PageHeader';
-import { PageFooter } from '../PageFooter';
+import { Dock } from '../Dock';
 import { FolderGit2 } from 'lucide-react';
 import { createNavigationHandler } from '../../utils/navigation';
 import { SiGithub } from 'react-icons/si';
@@ -79,7 +79,7 @@ export const Projects: React.FC<ProjectsProps> = ({ onExit, onNavigate }) => {
                     </section>
                 </main>
 
-                <PageFooter />
+                <Dock onNavigate={handleNavigate} currentPage="Projects" className="py-3" />
             </div>
         </div>
     );

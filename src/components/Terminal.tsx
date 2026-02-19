@@ -72,7 +72,7 @@ export const Terminal: React.FC = () => {
             <div className={`flex flex-col h-full w-full ${activeComponent ? 'invisible' : ''}`}>
                 {/* Top Bar - KDE / Linux Style - Always visible, never scrolls */}
                 <div className="w-full h-10 bg-elegant-card flex items-center px-4 justify-end border-b border-elegant-border flex-shrink-0 select-none relative z-20">
-                    <div className="absolute left-1/2 transform -translate-x-1/2 text-gray-400 text-lg font-medium font-mono">
+                    <div className="absolute left-4 transform-none md:left-1/2 md:-translate-x-1/2 text-gray-400 text-lg font-medium font-mono truncate max-w-[60%] md:max-w-none">
                         {user}@neosphere:~
                     </div>
                     <div className="flex gap-3 relative z-10">

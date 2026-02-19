@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { Home, User, FolderGit2, Image, StickyNote, Mail, Terminal as TerminalIcon, type LucideIcon } from 'lucide-react';
 
 interface DockProps {
@@ -24,10 +24,30 @@ const items: DockItem[] = [
 ];
 
 export const Dock: React.FC<DockProps> = ({ onNavigate, currentPage, className = '' }) => {
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
+    const itemRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
+
+    useEffect(() => {
+        if (currentPage) {
+            const element = itemRefs.current.get(currentPage);
+            if (element) {
+                element.scrollIntoView({
+                    behavior: 'smooth',
+                    inline: 'center',
+                    block: 'nearest'
+                });
+            }
+        }
+    }, [currentPage]);
+
     return (
         <nav className={`w-full px-3 ${className}`} aria-label="Navigation">
             <div className="mx-auto max-w-fit bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl px-3 py-2 overflow-hidden">
-                <div className="flex items-center overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+                <div 
+                    ref={scrollContainerRef}
+                    className="flex items-center overflow-x-auto no-scrollbar" 
+                    style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                >
                     {items.map((item) => {
                         const isActive = currentPage === item.label;
                         const showSepBefore = item.label === 'About';
@@ -39,6 +59,10 @@ export const Dock: React.FC<DockProps> = ({ onNavigate, currentPage, className =
                                     <div className="w-px bg-white/10 mx-0.5 my-1.5 self-stretch shrink-0" />
                                 )}
                                 <button
+                                    ref={(el) => {
+                                        if (el) itemRefs.current.set(item.label, el);
+                                        else itemRefs.current.delete(item.label);
+                                    }}
                                     onClick={() => onNavigate(item.label)}
                                     className={`group flex flex-col items-center gap-0.5 w-16 py-2.5 rounded-lg transition-all duration-200 shrink-0 ${
                                         isActive

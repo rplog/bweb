@@ -76,7 +76,7 @@ export const About: React.FC<AboutProps> = ({ onExit, onNavigate }) => {
                                     <p className="text-elegant-text-secondary mb-6 text-sm">Full Stack Developer</p>
 
                                     <div className="flex gap-3 mb-6 justify-center">
-                                        <a href="#" aria-label="Github Profile" className="p-2 bg-elegant-bg hover:bg-elegant-card rounded transition-colors border border-elegant-border text-elegant-text-muted hover:text-elegant-text-primary">
+                                        <a href="https://github.com/bahauddin-alam" target="_blank" rel="noopener noreferrer" aria-label="Github Profile" className="p-2 bg-elegant-bg hover:bg-elegant-card rounded transition-colors border border-elegant-border text-elegant-text-muted hover:text-elegant-text-primary">
                                             <SiGithub size={18} aria-hidden="true" />
                                         </a>
                                         <a href="https://x.com/bahauddinalam" target="_blank" rel="noopener noreferrer" aria-label="X (Twitter) Profile" className="p-2 bg-elegant-bg hover:bg-elegant-card rounded transition-colors border border-elegant-border text-elegant-text-muted hover:text-elegant-text-primary">

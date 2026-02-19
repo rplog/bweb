@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Search, Terminal, Image, User, Mail, FolderGit2, FileText } from 'lucide-react';
+import { Search, Home, Terminal, Image, User, Mail, FolderGit2, FileText } from 'lucide-react';
 
 interface SpotlightProps {
     onNavigate: (destination: string) => void;
@@ -13,6 +13,7 @@ export const Spotlight: React.FC<SpotlightProps> = ({ onNavigate }) => {
     const listRef = useRef<HTMLDivElement>(null);
 
     const options = [
+        { name: 'Home', icon: <Home size={18} /> },
         { name: 'Terminal', icon: <Terminal size={18} /> },
         { name: 'Gallery', icon: <Image size={18} /> },
         { name: 'Projects', icon: <FolderGit2 size={18} /> },

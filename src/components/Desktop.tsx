@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { SiGithub, SiX, SiLinkedin, SiTelegram } from 'react-icons/si';
 import { Dock } from './Dock';
+import { Spotlight } from './Spotlight';
 
 interface DesktopProps {
     onOpenTerminal: () => void;
@@ -15,8 +16,20 @@ export const Desktop: React.FC<DesktopProps> = ({ onOpenTerminal, onNavigate }) 
         return () => clearInterval(interval);
     }, []);
 
+    const handleDockNavigate = useCallback((dest: string) => {
+        if (dest === 'Terminal') {
+            onOpenTerminal();
+        } else if (dest === 'Home') {
+            // Already on desktop, no-op
+        } else {
+            onNavigate(dest);
+        }
+    }, [onOpenTerminal, onNavigate]);
+
     return (
         <div className="fixed inset-0 bg-elegant-bg flex flex-col items-center justify-center font-mono select-none">
+            <Spotlight onNavigate={handleDockNavigate} />
+
             {/* Main content area */}
             <div className="flex-1 flex flex-col items-center justify-center px-6 max-w-2xl mx-auto text-center">
                 {/* Clock */}
@@ -46,7 +59,7 @@ export const Desktop: React.FC<DesktopProps> = ({ onOpenTerminal, onNavigate }) 
 
                 {/* Social links */}
                 <div className="flex gap-3">
-                    <a href="#" aria-label="GitHub Profile" className="p-2.5 text-elegant-text-muted hover:text-elegant-text-primary transition-colors">
+                    <a href="https://github.com/bahauddin-alam" target="_blank" rel="noopener noreferrer" aria-label="GitHub Profile" className="p-2.5 text-elegant-text-muted hover:text-elegant-text-primary transition-colors">
                         <SiGithub size={18} />
                     </a>
                     <a href="https://x.com/bahauddinalam" target="_blank" rel="noopener noreferrer" aria-label="X (Twitter) Profile" className="p-2.5 text-elegant-text-muted hover:text-elegant-text-primary transition-colors">
@@ -63,9 +76,8 @@ export const Desktop: React.FC<DesktopProps> = ({ onOpenTerminal, onNavigate }) 
 
             {/* Dock */}
             <Dock
-                onNavigate={onNavigate}
-                showTerminal
-                onOpenTerminal={onOpenTerminal}
+                onNavigate={handleDockNavigate}
+                currentPage="Home"
                 className="pb-5 md:pb-6"
             />
         </div>

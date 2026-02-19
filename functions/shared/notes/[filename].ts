@@ -56,12 +56,12 @@ export const onRequestGet: PagesFunction<{ DB: D1Database }> = async (context) =
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     ${edits.length > 0 ? '<script async src="https://cdn.jsdelivr.net/npm/diff@8.0.3/dist/diff.min.js"><' + '/script>' : ''}
-    <script async src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"><${''}/script>
-    <script async src="https://cdn.jsdelivr.net/npm/marked-highlight/lib/index.umd.min.js"><${''}/script>
-    <script async src="https://cdn.jsdelivr.net/npm/marked-footnote/dist/index.umd.min.js"><${''}/script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11/styles/github-dark.min.css">
-    <script async src="https://cdn.jsdelivr.net/npm/highlight.js@11/lib/common.min.js"><${''}/script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github-dark.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"><${''}/script>
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"><${''}/script>
+    <script defer src="https://cdn.jsdelivr.net/npm/marked-highlight/lib/index.umd.min.js"><${''}/script>
+    <script defer src="https://cdn.jsdelivr.net/npm/marked-footnote/dist/index.umd.min.js"><${''}/script>
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16/dist/katex.min.js"><${''}/script>
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16/dist/contrib/auto-render.min.js"><${''}/script>
     <style>
@@ -251,11 +251,11 @@ export const onRequestGet: PagesFunction<{ DB: D1Database }> = async (context) =
         var contentEl = document.getElementById('note-content');
         var isMarkdownOn = true;
         var mdBtn = document.getElementById('md-toggle-btn');
+        var markedReady = false;
 
-        var hasHighlight = false, hasFootnote = false;
-        function configureMarked() {
-            if (!window.marked) return;
-            if (!hasHighlight && window.markedHighlight && window.hljs) {
+        function initMarked() {
+            if (markedReady || !window.marked) return;
+            if (window.markedHighlight && window.hljs) {
                 window.marked.use(window.markedHighlight.markedHighlight({
                     langPrefix: 'hljs language-',
                     highlight: function(code, lang) {
@@ -265,17 +265,15 @@ export const onRequestGet: PagesFunction<{ DB: D1Database }> = async (context) =
                         return window.hljs.highlightAuto(code).value;
                     }
                 }));
-                hasHighlight = true;
             }
-            if (!hasFootnote && window.markedFootnote) {
+            if (window.markedFootnote) {
                 window.marked.use(window.markedFootnote.markedFootnote());
-                hasFootnote = true;
             }
+            markedReady = true;
         }
 
         function renderContent(text) {
-            if (isMarkdownOn && window.marked) {
-                configureMarked();
+            if (isMarkdownOn && markedReady) {
                 contentEl.classList.add('markdown-body');
                 contentEl.innerHTML = window.marked.parse(String(text));
                 if (window.renderMathInElement) {
@@ -312,19 +310,12 @@ export const onRequestGet: PagesFunction<{ DB: D1Database }> = async (context) =
         }
         window.toggleMarkdown = toggleMarkdown;
 
-        // Initial render — progressive: render with marked ASAP, re-render as extras load
+        // Show plain text immediately, then render markdown once defer scripts have loaded
         contentEl.innerHTML = escapeHtml(latestContent);
-        var libsLoaded = 0;
-        function onLibLoad() {
-            libsLoaded++;
-            if (!isMarkdownOn || currentViewedEdit) return;
-            if (window.marked) renderContent(latestContent);
-        }
-        if (window.marked) {
-            renderContent(latestContent);
-        }
-        var libScripts = document.querySelectorAll('script[async], script[defer]');
-        libScripts.forEach(function(s) { s.addEventListener('load', onLibLoad); });
+        document.addEventListener('DOMContentLoaded', function() {
+            initMarked();
+            if (isMarkdownOn && !currentViewedEdit) renderContent(latestContent);
+        });
 
         function formatDate(timestamp) {
             try {

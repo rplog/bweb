@@ -31,6 +31,18 @@ export const Terminal: React.FC<TerminalProps> = ({ terminalMode, onMinimize, on
     const isWindowed = terminalMode === 'windowed';
     const isVisible = terminalMode !== 'hidden' && !activeComponent;
 
+    // Reset SEO when returning to Desktop/Home
+    useEffect(() => {
+        if (!activeComponent) {
+            document.title = 'Bahauddin Alam - Full Stack Developer';
+            const metaDesc = document.querySelector('meta[name="description"]');
+            if (metaDesc) metaDesc.setAttribute('content', 'Bahauddin Alam is a Full Stack Developer specializing in React, JavaScript, TypeScript, Tailwind CSS, and Python. Explore his portfolio and projects.');
+            
+            const canonical = document.querySelector('link[rel="canonical"]');
+            if (canonical) canonical.setAttribute('href', 'https://bahauddin.in');
+        }
+    }, [activeComponent]);
+
     // Auto-scroll on ANY content change (handles Ping, Htop, etc. internal updates)
     useEffect(() => {
         const container = scrollContainerRef.current;

@@ -6,13 +6,20 @@ import { Dock } from '../Dock';
 import { SiGithub, SiX, SiLinkedin, SiReact, SiTypescript, SiRust, SiTailwindcss, SiPython, SiTelegram, SiNodedotjs } from 'react-icons/si';
 import { createNavigationHandler } from '../../utils/navigation';
 
+import { useSEO } from '../../hooks/useSEO';
+
 interface AboutProps {
     onExit: () => void;
     onNavigate?: (dest: string) => void;
 }
 
 export const About: React.FC<AboutProps> = ({ onExit, onNavigate }) => {
-
+    useSEO({
+        title: 'About | Bahauddin Alam',
+        description: 'About Bahauddin Alam - Full Stack Developer specializing in React, TypeScript, and Rust. Based in Patna, India.',
+        url: 'https://bahauddin.in/about',
+        image: 'https://bahauddin.in/assets/me.jpg'
+    });
 
     const handleNavigate = createNavigationHandler(onExit, onNavigate);
 

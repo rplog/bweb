@@ -14,10 +14,19 @@ export const onRequestGet: PagesFunction<{ DB: D1Database }> = async (context) =
         .replace(/</g, '\\u003c')
         .replace(/>/g, '\\u003e');
 
+    interface Note {
+        id: number;
+        filename: string;
+        content: string;
+        country: string | null;
+        created_at: number;
+        updated_at: number;
+    }
+
     try {
         const note = await env.DB.prepare(
             "SELECT id, filename, content, country, created_at, updated_at FROM notes WHERE filename = ?"
-        ).bind(filename).first();
+        ).bind(filename).first<Note>();
 
         if (!note) {
             return new Response("Note not found", { status: 404 });
@@ -43,21 +52,43 @@ export const onRequestGet: PagesFunction<{ DB: D1Database }> = async (context) =
             accentHover: "#E0C080",
         };
 
-        const html = `
+        const description = content.slice(0, 160).replace(/\n/g, ' ') + (content.length > 160 ? '...' : '');
+    const ogUrl = `https://bahauddin.in/shared/notes/${safeFilename}`;
+    const imageUrl = 'https://bahauddin.in/og-image.png'; // Corrected image URL
+
+    const html = `
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${safeFilename} - NeoSphere Notes</title>
+    <meta name="description" content="${escapeHtml(description)}">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="${ogUrl}">
+    <meta property="og:title" content="${safeFilename} - NeoSphere Notes">
+    <meta property="og:description" content="${escapeHtml(description)}">
+    <meta property="og:image" content="${imageUrl}">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="${ogUrl}">
+    <meta property="twitter:title" content="${safeFilename} - NeoSphere Notes">
+    <meta property="twitter:description" content="${escapeHtml(description)}">
+    <meta property="twitter:image" content="${imageUrl}">
+
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <link rel="icon" type="image/png" href="/favicon.png">
+    <link rel="canonical" href="https://bahauddin.in/notes?note=${encodeURIComponent(safeFilename)}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     ${edits.length > 0 ? '<script async src="https://cdn.jsdelivr.net/npm/diff@8.0.3/dist/diff.min.js"><' + '/script>' : ''}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github-dark.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16/dist/katex.min.css">
+
     <style>
         body {
             background-color: ${colors.bg};

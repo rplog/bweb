@@ -5,12 +5,20 @@ import { Send, User, Mail, MessageSquare } from 'lucide-react';
 import { Dock } from '../Dock';
 import { createNavigationHandler } from '../../utils/navigation';
 
+import { useSEO } from '../../hooks/useSEO';
+
 interface ContactProps {
     onExit: () => void;
     onNavigate?: (dest: string) => void;
 }
 
 export const Contact: React.FC<ContactProps> = ({ onExit, onNavigate }) => {
+    useSEO({
+        title: 'Contact | Bahauddin Alam',
+        description: 'Get in touch with Bahauddin Alam. Available for freelance projects and collaborations.',
+        url: 'https://bahauddin.in/contact'
+    });
+
     const [formData, setFormData] = useState({ name: '', email: '', message: '' });
 
 

@@ -6,12 +6,20 @@ import { FolderGit2 } from 'lucide-react';
 import { createNavigationHandler } from '../../utils/navigation';
 import { SiGithub } from 'react-icons/si';
 
+import { useSEO } from '../../hooks/useSEO';
+
 interface ProjectsProps {
     onExit: () => void;
     onNavigate?: (dest: string) => void;
 }
 
 export const Projects: React.FC<ProjectsProps> = ({ onExit, onNavigate }) => {
+    useSEO({
+        title: 'Projects | Bahauddin Alam',
+        description: 'Showcase of my recent projects. From web applications to system tools, explore what I\'ve built.',
+        url: 'https://bahauddin.in/projects'
+    });
+
     const handleNavigate = createNavigationHandler(onExit, onNavigate);
 
     const projects = [

@@ -36,7 +36,15 @@ interface GalleryProps {
     onNavigate: (path: string) => void;
 }
 
+import { useSEO } from '../../hooks/useSEO';
+
 export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
+    useSEO({
+        title: 'Gallery | Bahauddin Alam',
+        description: 'Explore my photography portfolio. A collection of moments captured from my travels and daily life.',
+        url: 'https://bahauddin.in/gallery'
+    });
+
     const [albums, setAlbums] = useState<Album[]>([]);
     const [activeAlbumTitle, setActiveAlbumTitle] = useState<string | null>(null);
     const [activePhotoKey, setActivePhotoKey] = useState<string | null>(null);

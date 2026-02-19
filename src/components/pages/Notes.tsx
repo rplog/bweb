@@ -33,14 +33,46 @@ interface NotesProps {
     onNavigate: (path: string) => void;
 }
 
+import { useSEO } from '../../hooks/useSEO';
+
 export const Notes: React.FC<NotesProps> = ({ onExit, onNavigate }) => {
+    const [selectedNote, setSelectedNote] = useState<Note | null>(null);
+
+    useSEO({
+        title: selectedNote ? `${selectedNote.filename} | Notes` : 'Notes | Bahauddin Alam',
+        description: selectedNote ? `Read ${selectedNote.filename} on my personal digital garden.` : 'My personal digital garden. A collection of notes, thoughts, and learnings on software development and technology.',
+        url: selectedNote ? `https://bahauddin.in/notes?note=${encodeURIComponent(selectedNote.filename)}` : 'https://bahauddin.in/notes'
+    });
+
     const handleNavigate = createNavigationHandler(onExit, onNavigate);
     const [notes, setNotes] = useState<Note[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
-    const [selectedNote, setSelectedNote] = useState<Note | null>(null);
+    // selectedNote state moved up
     const [noteContent, setNoteContent] = useState<string | null>(null);
     const [contentLoading, setContentLoading] = useState(false);
+
+    // Deep Linking: Check URL for note param on mount
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const noteParam = params.get('note');
+        if (noteParam) {
+            // Need to fetch specific note even if list isn't ready
+            const loadDeepLinkedNote = async () => {
+                // Create a placeholder note object since we don't have the full details yet
+                // We'll update it when the list loads or we could fetch metadata
+                const placeholderNote: Note = {
+                    filename: noteParam,
+                    created_at: Date.now(), // Fallback
+                    updated_at: Date.now(), // Fallback
+                    size: 0,
+                    author: 'Loading...',
+                };
+                handleNoteClick(placeholderNote, false); // false = don't push state again
+            };
+            loadDeepLinkedNote();
+        }
+    }, []);
 
     // Nano / Editing State
     const [isEditing, setIsEditing] = useState(false);
@@ -93,10 +125,16 @@ export const Notes: React.FC<NotesProps> = ({ onExit, onNavigate }) => {
         }
     };
 
-    const handleNoteClick = async (note: Note) => {
+    const handleNoteClick = async (note: Note, updateUrl = true) => {
         setSelectedNote(note);
         setContentLoading(true);
         setNoteContent(null);
+        
+        if (updateUrl) {
+            const newUrl = `${window.location.pathname}?note=${encodeURIComponent(note.filename)}`;
+            window.history.pushState({ path: newUrl }, '', newUrl);
+        }
+
         try {
             const res = await fetch(`/api/notes/${note.filename}`);
             if (res.ok) {
@@ -116,6 +154,9 @@ export const Notes: React.FC<NotesProps> = ({ onExit, onNavigate }) => {
     const closeNote = () => {
         setSelectedNote(null);
         setNoteContent(null);
+        // Remove query param
+        const newUrl = window.location.pathname;
+        window.history.pushState({ path: newUrl }, '', newUrl);
     };
 
     // --- Actions ---
@@ -329,10 +370,14 @@ export const Notes: React.FC<NotesProps> = ({ onExit, onNavigate }) => {
                     ) : (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                             {filteredNotes.map((note) => (
-                                <div
+                                <a
                                     key={note.filename}
-                                    onClick={() => handleNoteClick(note)}
-                                    className="group bg-elegant-card border border-elegant-border rounded-lg p-5 hover:border-elegant-accent transition-all duration-300 cursor-pointer hover:shadow-lg hover:shadow-elegant-accent/5 flex flex-col h-full relative overflow-hidden"
+                                    href={`/notes?note=${encodeURIComponent(note.filename)}`}
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        handleNoteClick(note);
+                                    }}
+                                    className="group bg-elegant-card border border-elegant-border rounded-lg p-5 hover:border-elegant-accent transition-all duration-300 cursor-pointer hover:shadow-lg hover:shadow-elegant-accent/5 flex flex-col h-full relative overflow-hidden block text-left"
                                 >
                                     <div className="absolute top-0 right-0 p-3 opacity-0 group-hover:opacity-100 transition-opacity">
                                         <Maximize2 size={16} className="text-elegant-accent" />
@@ -357,7 +402,7 @@ export const Notes: React.FC<NotesProps> = ({ onExit, onNavigate }) => {
                                             <span>{new Date(note.updated_at).toLocaleDateString()}</span>
                                         </div>
                                     </div>
-                                </div>
+                                </a>
                             ))}
                         </div>
                     )}

@@ -3,6 +3,7 @@ import type { FileSystemNode } from './fileSystem';
 import { Htop } from '../components/Htop';
 import { Ping } from '../components/Ping';
 import { Nano } from '../components/Nano';
+
 import { createNavigator } from './navigation';
 import React from 'react';
 
@@ -733,6 +734,17 @@ export const commands: Record<string, Command> = {
             } catch {
                 return `Error fetching weather for ${city}`;
             }
+        }
+    },
+    notes: {
+        description: 'View visitor notes',
+        execute: (_args, { setFullScreen }) => {
+            if (setFullScreen) {
+                const navigate = createNavigator(setFullScreen);
+                navigate('Notes');
+                return '';
+            }
+            return 'Error: Fullscreen mode not supported';
         }
     },
     ping: {

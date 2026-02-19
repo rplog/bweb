@@ -3,6 +3,7 @@ import { Gallery } from '../components/pages/Gallery';
 import { About } from '../components/pages/About';
 import { Contact } from '../components/pages/Contact';
 import { Projects } from '../components/pages/Projects';
+import { Notes } from '../components/pages/Notes';
 
 export const createNavigator = (setFullScreen: (node: React.ReactNode | null, path?: string) => void) => {
     const navigate = (dest: string) => {
@@ -16,6 +17,8 @@ export const createNavigator = (setFullScreen: (node: React.ReactNode | null, pa
             setFullScreen(<Contact onExit={() => setFullScreen(null)} onNavigate={navigate} />, '/contact');
         } else if (dest === 'Projects') {
             setFullScreen(<Projects onExit={() => setFullScreen(null)} onNavigate={navigate} />, '/projects');
+        } else if (dest === 'Notes') {
+            setFullScreen(<Notes onExit={() => setFullScreen(null)} onNavigate={navigate} />, '/notes');
         }
     };
     return navigate;

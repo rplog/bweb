@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Search, Terminal, Image, User, Mail, FolderGit2 } from 'lucide-react';
+import { Search, Terminal, Image, User, Mail, FolderGit2, FileText } from 'lucide-react';
 
 interface SpotlightProps {
     onNavigate: (destination: string) => void;
@@ -10,11 +10,13 @@ export const Spotlight: React.FC<SpotlightProps> = ({ onNavigate }) => {
     const [query, setQuery] = useState('');
     const [selectedIndex, setSelectedIndex] = useState(0);
     const inputRef = useRef<HTMLInputElement>(null);
+    const listRef = useRef<HTMLDivElement>(null);
 
     const options = [
         { name: 'Terminal', icon: <Terminal size={18} /> },
         { name: 'Gallery', icon: <Image size={18} /> },
         { name: 'Projects', icon: <FolderGit2 size={18} /> },
+        { name: 'Notes', icon: <FileText size={18} /> },
         { name: 'About', icon: <User size={18} /> },
         { name: 'Contact', icon: <Mail size={18} /> },
     ];
@@ -75,6 +77,16 @@ export const Spotlight: React.FC<SpotlightProps> = ({ onNavigate }) => {
         }
     }, [isOpen]);
 
+    // Scroll selected item into view
+    useEffect(() => {
+        if (listRef.current) {
+            const selectedElement = listRef.current.children[selectedIndex] as HTMLElement;
+            if (selectedElement) {
+                selectedElement.scrollIntoView({ block: 'nearest' });
+            }
+        }
+    }, [selectedIndex]);
+
     if (!isOpen) return null;
 
     return (
@@ -98,7 +110,10 @@ export const Spotlight: React.FC<SpotlightProps> = ({ onNavigate }) => {
                     />
                     <div className="text-xs text-gray-600 border border-gray-800 rounded px-2 py-1">ESC to close</div>
                 </div>
-                <div className="max-h-[300px] overflow-y-auto py-2">
+                <div
+                    ref={listRef}
+                    className="max-h-[300px] overflow-y-auto py-2 scroll-smooth"
+                >
                     {filtered.map((opt, i) => (
                         <button
                             key={opt.name}

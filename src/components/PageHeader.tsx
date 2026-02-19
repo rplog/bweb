@@ -27,7 +27,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    const pages = ['Projects', 'Gallery', 'About', 'Contact'];
+    const pages = ['Projects', 'Gallery', 'Notes', 'About', 'Contact'];
 
     return (
         <header className={`border-b border-elegant-border bg-elegant-bg px-4 sm:px-6 lg:px-8 py-3 ${className}`}>

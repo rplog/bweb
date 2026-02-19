@@ -86,13 +86,7 @@ export const Terminal: React.FC<TerminalProps> = ({ terminalMode, onMinimize, on
             {/* Full Screen Component Layer - always rendered independently */}
             {activeComponent && (
                 <div className="fixed inset-0 z-50 bg-elegant-bg text-elegant-text-primary font-mono text-base p-4 overflow-hidden">
-                    <React.Suspense fallback={
-                        <div className="flex items-center justify-center h-full w-full bg-elegant-bg">
-                            <div className="text-elegant-accent animate-pulse font-mono">Loading module...</div>
-                        </div>
-                    }>
-                        {activeComponent}
-                    </React.Suspense>
+                    {activeComponent}
                 </div>
             )}
 

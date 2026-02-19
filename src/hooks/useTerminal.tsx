@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, lazy } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { commands } from '../utils/commands';
 import { resolvePath, resolvePathArray } from '../utils/fileSystemUtils';
 import { createNavigator } from '../utils/navigation';
@@ -7,12 +7,12 @@ import { useFileSystem } from './terminal/useFileSystem';
 import { useTerminalUser } from './terminal/useTerminalUser';
 import { useRouting } from './terminal/useRouting';
 
-// Import pages for direct routing using lazy loading
-const Gallery = lazy(() => import('../components/pages/Gallery').then(module => ({ default: module.Gallery })));
-const About = lazy(() => import('../components/pages/About').then(module => ({ default: module.About })));
-const Contact = lazy(() => import('../components/pages/Contact').then(module => ({ default: module.Contact })));
-const Projects = lazy(() => import('../components/pages/Projects').then(module => ({ default: module.Projects })));
-const Notes = lazy(() => import('../components/pages/Notes').then(module => ({ default: module.Notes })));
+// Import pages for direct routing
+import { Gallery } from '../components/pages/Gallery';
+import { About } from '../components/pages/About';
+import { Contact } from '../components/pages/Contact';
+import { Projects } from '../components/pages/Projects';
+import { Notes } from '../components/pages/Notes';
 
 export type { TerminalOutput };
 

@@ -198,8 +198,8 @@ export const onRequestGet: PagesFunction<{ DB: D1Database }> = async (context) =
     </div>
 
     <script>
-        var createdAt = ${created_at};
-        var updatedAt = ${updated_at};
+        var createdAt = ${safeJson(created_at)};
+        var updatedAt = ${safeJson(updated_at)};
         var latestContent = ${safeJson(content)};
         var edits = ${safeJson(edits)};
 

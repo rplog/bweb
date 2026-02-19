@@ -1,11 +1,18 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { commands } from '../utils/commands';
 import { resolvePath, resolvePathArray } from '../utils/fileSystemUtils';
-import { ROUTES } from '../utils/routes';
+import { createNavigator } from '../utils/navigation';
 import { useCommandHistory, type TerminalOutput } from './terminal/useCommandHistory';
 import { useFileSystem } from './terminal/useFileSystem';
 import { useTerminalUser } from './terminal/useTerminalUser';
 import { useRouting } from './terminal/useRouting';
+
+// Import pages for direct routing
+import { Gallery } from '../components/pages/Gallery';
+import { About } from '../components/pages/About';
+import { Contact } from '../components/pages/Contact';
+import { Projects } from '../components/pages/Projects';
+import { Notes } from '../components/pages/Notes';
 
 export type { TerminalOutput };
 
@@ -16,7 +23,7 @@ export const useTerminal = () => {
     const { activeComponent, activeComponentRef, isInputVisible, setIsInputVisible, setFullScreenWithRoute, setActiveComponent } = useRouting();
 
     const initializedRef = useRef(false);
-    const executeRef = useRef<(commandStr: string, isInitialLoad?: boolean) => Promise<void>>(async () => {});
+    const executeRef = useRef<(commandStr: string, isInitialLoad?: boolean) => Promise<void>>(async () => { });
 
     const execute = useCallback(async (commandStr: string, isInitialLoad = false) => {
         const trimmed = commandStr.trim();
@@ -104,11 +111,19 @@ export const useTerminal = () => {
         initializedRef.current = true;
 
         const path = window.location.pathname;
-        const command = ROUTES[path];
-        if (command) {
-            executeRef.current(command, true);
-        } else if (path.startsWith('/gallery')) {
-            executeRef.current('gallery', true);
+        const navigate = createNavigator(setFullScreenWithRoute);
+
+        // Direct routing for initial load
+        if (path === '/gallery' || path.startsWith('/gallery/')) {
+            setFullScreenWithRoute(<Gallery onExit={() => setFullScreenWithRoute(null)} onNavigate={navigate} />, path);
+        } else if (path === '/about') {
+            setFullScreenWithRoute(<About onExit={() => setFullScreenWithRoute(null)} onNavigate={navigate} />, path);
+        } else if (path === '/contact') {
+            setFullScreenWithRoute(<Contact onExit={() => setFullScreenWithRoute(null)} onNavigate={navigate} />, path);
+        } else if (path === '/projects') {
+            setFullScreenWithRoute(<Projects onExit={() => setFullScreenWithRoute(null)} onNavigate={navigate} />, path);
+        } else if (path === '/notes') {
+            setFullScreenWithRoute(<Notes onExit={() => setFullScreenWithRoute(null)} onNavigate={navigate} />, path);
         } else if (path !== '/' && path !== '/index.html') {
             addToHistory(`access ${path}`, (
                 <div className="flex flex-col">
@@ -126,31 +141,42 @@ export const useTerminal = () => {
             executeRef.current(`cd ${dir}`, true);
             window.history.replaceState({}, '', '/');
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    // Popstate handler - registered once, uses ref to always call current execute
+    // Popstate handler - registered once
     useEffect(() => {
         const handlePopState = () => {
             const path = window.location.pathname;
+            const navigate = createNavigator(setFullScreenWithRoute);
+
             if (path === '/') {
                 setActiveComponent(null);
                 activeComponentRef.current = null;
-            } else {
-                const command = ROUTES[path];
-                if (command) {
-                    executeRef.current(command, true);
-                } else if (path.startsWith('/gallery')) {
-                    if (!activeComponentRef.current) {
-                        executeRef.current('gallery', true);
-                    }
+            } else if (path === '/gallery' || path.startsWith('/gallery/')) {
+                // For gallery, only mount if not already active to avoid resetting state during internal navigation
+                // BUT if we are coming from another page, we MUST mount it.
+                if (!activeComponentRef.current || !activeComponentRef.current.toString().includes('Gallery')) {
+                    // Note: checking toString() on component is flaky, but checking path through useRouting context/state would be better
+                    // However, simplify: Just remount. React reconciliation should handle it if it's the same type?
+                    // Actually, Gallery handles its own internal routing. We just ensure Gallery is mounted.
+                    // The safe bet is: if we are at /gallery path, ensure Gallery component is the active one.
+                    setFullScreenWithRoute(<Gallery onExit={() => setFullScreenWithRoute(null)} onNavigate={navigate} />, path);
                 }
+            } else if (path === '/about') {
+                setFullScreenWithRoute(<About onExit={() => setFullScreenWithRoute(null)} onNavigate={navigate} />, path);
+            } else if (path === '/contact') {
+                setFullScreenWithRoute(<Contact onExit={() => setFullScreenWithRoute(null)} onNavigate={navigate} />, path);
+            } else if (path === '/projects') {
+                setFullScreenWithRoute(<Projects onExit={() => setFullScreenWithRoute(null)} onNavigate={navigate} />, path);
+            } else if (path === '/notes') {
+                setFullScreenWithRoute(<Notes onExit={() => setFullScreenWithRoute(null)} onNavigate={navigate} />, path);
             }
         };
 
         window.addEventListener('popstate', handlePopState);
         return () => window.removeEventListener('popstate', handlePopState);
-    }, [setActiveComponent, activeComponentRef]);
+    }, [setActiveComponent, activeComponentRef, setFullScreenWithRoute]);
 
     const handleTabCompletion = (input: string): string => {
         if (!input) return '';

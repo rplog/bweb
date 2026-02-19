@@ -1,3 +1,5 @@
+import { injectSEO } from '../utils/seo';
+
 interface Env {
     neosphere_assets: R2Bucket;
     ASSETS: Fetcher;
@@ -11,8 +13,15 @@ export const onRequest: PagesFunction<Env> = async (context) => {
     const { request, env, params } = context;
     const pathParts = params.path;
 
-    if (!pathParts || (Array.isArray(pathParts) && pathParts.length === 0)) {
-        return context.next();
+    // Empty path (e.g. /gallery/ with trailing slash) → serve gallery index with SEO
+    if (!pathParts || (Array.isArray(pathParts) && pathParts.length === 0)
+        || (Array.isArray(pathParts) && pathParts.length === 1 && pathParts[0] === '')) {
+        const spaResponse = await env.ASSETS.fetch(new URL('/', request.url));
+        return injectSEO(spaResponse, {
+            title: 'Gallery | Bahauddin Alam',
+            description: 'Explore my photography portfolio. A collection of moments captured from my travels and daily life.',
+            url: 'https://bahauddin.in/gallery'
+        });
     }
 
     const key = Array.isArray(pathParts) ? pathParts.join('/') : pathParts;
@@ -30,10 +39,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
         return new Response(object.body, { headers });
     }
 
-    // Extensionless URL → SPA page with OG tags
-    const escHtml = (s: string) =>
-        s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-
+    // Extensionless URL → SPA page with OG tags (replace existing, don't append duplicates)
     let ogTitle = '';
     let ogDescription = '';
     let coverUrl = '';
@@ -47,8 +53,8 @@ export const onRequest: PagesFunction<Env> = async (context) => {
             isPhoto = true;
             const rawFilename = decodeURIComponent(key.split('/').pop() || key);
             const albumParts = key.split('/').slice(0, -1).map(p => decodeURIComponent(p));
-            const albumName = escHtml(albumParts.join(' / '));
-            const filename = escHtml(rawFilename);
+            const albumName = albumParts.join(' / ');
+            const filename = rawFilename;
             coverUrl = new URL(`/gallery/${encodeKey(match.key)}`, request.url).href;
             ogTitle = albumName ? `${filename} — ${albumName}` : filename;
             ogDescription = albumName ? `Photo from the ${albumName} album` : 'View photo';
@@ -57,7 +63,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
 
     if (!isPhoto) {
         // Album URL
-        const albumTitle = escHtml(decodeURIComponent(key.split('/').pop() || key));
+        const albumTitle = decodeURIComponent(key.split('/').pop() || key);
         ogTitle = `${albumTitle} — Gallery`;
         ogDescription = `Browse the ${albumTitle} album`;
         const listing = await env.neosphere_assets.list({ prefix: r2Key + '/', limit: 10 }).catch(() => null);
@@ -71,25 +77,11 @@ export const onRequest: PagesFunction<Env> = async (context) => {
         }
     }
 
-    const ogTags = [
-        `<meta property="og:title" content="${ogTitle}" />`,
-        `<meta property="og:type" content="website" />`,
-        `<meta property="og:url" content="${escHtml(request.url)}" />`,
-        `<meta property="og:description" content="${escHtml(ogDescription)}" />`,
-        coverUrl ? `<meta property="og:image" content="${escHtml(coverUrl)}" />` : '',
-        `<meta name="twitter:card" content="${coverUrl ? 'summary_large_image' : 'summary'}" />`,
-        `<meta name="twitter:title" content="${ogTitle}" />`,
-        `<meta name="twitter:description" content="${escHtml(ogDescription)}" />`,
-        coverUrl ? `<meta name="twitter:image" content="${escHtml(coverUrl)}" />` : '',
-    ].filter(Boolean).join('\n    ');
-
     const spaResponse = await env.ASSETS.fetch(new URL('/', request.url));
-
-    return new HTMLRewriter()
-        .on('head', {
-            element(el) {
-                el.append(`\n    ${ogTags}\n`, { html: true });
-            }
-        })
-        .transform(spaResponse);
+    return injectSEO(spaResponse, {
+        title: ogTitle,
+        description: ogDescription,
+        url: request.url,
+        image: coverUrl || undefined
+    });
 };

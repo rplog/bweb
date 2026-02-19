@@ -8,6 +8,9 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Nano } from '../Nano';
 
+import { ActionModals, type PromptConfig, type AlertConfig, type ConfirmConfig } from '../shared/ActionModals';
+import { formatBytes } from '../../utils/format';
+
 interface Note {
     filename: string;
     created_at: number;
@@ -41,6 +44,24 @@ export const Notes: React.FC<NotesProps> = ({ onExit, onNavigate }) => {
 
     // Admin State
     const [isAdmin, setIsAdmin] = useState(false);
+
+    // Custom Prompts/Alerts State
+    const [promptConfig, setPromptConfig] = useState<PromptConfig | null>(null);
+    const [alertConfig, setAlertConfig] = useState<AlertConfig | null>(null);
+    const [confirmConfig, setConfirmConfig] = useState<ConfirmConfig | null>(null);
+
+    const showConfirm = (title: string, message: string, onConfirm: () => void, confirmLabel = 'Confirm') => {
+        setConfirmConfig({ isOpen: true, title, message, onConfirm, confirmLabel });
+    };
+
+    const showAlert = (message: string, type: 'error' | 'success' | 'info' = 'info') => {
+        setAlertConfig({ isOpen: true, message, type });
+        if (type === 'success') setTimeout(() => setAlertConfig(null), 2500);
+    };
+
+    // const showPrompt = (title: string, defaultValue: string, onConfirm: (val: string) => void) => {
+    //     setPromptConfig({ isOpen: true, title, defaultValue, onConfirm });
+    // };
 
     useEffect(() => {
         fetchNotes();
@@ -108,26 +129,38 @@ export const Notes: React.FC<NotesProps> = ({ onExit, onNavigate }) => {
     };
 
     const handleDelete = async () => {
-        if (!selectedNote || !isAdmin) return;
-        if (!confirm(`Are you sure you want to delete ${selectedNote.filename}?`)) return;
+        if (!selectedNote) return;
 
-        try {
-            const token = localStorage.getItem('admin_token');
-            const res = await fetch(`/api/notes/${selectedNote.filename}`, {
-                method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-
-            if (res.ok) {
-                closeNote();
-                fetchNotes();
-            } else {
-                alert('Failed to delete note');
-            }
-        } catch (e) {
-            console.error(e);
-            alert('Error deleting note');
+        if (!isAdmin) {
+            showAlert('You are not authorized to delete notes.', 'error');
+            return;
         }
+
+        showConfirm(
+            'Delete Note',
+            `Are you sure you want to delete ${selectedNote.filename}?`,
+            async () => {
+                try {
+                    const token = localStorage.getItem('admin_token');
+                    const res = await fetch(`/api/notes/${selectedNote.filename}`, {
+                        method: 'DELETE',
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+
+                    if (res.ok) {
+                        closeNote();
+                        fetchNotes();
+                        showAlert('Note deleted successfully', 'success');
+                    } else {
+                        showAlert('Failed to delete note', 'error');
+                    }
+                } catch (e) {
+                    console.error(e);
+                    showAlert('Error deleting note', 'error');
+                }
+            },
+            'Delete'
+        );
     };
 
     const handleShare = () => {
@@ -138,7 +171,7 @@ export const Notes: React.FC<NotesProps> = ({ onExit, onNavigate }) => {
         // We will match that.
         const url = `${window.location.origin}/shared/notes/${encodeURIComponent(selectedNote.filename)}`;
         navigator.clipboard.writeText(url);
-        alert('Share link copied to clipboard!');
+        showAlert('Share link copied to clipboard!', 'success');
     };
 
     const handleNanoSave = async (filename: string, content: string, commitMsg?: string, authorName?: string) => {
@@ -201,7 +234,7 @@ export const Notes: React.FC<NotesProps> = ({ onExit, onNavigate }) => {
             }
 
         } catch (e: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
-            alert(`Error saving note: ${e.message}`);
+            showAlert(`Error saving note: ${e.message}`, 'error');
             throw e;
         }
     };
@@ -412,7 +445,7 @@ export const Notes: React.FC<NotesProps> = ({ onExit, onNavigate }) => {
                                         Last updated: {new Date(selectedNote.updated_at).toLocaleString()}
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <span>{selectedNote.size} bytes</span>
+                                        <span>{formatBytes(selectedNote.size)}</span>
                                         <span>•</span>
                                         <span>Author: {selectedNote.author || 'Anonymous'}</span>
                                     </div>
@@ -424,6 +457,14 @@ export const Notes: React.FC<NotesProps> = ({ onExit, onNavigate }) => {
                         </div>
                     )
                 }
+                <ActionModals
+                    promptConfig={promptConfig}
+                    setPromptConfig={setPromptConfig}
+                    alertConfig={alertConfig}
+                    setAlertConfig={setAlertConfig}
+                    confirmConfig={confirmConfig}
+                    setConfirmConfig={setConfirmConfig}
+                />
             </div >
         </div >
     );

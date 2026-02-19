@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Search, Terminal, Image, User, Mail } from 'lucide-react';
+import { Search, Terminal, Image, User, Mail, FolderGit2 } from 'lucide-react';
 
 interface SpotlightProps {
     onNavigate: (destination: string) => void;
@@ -14,6 +14,7 @@ export const Spotlight: React.FC<SpotlightProps> = ({ onNavigate }) => {
     const options = [
         { name: 'Terminal', icon: <Terminal size={18} /> },
         { name: 'Gallery', icon: <Image size={18} /> },
+        { name: 'Projects', icon: <FolderGit2 size={18} /> },
         { name: 'About', icon: <User size={18} /> },
         { name: 'Contact', icon: <Mail size={18} /> },
     ];

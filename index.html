@@ -39,27 +39,49 @@
   <meta name="twitter:image" content="https://bahauddin.in/og-image.png" />
 
   <!-- JSON-LD Structured Data -->
-  <script type="application/ld+json">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
     {
-      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "@id": "https://bahauddin.in/#website",
+      "url": "https://bahauddin.in",
+      "name": "Bahauddin Alam",
+      "alternateName": "Bahauddin Alam Portfolio",
+      "publisher": {
+        "@id": "https://bahauddin.in/#person"
+      }
+    },
+    {
       "@type": "Person",
+      "@id": "https://bahauddin.in/#person",
       "name": "Bahauddin Alam",
       "url": "https://bahauddin.in",
+      "image": "https://bahauddin.in/assets/me.jpg",
+      "description": "Bahauddin Alam is a Full Stack Developer specializing in React, JavaScript, TypeScript, Tailwind CSS, and Python.",
+      "jobTitle": "Full Stack Developer",
+      "worksFor": {
+        "@type": "Organization",
+        "name": "Freelance"
+      },
       "sameAs": [
         "https://x.com/bahauddinalam",
         "https://www.linkedin.com/in/bahauddinalam",
         "https://github.com/bahauddin-alam",
         "https://www.instagram.com/bahauddin_alam"
       ],
-      "jobTitle": "Full Stack Developer",
-      "worksFor": {
-        "@type": "Organization",
-        "name": "Freelance"
-      },
-      "image": "https://bahauddin.in/assets/me.jpg",
-      "description": "Bahauddin Alam is a Full Stack Developer specializing in React, JavaScript, TypeScript, Tailwind CSS, and Python."
+      "knowsAbout": [
+        "React",
+        "JavaScript",
+        "TypeScript",
+        "Tailwind CSS",
+        "Python"
+      ]
     }
-  </script>
+  ]
+}
+</script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&display=swap" rel="stylesheet" />

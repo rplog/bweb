@@ -252,43 +252,51 @@ export const onRequestGet: PagesFunction<{ DB: D1Database }> = async (context) =
         var isMarkdownOn = true;
         var mdBtn = document.getElementById('md-toggle-btn');
 
-        // Configure marked with extensions — all scripts loaded synchronously above
-        if (window.marked) {
-            if (window.markedHighlight && window.hljs) {
-                window.marked.use(window.markedHighlight.markedHighlight({
-                    langPrefix: 'hljs language-',
-                    highlight: function(code, lang) {
-                        if (lang && window.hljs.getLanguage(lang)) {
-                            return window.hljs.highlight(code, { language: lang }).value;
+        // Configure marked with extensions — wrapped in try/catch so failures never break the page
+        try {
+            if (window.marked) {
+                if (window.markedHighlight && window.hljs) {
+                    window.marked.use(window.markedHighlight.markedHighlight({
+                        langPrefix: 'hljs language-',
+                        highlight: function(code, lang) {
+                            try {
+                                if (lang && window.hljs.getLanguage(lang)) {
+                                    return window.hljs.highlight(code, { language: lang }).value;
+                                }
+                                return window.hljs.highlightAuto(code).value;
+                            } catch(e) { return escapeHtml(code); }
                         }
-                        return window.hljs.highlightAuto(code).value;
-                    }
-                }));
+                    }));
+                }
+                if (window.markedFootnote) {
+                    window.marked.use(window.markedFootnote.markedFootnote());
+                }
             }
-            if (window.markedFootnote) {
-                window.marked.use(window.markedFootnote.markedFootnote());
-            }
-        }
+        } catch(e) { console.error('marked extension error:', e); }
 
         function renderContent(text) {
-            if (isMarkdownOn && window.marked) {
-                contentEl.classList.add('markdown-body');
-                contentEl.innerHTML = window.marked.parse(String(text));
-                if (window.renderMathInElement) {
-                    window.renderMathInElement(contentEl, {
-                        delimiters: [
-                            { left: '$$', right: '$$', display: true },
-                            { left: '$', right: '$', display: false },
-                            { left: '\\\\(', right: '\\\\)', display: false },
-                            { left: '\\\\[', right: '\\\\]', display: true }
-                        ],
-                        throwOnError: false
-                    });
+            try {
+                if (isMarkdownOn && window.marked) {
+                    contentEl.classList.add('markdown-body');
+                    contentEl.innerHTML = window.marked.parse(String(text));
+                    if (window.renderMathInElement) {
+                        try {
+                            window.renderMathInElement(contentEl, {
+                                delimiters: [
+                                    { left: '$$', right: '$$', display: true },
+                                    { left: '$', right: '$', display: false },
+                                    { left: '\\\\(', right: '\\\\)', display: false },
+                                    { left: '\\\\[', right: '\\\\]', display: true }
+                                ],
+                                throwOnError: false
+                            });
+                        } catch(e) { console.error('KaTeX error:', e); }
+                    }
+                    return;
                 }
-            } else {
-                contentEl.classList.remove('markdown-body');
-                contentEl.innerHTML = escapeHtml(text);
-            }
+            } catch(e) { console.error('marked parse error:', e); }
+            contentEl.classList.remove('markdown-body');
+            contentEl.innerHTML = escapeHtml(text);
         }
 
         function toggleMarkdown() {

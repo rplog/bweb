@@ -264,14 +264,14 @@ export const onRequestGet: PagesFunction<{ DB: D1Database }> = async (context) =
                     var oldText = edit.previous_content != null ? String(edit.previous_content) : "";
                     var newText = index === 0 ? latestContent : (edits[index - 1].previous_content != null ? String(edits[index - 1].previous_content) : "");
                     if (window.Diff) {
-                        var normOld = oldText.replace(/\r\n/g, '\n');
-                        var normNew = newText.replace(/\r\n/g, '\n');
-                        if (normOld.length > 0 && normOld[normOld.length - 1] !== '\n') normOld += '\n';
-                        if (normNew.length > 0 && normNew[normNew.length - 1] !== '\n') normNew += '\n';
+                        var normOld = oldText.replace(/\\r\\n/g, '\\n');
+                        var normNew = newText.replace(/\\r\\n/g, '\\n');
+                        if (normOld.length > 0 && normOld[normOld.length - 1] !== '\\n') normOld += '\\n';
+                        if (normNew.length > 0 && normNew[normNew.length - 1] !== '\\n') normNew += '\\n';
                         var diff = window.Diff.diffLines(normOld, normNew);
                         var addedCount = 0, removedCount = 0, oldLineNum = 1, newLineNum = 1, linesHtml = '';
                         diff.forEach(function(part) {
-                            var lines = (part.value || '').replace(/\n$/, '').split('\n');
+                            var lines = (part.value || '').replace(/\\n$/, '').split('\\n');
                             for (var li = 0; li < lines.length; li++) {
                                 var escaped = escapeHtml(lines[li]);
                                 if (part.added) {

@@ -13,7 +13,7 @@ export const onRequest: PagesFunction = async (context) => {
     // 3. Inject customized SEO meta tags
     const newHtml = injectSEO(html, {
         title: 'About | Bahauddin Alam',
-        description: 'Learn more about Bahauddin Alam, a Full Stack Developer with a passion for building elegant and functional web applications.',
+        description: 'I build high-performance web applications and developer-focused tools with a strong emphasis on scalability, reliability, and systems-level optimization.',
         url: 'https://bahauddin.in/about'
     });
 

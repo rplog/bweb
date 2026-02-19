@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Spotlight } from '../Spotlight';
 import { PageHeader } from '../PageHeader';
-import { Code, X } from 'lucide-react';
+import { Code, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { Dock } from '../Dock';
 import { SiGithub, SiX, SiLinkedin, SiReact, SiTypescript, SiRust, SiTailwindcss, SiPython, SiTelegram, SiNodedotjs } from 'react-icons/si';
 import { createNavigationHandler } from '../../utils/navigation';
@@ -25,6 +25,7 @@ export const About: React.FC<AboutProps> = ({ onExit, onNavigate }) => {
 
     const [showProfile, setShowProfile] = useState(false);
     const [hasImageError, setHasImageError] = useState(false);
+    const [isExpanded, setIsExpanded] = useState(false);
 
     return (
         <div className="h-full w-full bg-elegant-bg text-elegant-text-secondary font-mono selection:bg-elegant-accent/20 overflow-y-auto">
@@ -128,14 +129,66 @@ export const About: React.FC<AboutProps> = ({ onExit, onNavigate }) => {
                                 </div>
                                 <div className="space-y-4 text-elegant-text-secondary leading-relaxed text-sm">
                                     <p>
-                                        I construct digital infrastructures in the void. Specializing in high-performance edge computing, and easy to navigate UI/UX design.
+                                        I'm Bahauddin Alam, a freelance Full Stack Developer based in Patna, India. Alongside continuing my academic studies, I focus on building performance-driven web applications and developer-oriented systems designed for reliability, scalability, and long-term maintainability.
                                     </p>
+
                                     <p>
-                                        My work focuses on creating seamless user experiences and always pushing the boundaries of what's possible in the browser.
+                                        My primary stack includes React, TypeScript, Tailwind CSS, Python, and Node.js, and I deploy and scale applications using AWS and modern edge platforms. I work across the entire development lifecycle — from frontend architecture and UI/UX implementation to backend logic, infrastructure setup, and deployment strategy.
                                     </p>
-                                    <p className="text-elegant-accent text-xs font-mono mt-4 pt-4 border-t border-elegant-border">
-                                        <span aria-hidden="true">$ whoami → </span>Building the future, one commit at a time.
-                                    </p>
+
+                                    {!isExpanded && (
+                                        <button
+                                            onClick={() => setIsExpanded(true)}
+                                            className="flex items-center gap-2 text-elegant-accent hover:text-elegant-accent/80 transition-colors text-sm font-medium mt-4 group"
+                                        >
+                                            Read More
+                                            <ChevronDown size={16} className="group-hover:translate-y-0.5 transition-transform" />
+                                        </button>
+                                    )}
+
+                                    <div className={`grid transition-all duration-500 ease-in-out ${isExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0 overflow-hidden'}`}>
+                                        <div className="overflow-hidden">
+                                            <div className="pt-2"> {/* Padding to separate from button/prev paragraph */}
+                                                <h3 className="text-base font-bold text-elegant-text-primary mt-4 mb-2">Engineering Approach</h3>
+
+                                                <p className="mb-4">
+                                                    My background in systems programming with C++ has shaped the way I think about software. Understanding memory management, performance constraints, and low-level optimization gives me a systems-first perspective when designing web applications. I prioritize clean architecture, efficient execution, and simplicity over unnecessary complexity.
+                                                </p>
+
+                                                <p className="mb-4">
+                                                    Rather than separating frontend and backend concerns, I approach development holistically. Every layer — interface, API design, database interaction, deployment, and monitoring — should work together cohesively. Good software is not just functional; it is structured, predictable, and maintainable.
+                                                </p>
+
+                                                <h3 className="text-base font-bold text-elegant-text-primary mt-6 mb-2">What I Build</h3>
+
+                                                <p className="mb-4">
+                                                    I have built server uptime monitoring systems, real-time health tracking dashboards, and alert tools designed to improve system visibility and operational awareness. These tools focus on performance, reliability, and clarity — minimizing noise while maximizing actionable insight.
+                                                </p>
+
+                                                <p className="mb-4">
+                                                    I also designed and developed a custom terminal-themed web interface engineered for speed and responsiveness. This project reflects my interest in blending structured systems thinking with modern web technologies.
+                                                </p>
+
+                                                <h3 className="text-base font-bold text-elegant-text-primary mt-6 mb-2">Areas of Interest</h3>
+
+                                                <p className="mb-4">
+                                                    I'm particularly interested in high-performance computing, distributed systems, edge infrastructure, and developer tooling. My long-term focus is on building software that is efficient, scalable, and thoughtfully engineered — whether for clients, open-source contributions, or independent projects.
+                                                </p>
+
+                                                <p className="mb-4">
+                                                    I believe strong engineering is about clarity, performance, and responsibility — building systems that not only work today but remain stable and maintainable tomorrow.
+                                                </p>
+
+                                                <button
+                                                    onClick={() => setIsExpanded(false)}
+                                                    className="flex items-center gap-2 text-elegant-text-muted hover:text-elegant-text-primary transition-colors text-sm font-medium mt-6 group"
+                                                >
+                                                    Read Less
+                                                    <ChevronUp size={16} className="group-hover:-translate-y-0.5 transition-transform" />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </section>
 

@@ -7,7 +7,7 @@ export const onRequestGet: PagesFunction<{ DB: D1Database }> = async (context) =
         const filename = params.filename;
 
         const note = await env.DB.prepare(
-            "SELECT * FROM notes WHERE filename = ?"
+            "SELECT id, filename, content, country, created_at, updated_at FROM notes WHERE filename = ?"
         ).bind(filename).first();
 
         if (!note) {
@@ -35,12 +35,14 @@ export const onRequestPut: PagesFunction<{ DB: D1Database; RATE_LIMITER: KVNames
             return new Response(JSON.stringify({ error: "Rate limit exceeded. Please wait." }), { status: 429, headers: { "Content-Type": "application/json" } });
         }
 
-        const { content, commit_msg, author_name } = await request.json() as { content?: string; commit_msg?: string; author_name?: string }; // Extract commit_msg and author_name
+        const { content, commit_msg, author_name } = await request.json() as { content?: string; commit_msg?: string; author_name?: string };
 
-        if (content && content.length > 10485760) return new Response(JSON.stringify({ error: "Content too large (max 10MB)" }), { status: 400, headers: { "Content-Type": "application/json" } });
+        if (content == null) return new Response(JSON.stringify({ error: "Content required" }), { status: 400, headers: { "Content-Type": "application/json" } });
+        if (content.length > 10485760) return new Response(JSON.stringify({ error: "Content too large (max 10MB)" }), { status: 400, headers: { "Content-Type": "application/json" } });
 
         const now = Date.now();
         const city = request.cf?.city || "unknown";
+        const country = request.cf?.country || "unknown";
 
         // Get current content for history
         const currentNote = await env.DB.prepare("SELECT id, content FROM notes WHERE filename = ?").bind(filename).first();
@@ -49,7 +51,7 @@ export const onRequestPut: PagesFunction<{ DB: D1Database; RATE_LIMITER: KVNames
             const editId = crypto.randomUUID();
             await env.DB.prepare(
                 "INSERT INTO note_edits (id, note_id, previous_content, ip, city, country, created_at, commit_msg, author_name) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
-            ).bind(editId, currentNote.id, currentNote.content, ip, city, request.cf?.country || "unknown", now, commit_msg || null, author_name || null).run();
+            ).bind(editId, currentNote.id, currentNote.content, ip, city, country, now, commit_msg || null, author_name || null).run();
         }
 
         const info = await env.DB.prepare(

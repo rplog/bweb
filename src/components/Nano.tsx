@@ -38,6 +38,18 @@ export const Nano: React.FC<NanoProps> = ({ filename: initialFilename, initialCo
         }
     }, [isPromptingSave]);
 
+    const handleExitRequest = () => {
+        if (!isModified || exitAttempt) {
+            onExit();
+        } else {
+            setExitAttempt(true);
+            setMessage('[ Buffer modified? Press ^X again to discard and exit ]');
+            setTimeout(() => {
+                if (!isPromptingSave) setMessage('');
+            }, 3000);
+        }
+    };
+
     const handleSave = async () => {
         // Always prompt, pre-filling current filename if available
         setIsPromptingSave(true);
@@ -54,15 +66,7 @@ export const Nano: React.FC<NanoProps> = ({ filename: initialFilename, initialCo
                 handleSave();
             } else if (e.key === 'x') { // Exit
                 e.preventDefault();
-                if (!isModified || exitAttempt) {
-                    onExit();
-                } else {
-                    setExitAttempt(true);
-                    setMessage('[ Buffer modified? Press ^X again to discard and exit ]');
-                    setTimeout(() => {
-                        if (!isPromptingSave) setMessage('');
-                    }, 3000);
-                }
+                handleExitRequest();
             }
         } else {
             if (exitAttempt) setExitAttempt(false);
@@ -188,7 +192,7 @@ export const Nano: React.FC<NanoProps> = ({ filename: initialFilename, initialCo
                     <span className="bg-elegant-accent text-elegant-bg px-1 font-bold mr-1">^K</span> Cut Text
                 </button>
                 <button
-                    onClick={(e) => { e.preventDefault(); onExit(); }}
+                    onClick={(e) => { e.preventDefault(); handleExitRequest(); }}
                     className="text-left hover:bg-elegant-card transition-colors cursor-pointer rounded px-1"
                 >
                     <span className="bg-elegant-accent text-elegant-bg px-1 font-bold mr-1">^X</span> Exit

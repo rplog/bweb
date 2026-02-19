@@ -15,7 +15,6 @@ export interface CommandContext {
     setFullScreenWithRoute?: (component: React.ReactNode, route: string) => void;
     setFullScreen?: (component: React.ReactNode | null) => void;
     setIsInputVisible: (visible: boolean) => void;
-    onSaveNote?: (filename: string, content: string, commitMsg: string, authorName: string) => Promise<void>;
     addToHistory?: (command: string, output: string | React.ReactNode) => void;
 }
 
@@ -497,7 +496,7 @@ export const commands: Record<string, Command> = {
                 return 'share: can only share files from visitors_notes directory';
             }
 
-            const url = `${window.location.origin}/shared/notes/${filename}`;
+            const url = `${window.location.origin}/shared/notes/${encodeURIComponent(filename)}`;
 
             return (
                 <div className="text-elegant-text-primary">
@@ -905,6 +904,17 @@ export const commands: Record<string, Command> = {
             return 'Fullscreen not supported';
         }
     },
+    projects: {
+        description: 'Open Projects page',
+        execute: (_args, { setFullScreen }) => {
+            if (setFullScreen) {
+                const navigate = createNavigator(setFullScreen);
+                navigate('Projects');
+                return '';
+            }
+            return 'Fullscreen not supported';
+        }
+    },
     grep: {
         description: 'Search for notes by filename pattern',
         usage: 'grep <pattern>',
@@ -929,7 +939,7 @@ export const commands: Record<string, Command> = {
                             Found {results.length} note{results.length !== 1 ? 's' : ''} matching "{pattern}":
                         </div>
                         <div className="grid grid-cols-2 gap-2">
-                            {results.map((note: { filename: string; updated_at: string }) => (
+                            {results.map((note: { filename: string; updated_at: number }) => (
                                 <div key={note.filename} className="flex justify-between">
                                     <span className="text-elegant-text-primary">{note.filename}</span>
                                     <span className="text-elegant-text-muted text-xs">{new Date(note.updated_at).toLocaleDateString()}</span>

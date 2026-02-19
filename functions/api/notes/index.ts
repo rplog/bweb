@@ -58,11 +58,11 @@ export const onRequestPost: PagesFunction<{ DB: D1Database; RATE_LIMITER: KVName
 
         const batch = [
             env.DB.prepare(
-                `INSERT INTO notes (id, filename, content, ip, city, country, timezone, user_agent, created_at, updated_at) 
+                `INSERT INTO notes (id, filename, content, ip, city, country, timezone, user_agent, created_at, updated_at)
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
             ).bind(id, filename, content, ip, city, country, timezone, userAgent, now, now),
             env.DB.prepare(
-                `INSERT INTO note_edits (id, note_id, previous_content, ip, city, country, created_at, commit_msg, author_name) 
+                `INSERT INTO note_edits (id, note_id, previous_content, ip, city, country, created_at, commit_msg, author_name)
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
             ).bind(crypto.randomUUID(), id, "", ip, city, country, now, commit_msg || "Initial commit", author_name || null)
         ];

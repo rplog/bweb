@@ -3,9 +3,10 @@ import { Spotlight } from '../Spotlight';
 import { PageHeader } from '../PageHeader';
 import { PageFooter } from '../PageFooter';
 import { createNavigationHandler } from '../../utils/navigation';
-import { FileText, Calendar, User, Search, X, Loader2, Maximize2 } from 'lucide-react';
+import { FileText, Calendar, User, Search, X, Loader2, Maximize2, Plus, Edit, Trash2, Share2, AlertCircle } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { Nano } from '../Nano';
 
 interface Note {
     filename: string;
@@ -33,9 +34,23 @@ export const Notes: React.FC<NotesProps> = ({ onExit, onNavigate }) => {
     const [noteContent, setNoteContent] = useState<string | null>(null);
     const [contentLoading, setContentLoading] = useState(false);
 
+    // Nano / Editing State
+    const [isEditing, setIsEditing] = useState(false);
+    const [editFilename, setEditFilename] = useState<string | undefined>(undefined);
+    const [editContent, setEditContent] = useState('');
+
+    // Admin State
+    const [isAdmin, setIsAdmin] = useState(false);
+
     useEffect(() => {
         fetchNotes();
+        checkAdmin();
     }, []);
+
+    const checkAdmin = () => {
+        const token = localStorage.getItem('admin_token');
+        setIsAdmin(!!token);
+    };
 
     const fetchNotes = async () => {
         setLoading(true);
@@ -77,10 +92,137 @@ export const Notes: React.FC<NotesProps> = ({ onExit, onNavigate }) => {
         setNoteContent(null);
     };
 
+    // --- Actions ---
+
+    const handleCreate = () => {
+        setEditFilename(undefined); // New file
+        setEditContent('');
+        setIsEditing(true);
+    };
+
+    const handleEdit = () => {
+        if (!selectedNote || noteContent === null) return;
+        setEditFilename(selectedNote.filename);
+        setEditContent(noteContent);
+        setIsEditing(true);
+    };
+
+    const handleDelete = async () => {
+        if (!selectedNote || !isAdmin) return;
+        if (!confirm(`Are you sure you want to delete ${selectedNote.filename}?`)) return;
+
+        try {
+            const token = localStorage.getItem('admin_token');
+            const res = await fetch(`/api/notes/${selectedNote.filename}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (res.ok) {
+                closeNote();
+                fetchNotes();
+            } else {
+                alert('Failed to delete note');
+            }
+        } catch (e) {
+            console.error(e);
+            alert('Error deleting note');
+        }
+    };
+
+    const handleShare = () => {
+        if (!selectedNote) return;
+        // Construct standard URL format for shared notes if applicable, or just a link to this page with query param
+        // Assuming /shared/notes/[filename] is handled by a route or we link back to here?
+        // The previous commands.tsx implementation used `${window.location.origin}/shared/notes/${filename}`
+        // We will match that.
+        const url = `${window.location.origin}/shared/notes/${encodeURIComponent(selectedNote.filename)}`;
+        navigator.clipboard.writeText(url);
+        alert('Share link copied to clipboard!');
+    };
+
+    const handleNanoSave = async (filename: string, content: string, commitMsg?: string, authorName?: string) => {
+        try {
+            // Check if it's a new file or update
+            // We use editFilename to determine if we started as an edit, but the user might change filename in Nano (Save As)
+
+            // First check if file exists (if we didn't start with a filename, or if user changed it)
+            // But simplify: Try GET. If 200 => update (PUT), else => create (POST)
+
+            const checkRes = await fetch(`/api/notes/${filename}`);
+            const exists = checkRes.status === 200;
+
+            let res;
+            if (exists) {
+                res = await fetch(`/api/notes/${filename}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        content: content,
+                        commit_msg: commitMsg,
+                        author_name: authorName
+                    })
+                });
+            } else {
+                res = await fetch('/api/notes', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        filename: filename,
+                        content: content,
+                        commit_msg: commitMsg,
+                        author_name: authorName
+                    })
+                });
+            }
+
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.error || res.statusText);
+            }
+
+            // Success
+            setIsEditing(false);
+            if (selectedNote) {
+                // If we were editing, refresh the detail view with new content
+                // If filename changed, we might need to close or update selectedNote
+                if (selectedNote.filename === filename) {
+                    setNoteContent(content);
+                    // Refresh meta
+                    fetchNotes();
+                } else {
+                    // Filename changed (Save As), refresh list and close old note
+                    fetchNotes();
+                    closeNote();
+                }
+            } else {
+                // Created new note
+                fetchNotes();
+            }
+
+        } catch (e: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
+            alert(`Error saving note: ${e.message}`);
+            throw e;
+        }
+    };
+
     const filteredNotes = notes.filter(note =>
         note.filename.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (note.author && note.author.toLowerCase().includes(searchTerm.toLowerCase()))
     );
+
+    if (isEditing) {
+        return (
+            <div className="fixed inset-0 z-50 bg-elegant-bg">
+                <Nano
+                    filename={editFilename}
+                    initialContent={editContent}
+                    onSaveAs={handleNanoSave}
+                    onExit={() => setIsEditing(false)}
+                />
+            </div>
+        );
+    }
 
     return (
         <div className="h-full w-full bg-elegant-bg text-elegant-text-secondary font-mono selection:bg-elegant-accent/20 overflow-y-auto">
@@ -95,20 +237,32 @@ export const Notes: React.FC<NotesProps> = ({ onExit, onNavigate }) => {
                             <button onClick={onExit} className="hover:text-elegant-text-primary transition-colors hover:underline decoration-elegant-text-muted underline-offset-4">~</button>
                             <span>/</span>
                             <span className="text-elegant-text-primary font-bold">notes</span>
+                            <span className="text-elegant-text-muted mx-2">({notes.length})</span>
                         </div>
 
-                        {/* Search Bar */}
-                        <div className="relative w-full md:w-64">
-                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <Search size={16} className="text-elegant-text-muted" />
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full md:w-auto">
+                            {/* Create Button */}
+                            <button
+                                onClick={handleCreate}
+                                className="flex items-center justify-center gap-2 bg-elegant-accent text-elegant-bg px-4 py-2 rounded-md font-bold hover:bg-elegant-accent/90 transition-colors"
+                            >
+                                <Plus size={16} />
+                                <span>New Note</span>
+                            </button>
+
+                            {/* Search Bar */}
+                            <div className="relative flex-1 sm:w-64">
+                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <Search size={16} className="text-elegant-text-muted" />
+                                </div>
+                                <input
+                                    type="text"
+                                    placeholder="Search notes..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    className="w-full bg-elegant-card border border-elegant-border rounded-md pl-10 pr-4 py-2 text-sm text-elegant-text-primary placeholder-elegant-text-muted focus:outline-none focus:border-elegant-accent focus:ring-1 focus:ring-elegant-accent transition-colors"
+                                />
                             </div>
-                            <input
-                                type="text"
-                                placeholder="Search notes..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full bg-elegant-card border border-elegant-border rounded-md pl-10 pr-4 py-2 text-sm text-elegant-text-primary placeholder-elegant-text-muted focus:outline-none focus:border-elegant-accent focus:ring-1 focus:ring-elegant-accent transition-colors"
-                            />
                         </div>
                     </div>
 
@@ -122,9 +276,17 @@ export const Notes: React.FC<NotesProps> = ({ onExit, onNavigate }) => {
                         <div className="text-center py-20 text-elegant-text-muted border border-dashed border-elegant-border rounded-lg">
                             <FileText size={48} className="mx-auto mb-4 opacity-50" />
                             <p className="text-lg mb-2">No notes found</p>
-                            <p className="text-sm">
+                            <p className="text-sm mb-6">
                                 {searchTerm ? `No results for "${searchTerm}"` : "The archive is empty."}
                             </p>
+                            {!searchTerm && (
+                                <button
+                                    onClick={handleCreate}
+                                    className="text-elegant-accent hover:underline flex items-center justify-center gap-1 mx-auto"
+                                >
+                                    <Plus size={14} /> Create your first note
+                                </button>
+                            )}
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -181,12 +343,43 @@ export const Notes: React.FC<NotesProps> = ({ onExit, onNavigate }) => {
                                             {selectedNote.filename}
                                         </h2>
                                     </div>
-                                    <button
-                                        onClick={closeNote}
-                                        className="p-2 hover:bg-white/10 rounded-full text-elegant-text-muted hover:text-white transition-colors"
-                                    >
-                                        <X size={20} />
-                                    </button>
+                                    <div className="flex items-center gap-2">
+                                        {/* Action Buttons */}
+                                        <button
+                                            onClick={handleShare}
+                                            className="p-2 hover:bg-white/10 rounded-md text-elegant-text-muted hover:text-elegant-accent transition-colors flex items-center gap-1"
+                                            title="Share Note"
+                                        >
+                                            <Share2 size={18} />
+                                        </button>
+
+                                        <button
+                                            onClick={handleEdit}
+                                            className="p-2 hover:bg-white/10 rounded-md text-elegant-text-muted hover:text-elegant-accent transition-colors flex items-center gap-1"
+                                            title="Edit Note"
+                                        >
+                                            <Edit size={18} />
+                                        </button>
+
+                                        {isAdmin && (
+                                            <button
+                                                onClick={handleDelete}
+                                                className="p-2 hover:bg-red-500/10 rounded-md text-elegant-text-muted hover:text-red-500 transition-colors flex items-center gap-1"
+                                                title="Delete Note"
+                                            >
+                                                <Trash2 size={18} />
+                                            </button>
+                                        )}
+
+                                        <div className="w-px h-6 bg-elegant-border mx-1"></div>
+
+                                        <button
+                                            onClick={closeNote}
+                                            className="p-2 hover:bg-white/10 rounded-full text-elegant-text-muted hover:text-white transition-colors"
+                                        >
+                                            <X size={20} />
+                                        </button>
+                                    </div>
                                 </div>
 
                                 {/* Modal Content */}
@@ -197,9 +390,19 @@ export const Notes: React.FC<NotesProps> = ({ onExit, onNavigate }) => {
                                             <p>Loading content...</p>
                                         </div>
                                     ) : (
-                                        <div className="prose prose-invert prose-sm md:prose-base max-w-none prose-headings:text-elegant-text-primary prose-a:text-elegant-accent prose-code:text-elegant-accent prose-code:bg-white/5 prose-code:px-1 prose-code:rounded prose-pre:bg-black/50 prose-pre:border prose-pre:border-white/10">
-                                            <ReactMarkdown remarkPlugins={[remarkGfm]}>{noteContent || ''}</ReactMarkdown>
-                                        </div>
+                                        <>
+                                            {noteContent ? (
+                                                <div className="prose prose-invert prose-sm md:prose-base max-w-none prose-headings:text-elegant-text-primary prose-a:text-elegant-accent prose-code:text-elegant-accent prose-code:bg-white/5 prose-code:px-1 prose-code:rounded prose-pre:bg-black/50 prose-pre:border prose-pre:border-white/10">
+                                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{noteContent || ''}</ReactMarkdown>
+                                                </div>
+                                            ) : (
+                                                <div className="flex flex-col items-center justify-center py-10 text-elegant-text-muted gap-2">
+                                                    <AlertCircle size={32} opacity={0.5} />
+                                                    <p>Failed to load content</p>
+                                                </div>
+                                            )}
+                                        </>
+
                                     )}
                                 </div>
 
@@ -225,3 +428,4 @@ export const Notes: React.FC<NotesProps> = ({ onExit, onNavigate }) => {
         </div >
     );
 };
+

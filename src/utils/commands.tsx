@@ -72,7 +72,7 @@ export const commands: Record<string, Command> = {
     help: {
         description: 'List all available commands',
         execute: () => {
-            const hiddenCommands = ['login', 'inbox', 'alerts', 'admin'];
+            const hiddenCommands = ['login', 'inbox', 'alerts', 'admin', 'logout', 'rm'];
             const commandList = Object.keys(commands)
                 .filter(cmd => !hiddenCommands.includes(cmd))
                 .join(', ');
@@ -123,6 +123,12 @@ export const commands: Record<string, Command> = {
 
                         <span className="text-elegant-text-primary font-bold">alerts</span>
                         <span className="text-elegant-text-muted">Configure notification channels.</span>
+
+                        <span className="text-elegant-text-primary font-bold">rm</span>
+                        <span className="text-elegant-text-muted">Remove a visitor note.</span>
+
+                        <span className="text-elegant-text-primary font-bold">logout</span>
+                        <span className="text-elegant-text-muted">End admin session.</span>
                     </div>
                     <div className="mt-2 text-elegant-text-muted text-xs">
                         Type <span className="text-elegant-text-primary">inbox -h</span> or <span className="text-elegant-text-primary">alerts -h</span> for details.
@@ -162,7 +168,11 @@ export const commands: Record<string, Command> = {
     },
     logout: {
         description: 'Logout from admin session',
-        execute: (_args, { setUser }) => {
+        execute: (_args, { user, setUser }) => {
+            const token = localStorage.getItem('admin_token');
+            if (!token && user !== 'root') {
+                 return 'Error: You are not logged in.';
+            }
             localStorage.removeItem('admin_token');
             if (setUser) setUser('neo');
             return 'Logged out successfully.';

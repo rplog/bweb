@@ -4,7 +4,10 @@
       "Bash(git diff:*)",
       "Bash(git show:*)",
       "Bash(git log:*)",
-      "Bash(git hash-object:*)"
+      "Bash(git hash-object:*)",
+      "Bash(npm ls:*)",
+      "WebFetch(domain:cdn.jsdelivr.net)",
+      "WebFetch(domain:cdnjs.cloudflare.com)"
     ]
   }
 }

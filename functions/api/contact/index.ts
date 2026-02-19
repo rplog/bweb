@@ -44,7 +44,7 @@ async function sendTelegram(env: Record<string, unknown>, name: string, email: s
         body: JSON.stringify({
             chat_id: String(env.TELEGRAM_CHAT_ID),
             text: text,
-            parse_mode: 'Markdown'
+            parse_mode: 'MarkdownV2'
         })
     });
 

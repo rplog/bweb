@@ -57,6 +57,13 @@ export const onRequestGet: PagesFunction<{ DB: D1Database }> = async (context) =
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     ${edits.length > 0 ? '<script async src="https://cdn.jsdelivr.net/npm/diff@8.0.3/dist/diff.min.js"><' + '/script>' : ''}
     <script async src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"><${''}/script>
+    <script async src="https://cdn.jsdelivr.net/npm/marked-highlight/lib/index.umd.min.js"><${''}/script>
+    <script async src="https://cdn.jsdelivr.net/npm/marked-footnote/dist/index.umd.min.js"><${''}/script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11/styles/github-dark.min.css">
+    <script async src="https://cdn.jsdelivr.net/npm/highlight.js@11/lib/common.min.js"><${''}/script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16/dist/katex.min.js"><${''}/script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16/dist/contrib/auto-render.min.js"><${''}/script>
     <style>
         body {
             background-color: ${colors.bg};
@@ -145,6 +152,12 @@ export const onRequestGet: PagesFunction<{ DB: D1Database }> = async (context) =
         .markdown-body a { color: ${colors.accent}; text-decoration: underline; text-underline-offset: 3px; }
         .markdown-body a:hover { color: ${colors.accentHover}; }
         .markdown-body img { max-width: 100%; border-radius: 4px; }
+        .markdown-body pre code.hljs { background: none; padding: 0; }
+        .markdown-body .katex-display { overflow-x: auto; overflow-y: hidden; padding: 0.5em 0; }
+        .markdown-body .footnotes { margin-top: 2em; padding-top: 1em; border-top: 1px solid ${colors.border}; font-size: 0.9em; color: ${colors.textSecondary}; }
+        .markdown-body sup a, .markdown-body .footnotes a { color: ${colors.accent}; }
+        .markdown-body .footnotes ol { padding-left: 1.5em; }
+        .markdown-body .footnotes li { margin: 0.4em 0; }
         @media (max-width: 600px) {
             body { padding: 20px 15px; }
             h1 { font-size: 1.2rem; flex-direction: column; align-items: flex-start; gap: 10px; }
@@ -239,10 +252,42 @@ export const onRequestGet: PagesFunction<{ DB: D1Database }> = async (context) =
         var isMarkdownOn = true;
         var mdBtn = document.getElementById('md-toggle-btn');
 
+        var markedConfigured = false;
+        function configureMarked() {
+            if (markedConfigured || !window.marked) return;
+            if (window.markedHighlight && window.hljs) {
+                window.marked.use(window.markedHighlight.markedHighlight({
+                    langPrefix: 'hljs language-',
+                    highlight: function(code, lang) {
+                        if (lang && window.hljs.getLanguage(lang)) {
+                            return window.hljs.highlight(code, { language: lang }).value;
+                        }
+                        return window.hljs.highlightAuto(code).value;
+                    }
+                }));
+            }
+            if (window.markedFootnote) {
+                window.marked.use(window.markedFootnote.markedFootnote());
+            }
+            markedConfigured = true;
+        }
+
         function renderContent(text) {
             if (isMarkdownOn && window.marked) {
+                configureMarked();
                 contentEl.classList.add('markdown-body');
                 contentEl.innerHTML = window.marked.parse(String(text));
+                if (window.renderMathInElement) {
+                    window.renderMathInElement(contentEl, {
+                        delimiters: [
+                            { left: '$$', right: '$$', display: true },
+                            { left: '$', right: '$', display: false },
+                            { left: '\\\\(', right: '\\\\)', display: false },
+                            { left: '\\\\[', right: '\\\\]', display: true }
+                        ],
+                        throwOnError: false
+                    });
+                }
             } else {
                 contentEl.classList.remove('markdown-body');
                 contentEl.innerHTML = escapeHtml(text);
@@ -266,13 +311,19 @@ export const onRequestGet: PagesFunction<{ DB: D1Database }> = async (context) =
         }
         window.toggleMarkdown = toggleMarkdown;
 
-        // Initial render — try marked, fall back to plain if not loaded yet
-        if (window.marked) {
-            renderContent(latestContent);
-        } else {
-            contentEl.innerHTML = escapeHtml(latestContent);
-            document.querySelector('script[src*="marked"]').addEventListener('load', function() {
+        // Initial render — wait for all libs then re-render with full markdown
+        contentEl.innerHTML = escapeHtml(latestContent);
+        function tryInitialRender() {
+            if (window.marked && window.hljs && window.markedHighlight && window.markedFootnote && window.renderMathInElement) {
                 if (isMarkdownOn && !currentViewedEdit) renderContent(latestContent);
+                return true;
+            }
+            return false;
+        }
+        if (!tryInitialRender()) {
+            var libScripts = document.querySelectorAll('script[async], script[defer]');
+            libScripts.forEach(function(s) {
+                s.addEventListener('load', function() { tryInitialRender(); });
             });
         }
 

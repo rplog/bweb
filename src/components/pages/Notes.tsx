@@ -6,6 +6,11 @@ import { createNavigationHandler } from '../../utils/navigation';
 import { FileText, Calendar, User, Search, X, Loader2, Maximize2, Plus, Edit, Trash2, Share2, AlertCircle } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import rehypeHighlight from 'rehype-highlight';
+import 'katex/dist/katex.min.css';
+import 'highlight.js/styles/github-dark.min.css';
 import { Nano } from '../Nano';
 
 import { ActionModals, type PromptConfig, type AlertConfig, type ConfirmConfig } from '../shared/ActionModals';
@@ -426,7 +431,7 @@ export const Notes: React.FC<NotesProps> = ({ onExit, onNavigate }) => {
                                         <>
                                             {noteContent ? (
                                                 <div className="prose prose-invert prose-sm md:prose-base max-w-none prose-headings:text-elegant-text-primary prose-a:text-elegant-accent prose-code:text-elegant-accent prose-code:bg-white/5 prose-code:px-1 prose-code:rounded prose-pre:bg-black/50 prose-pre:border prose-pre:border-white/10">
-                                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{noteContent || ''}</ReactMarkdown>
+                                                    <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex, rehypeHighlight]}>{noteContent || ''}</ReactMarkdown>
                                                 </div>
                                             ) : (
                                                 <div className="flex flex-col items-center justify-center py-10 text-elegant-text-muted gap-2">

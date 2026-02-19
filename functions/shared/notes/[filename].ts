@@ -252,10 +252,10 @@ export const onRequestGet: PagesFunction<{ DB: D1Database }> = async (context) =
         var isMarkdownOn = true;
         var mdBtn = document.getElementById('md-toggle-btn');
 
-        var markedConfigured = false;
+        var hasHighlight = false, hasFootnote = false;
         function configureMarked() {
-            if (markedConfigured || !window.marked) return;
-            if (window.markedHighlight && window.hljs) {
+            if (!window.marked) return;
+            if (!hasHighlight && window.markedHighlight && window.hljs) {
                 window.marked.use(window.markedHighlight.markedHighlight({
                     langPrefix: 'hljs language-',
                     highlight: function(code, lang) {
@@ -265,11 +265,12 @@ export const onRequestGet: PagesFunction<{ DB: D1Database }> = async (context) =
                         return window.hljs.highlightAuto(code).value;
                     }
                 }));
+                hasHighlight = true;
             }
-            if (window.markedFootnote) {
+            if (!hasFootnote && window.markedFootnote) {
                 window.marked.use(window.markedFootnote.markedFootnote());
+                hasFootnote = true;
             }
-            markedConfigured = true;
         }
 
         function renderContent(text) {
@@ -311,21 +312,19 @@ export const onRequestGet: PagesFunction<{ DB: D1Database }> = async (context) =
         }
         window.toggleMarkdown = toggleMarkdown;
 
-        // Initial render — wait for all libs then re-render with full markdown
+        // Initial render — progressive: render with marked ASAP, re-render as extras load
         contentEl.innerHTML = escapeHtml(latestContent);
-        function tryInitialRender() {
-            if (window.marked && window.hljs && window.markedHighlight && window.markedFootnote && window.renderMathInElement) {
-                if (isMarkdownOn && !currentViewedEdit) renderContent(latestContent);
-                return true;
-            }
-            return false;
+        var libsLoaded = 0;
+        function onLibLoad() {
+            libsLoaded++;
+            if (!isMarkdownOn || currentViewedEdit) return;
+            if (window.marked) renderContent(latestContent);
         }
-        if (!tryInitialRender()) {
-            var libScripts = document.querySelectorAll('script[async], script[defer]');
-            libScripts.forEach(function(s) {
-                s.addEventListener('load', function() { tryInitialRender(); });
-            });
+        if (window.marked) {
+            renderContent(latestContent);
         }
+        var libScripts = document.querySelectorAll('script[async], script[defer]');
+        libScripts.forEach(function(s) { s.addEventListener('load', onLibLoad); });
 
         function formatDate(timestamp) {
             try {

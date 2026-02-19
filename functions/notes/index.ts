@@ -18,16 +18,9 @@ export const onRequest: PagesFunction = async (context) => {
 
     const indexRequest = new Request(url.origin + '/', context.request);
     const response = await context.env.ASSETS.fetch(indexRequest);
-    const html = await response.text();
-
-    const newHtml = injectSEO(html, {
+    return injectSEO(response, {
         title: title,
         description: description,
         url: pageUrl
-    });
-
-    return new Response(newHtml, {
-        headers: response.headers,
-        status: response.status
     });
 };

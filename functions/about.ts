@@ -7,19 +7,10 @@ export const onRequest: PagesFunction = async (context) => {
     const indexRequest = new Request(url.origin + '/', context.request);
     const response = await context.env.ASSETS.fetch(indexRequest);
     
-    // 2. Get the HTML content
-    const html = await response.text();
-
-    // 3. Inject customized SEO meta tags
-    const newHtml = injectSEO(html, {
+    // 2. Inject customized SEO meta tags
+    return injectSEO(response, {
         title: 'About | Bahauddin Alam',
-        description: 'I build high-performance web applications and developer-focused tools with a strong emphasis on scalability, reliability, and systems-level optimization.',
+        description: 'I build high-performance web applications and developer-focused tools with a strong emphasis on scaling, reliability, and systems-level optimization.',
         url: 'https://bahauddin.in/about'
-    });
-
-    // 4. Return new response
-    return new Response(newHtml, {
-        headers: response.headers,
-        status: response.status
     });
 };

@@ -35,9 +35,9 @@ export const Desktop: React.FC<DesktopProps> = ({ onOpenTerminal, onNavigate }) 
                 {/* Clock */}
                 <time
                     dateTime={time.toISOString()}
-                    className="text-6xl md:text-8xl font-extralight text-elegant-text-primary mb-1 tabular-nums tracking-tighter"
+                    className="text-4xl sm:text-5xl md:text-8xl font-extralight text-elegant-text-primary mb-1 tabular-nums tracking-tighter"
                 >
-                    {time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    {time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                 </time>
                 <p className="text-sm md:text-base text-elegant-text-muted mb-14 tracking-wide">
                     {time.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}

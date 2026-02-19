@@ -55,7 +55,7 @@ export const onRequestGet: PagesFunction<{ DB: D1Database }> = async (context) =
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
-    ${edits.length > 0 ? '<script src="https://cdn.jsdelivr.net/npm/diff@8.0.3/dist/diff.min.js"><' + '/script>' : ''}
+    ${edits.length > 0 ? '<script async src="https://cdn.jsdelivr.net/npm/diff@8.0.3/dist/diff.min.js"><' + '/script>' : ''}
     <style>
         body {
             background-color: ${colors.bg};

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Terminal } from './components/Terminal';
 import { Desktop } from './components/Desktop';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -7,6 +7,13 @@ export type TerminalMode = 'hidden' | 'windowed' | 'maximized';
 
 function App() {
   const [terminalMode, setTerminalMode] = useState<TerminalMode>('hidden');
+
+  // Listen for 'open-terminal' custom event from anywhere (pages, dock, spotlight)
+  useEffect(() => {
+    const handler = () => setTerminalMode('windowed');
+    window.addEventListener('open-terminal', handler);
+    return () => window.removeEventListener('open-terminal', handler);
+  }, []);
 
   const handleNavigate = useCallback((dest: string) => {
     const routes: Record<string, string> = {

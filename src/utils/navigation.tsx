@@ -7,7 +7,11 @@ import { Notes } from '../components/pages/Notes';
 
 export const createNavigator = (setFullScreen: (node: React.ReactNode | null, path?: string) => void) => {
     const navigate = (dest: string) => {
-        if (dest === 'Terminal' || dest === 'Home') {
+        if (dest === 'Terminal') {
+            setFullScreen(null);
+            // Tell App to open the terminal window
+            window.dispatchEvent(new CustomEvent('open-terminal'));
+        } else if (dest === 'Home') {
             setFullScreen(null);
         } else if (dest === 'Gallery') {
             setFullScreen(<Gallery onExit={() => setFullScreen(null)} onNavigate={navigate} />, '/gallery');
@@ -26,7 +30,13 @@ export const createNavigator = (setFullScreen: (node: React.ReactNode | null, pa
 
 export const createNavigationHandler = (onExit: () => void, onNavigate?: (dest: string) => void) => {
     return (dest: string) => {
-        if (dest === 'Terminal' || dest === 'Home') onExit();
-        else if (onNavigate) onNavigate(dest);
+        if (dest === 'Terminal') {
+            onExit();
+            window.dispatchEvent(new CustomEvent('open-terminal'));
+        } else if (dest === 'Home') {
+            onExit();
+        } else if (onNavigate) {
+            onNavigate(dest);
+        }
     };
 };

@@ -31,7 +31,7 @@ function escapeMarkdown(text: string): string {
     return text.replace(/[_*[\]()~`>#+\-=|{}.!]/g, '\\$&');
 }
 
-async function sendTelegram(env: Record<string, unknown>, name: string, email: string, message: string): Promise<void> {
+async function sendTelegram(env: Record<string, unknown>, chatId: string, name: string, email: string, message: string): Promise<void> {
     const safeName = escapeMarkdown(name);
     const safeEmail = escapeMarkdown(email);
     const safeMessage = escapeMarkdown(message);
@@ -42,7 +42,7 @@ async function sendTelegram(env: Record<string, unknown>, name: string, email: s
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-            chat_id: String(env.TELEGRAM_CHAT_ID),
+            chat_id: chatId,
             text: text,
             parse_mode: 'MarkdownV2'
         })
@@ -116,9 +116,12 @@ export const onRequestPost: PagesFunction<{
 
         // 3. Send Telegram with retry (fire-and-forget, 3 attempts)
         if (notificationChannels.includes('telegram') && env.TELEGRAM_BOT_TOKEN && env.TELEGRAM_CHAT_ID) {
+            const chatIds = String(env.TELEGRAM_CHAT_ID).split(',');
             context.waitUntil(
-                withRetry(() => sendTelegram(env, name, email, message), 'Telegram', 3, 500)
-                    .catch(err => console.error('[Telegram] All retries failed:', err.message))
+                Promise.all(chatIds.map(chatId =>
+                    withRetry(() => sendTelegram(env, chatId.trim(), name, email, message), `Telegram:${chatId}`, 3, 500)
+                        .catch(err => console.error(`[Telegram:${chatId}] All retries failed:`, err.message))
+                ))
             );
         }
 

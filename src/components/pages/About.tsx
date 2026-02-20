@@ -4,6 +4,7 @@ import { PageHeader } from '../PageHeader';
 import { Code, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { Dock } from '../Dock';
 import { SiGithub, SiX, SiLinkedin, SiReact, SiTypescript, SiRust, SiTailwindcss, SiPython, SiTelegram, SiNodedotjs } from 'react-icons/si';
+import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router';
 
 import { useSEO } from '../../hooks/useSEO';
@@ -202,25 +203,43 @@ export const About = () => {
                             {/* Skills Card */}
                             <section className="bg-elegant-card border border-elegant-border rounded-sm p-6" aria-labelledby="tech-stack-heading">
                                 <h2 id="tech-stack-heading" className="text-lg font-bold text-elegant-text-primary mb-6">Tech Stack</h2>
-                                <div className="flex flex-wrap gap-3">
+                                <div className="flex flex-col gap-3 w-full">
                                     {[
-                                        { name: 'React', icon: SiReact, color: 'text-[#61DAFB]' },
-                                        { name: 'TypeScript', icon: SiTypescript, color: 'text-[#3178C6]' },
-                                        { name: 'Rust', icon: SiRust, color: 'text-[#646CFF]' },
-                                        { name: 'Tailwind', icon: SiTailwindcss, color: 'text-[#06B6D4]' },
-                                        { name: 'Python', icon: SiPython, color: 'text-[#F38020]' },
-                                        { name: 'Node.js', icon: SiNodedotjs, color: 'text-[#339933]' }
-                                    ].map((skill) => (
+                                        { name: 'React', icon: SiReact, hex: '#61DAFB', progress: 95 },
+                                        { name: 'TypeScript', icon: SiTypescript, hex: '#3178C6', progress: 90 },
+                                        { name: 'Rust', icon: SiRust, hex: '#646CFF', progress: 75 },
+                                        { name: 'Node.js', icon: SiNodedotjs, hex: '#339933', progress: 90 },
+                                        { name: 'Python', icon: SiPython, hex: '#F38020', progress: 85 },
+                                        { name: 'Tailwind', icon: SiTailwindcss, hex: '#06B6D4', progress: 98 }
+                                    ].map((skill, index) => (
                                         <div
                                             key={skill.name}
-                                            className="bg-elegant-bg border border-elegant-border rounded-sm p-3 md:p-4 hover:border-elegant-text-muted transition-all cursor-default flex items-center gap-3 group shrink-0"
+                                            className="relative w-full bg-elegant-bg border border-elegant-border rounded-sm hover:border-elegant-text-muted transition-colors cursor-default group overflow-hidden"
                                             role="article"
-                                            aria-label={`Skill: ${skill.name}`}
+                                            aria-label={`Skill: ${skill.name}, Proficiency: ${skill.progress}%`}
                                         >
-                                            <div className="shrink-0 flex items-center justify-center w-6 h-6 md:w-8 md:h-8">
-                                                <skill.icon size={28} className={`w-full h-full ${skill.color} opacity-80 group-hover:opacity-100 transition-opacity`} aria-hidden="true" />
+                                            {/* Animated Brand-Colored Progress Fill */}
+                                            <motion.div 
+                                                className="absolute top-0 left-0 h-full z-0 opacity-20 group-hover:opacity-30 transition-opacity"
+                                                style={{ backgroundColor: skill.hex }}
+                                                initial={{ width: 0 }}
+                                                whileInView={{ width: `${skill.progress}%` }}
+                                                viewport={{ once: true }}
+                                                transition={{ duration: 1, delay: index * 0.1, ease: [0.16, 1, 0.3, 1] }}
+                                            />
+                                            
+                                            {/* Foreground Content */}
+                                            <div className="relative z-10 p-3 flex items-center justify-between">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="shrink-0 flex items-center justify-center w-7 h-7">
+                                                        <skill.icon size={24} style={{ color: skill.hex }} className={`tech-stack-icon`} aria-hidden="true" />
+                                                    </div>
+                                                    <div className="tech-stack-text">{skill.name}</div>
+                                                </div>
+                                                <div className="text-xs text-elegant-text-muted font-mono opacity-60 group-hover:opacity-100 transition-opacity pr-2">
+                                                    {skill.progress}%
+                                                </div>
                                             </div>
-                                            <div className="text-sm md:text-base font-medium text-elegant-text-secondary whitespace-nowrap">{skill.name}</div>
                                         </div>
                                     ))}
                                 </div>

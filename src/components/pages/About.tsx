@@ -28,7 +28,7 @@ export const About: React.FC<AboutProps> = ({ onExit, onNavigate }) => {
     const [isExpanded, setIsExpanded] = useState(false);
 
     return (
-        <div className="h-full w-full bg-elegant-bg text-elegant-text-secondary font-mono selection:bg-elegant-accent/20 overflow-y-auto">
+        <div className="h-full w-full bg-transparent text-elegant-text-secondary font-mono selection:bg-elegant-accent/20 overflow-y-auto">
             <div className="min-h-full flex flex-col">
                 <Spotlight onNavigate={handleNavigate} />
                 <PageHeader currentPath="about" onNavigate={handleNavigate} className="shrink-0" maxWidth="max-w-7xl" />

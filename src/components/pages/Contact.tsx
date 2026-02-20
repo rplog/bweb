@@ -53,7 +53,7 @@ export const Contact: React.FC<ContactProps> = ({ onExit, onNavigate }) => {
     };
 
     return (
-        <div className="h-full w-full bg-elegant-bg text-elegant-text-secondary font-mono selection:bg-elegant-accent/20 overflow-y-auto lg:overflow-hidden">
+        <div className="h-full w-full bg-transparent text-elegant-text-secondary font-mono selection:bg-elegant-accent/20 overflow-y-auto lg:overflow-hidden">
             <div className="h-full flex flex-col">
                 <Spotlight onNavigate={handleNavigate} />
                 <PageHeader currentPath="contact" onNavigate={handleNavigate} className="shrink-0" maxWidth="max-w-7xl" />

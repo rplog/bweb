@@ -292,7 +292,7 @@ export const Notes: React.FC<NotesProps> = ({ onExit, onNavigate }) => {
 
     if (isEditing) {
         return (
-            <div className="fixed inset-0 z-50 bg-elegant-bg">
+            <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm">
                 <Nano
                     filename={editFilename}
                     initialContent={editContent}
@@ -304,7 +304,7 @@ export const Notes: React.FC<NotesProps> = ({ onExit, onNavigate }) => {
     }
 
     return (
-        <div className="h-full w-full bg-elegant-bg text-elegant-text-secondary font-mono selection:bg-elegant-accent/20 overflow-y-auto">
+        <div className="h-full w-full bg-transparent text-elegant-text-secondary font-mono selection:bg-elegant-accent/20 overflow-y-auto">
             <div className="min-h-full flex flex-col">
                 <Spotlight onNavigate={handleNavigate} />
                 <PageHeader currentPath="notes" onNavigate={handleNavigate} className="sticky top-0 z-30" maxWidth="max-w-7xl" />

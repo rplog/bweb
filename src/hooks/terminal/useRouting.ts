@@ -14,10 +14,12 @@ export const useRouting = () => {
             // Don't overwrite if current URL is already a sub-path (preserves deep links)
             if (currentPath !== path && !currentPath.startsWith(path + '/')) {
                 window.history.pushState({}, '', path);
+                window.dispatchEvent(new PopStateEvent('popstate'));
             }
         } else if (component === null) {
             if (window.location.pathname !== '/') {
                 window.history.pushState({}, '', '/');
+                window.dispatchEvent(new PopStateEvent('popstate'));
             }
         }
     }, []);

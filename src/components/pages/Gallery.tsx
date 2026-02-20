@@ -602,7 +602,7 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
     }, [breadcrumbSegments, albums, openAlbum]);
 
     return (
-        <div className="h-full w-full bg-elegant-bg text-elegant-text-secondary font-mono selection:bg-elegant-accent/20 overflow-y-auto">
+        <div className="h-full w-full bg-transparent text-elegant-text-secondary font-mono selection:bg-elegant-accent/20 overflow-y-auto">
             <div className="min-h-full flex flex-col">
                 <Spotlight onNavigate={handleNavigate} />
                 <PageHeader currentPath="gallery" onNavigate={handleNavigate} className="sticky top-0 z-30" maxWidth="max-w-7xl" />

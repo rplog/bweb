@@ -27,22 +27,24 @@ export const Desktop: React.FC<DesktopProps> = ({ onOpenTerminal, onNavigate }) 
     }, [onOpenTerminal, onNavigate]);
 
     return (
-        <div className="fixed inset-0 bg-elegant-bg flex flex-col items-center justify-center font-mono select-none">
+        <div className="fixed inset-0 bg-transparent flex flex-col items-center justify-center font-mono select-none">
             <Spotlight onNavigate={handleDockNavigate} />
 
-            {/* Main content area */}
-            <div className="flex-1 flex flex-col items-center justify-center px-6 max-w-4xl mx-auto text-center">
-                    {/* Clock */}
-                    <time
-                        dateTime={time.toISOString()}
-                        className="text-4xl sm:text-5xl md:text-8xl font-extralight text-elegant-text-primary mb-1 tabular-nums tracking-tighter"
-                    >
-                         {time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                    </time>
-                    <p className="text-sm md:text-base text-elegant-text-muted mb-14 tracking-wide">
-                        {time.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
-                    </p>
+            {/* Top-right corner clock - Hidden on mobile to prevent overlap */}
+            <div className="hidden sm:flex fixed top-6 right-6 z-20 flex-col items-end pointer-events-none">
+                <time
+                    dateTime={time.toISOString()}
+                    className="text-xl sm:text-2xl font-light text-elegant-text-primary tabular-nums tracking-tight drop-shadow-md"
+                >
+                     {time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                </time>
+                <p className="text-xs text-elegant-text-muted tracking-wide">
+                    {time.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
+                </p>
+            </div>
 
+            {/* Main content area */}
+            <div className="z-10 flex-1 flex flex-col items-center justify-center px-6 max-w-4xl mx-auto text-center">
                     {/* SEO-rich intro */}
                     <div className="mb-6">
                         <h1 className="text-2xl md:text-3xl font-bold text-elegant-text-primary mb-1.5 tracking-tight">
@@ -51,7 +53,7 @@ export const Desktop: React.FC<DesktopProps> = ({ onOpenTerminal, onNavigate }) 
                         <h2 className="text-base text-elegant-accent font-medium mb-4">
                             Full Stack Developer
                         </h2>
-                        <div className="text-elegant-text-secondary text-sm leading-relaxed max-w-3xl mx-auto space-y-4">
+                        <div className="text-elegant-text-secondary text-base md:text-lg leading-relaxed max-w-3xl mx-auto space-y-4">
                             <p>
                                 I'm Bahauddin Alam, a freelance Full Stack Developer based in Patna, India. I build high-performance web applications and developer-focused tools using React, TypeScript, Tailwind CSS, Python, and Node.js, with deployment experience on AWS and edge platforms.
 
@@ -82,7 +84,7 @@ export const Desktop: React.FC<DesktopProps> = ({ onOpenTerminal, onNavigate }) 
             <Dock
                 onNavigate={handleDockNavigate}
                 currentPage="Home"
-                className="pb-5 md:pb-6"
+                className="pb-5 md:pb-6 relative z-10"
             />
         </div>
     );

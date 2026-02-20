@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useCallback } from 'react';
 import { useNavigate } from 'react-router';
 import { SiGithub, SiX, SiLinkedin, SiTelegram } from 'react-icons/si';
 import { Dock } from './Dock';
@@ -10,12 +10,6 @@ interface DesktopProps {
 
 export const Desktop: React.FC<DesktopProps> = ({ onOpenTerminal }) => {
     const navigate = useNavigate();
-    const [time, setTime] = useState(new Date());
-
-    useEffect(() => {
-        const interval = setInterval(() => setTime(new Date()), 1000);
-        return () => clearInterval(interval);
-    }, []);
 
     const handleDockNavigate = useCallback((dest: string) => {
         if (dest === 'Terminal') {
@@ -33,17 +27,6 @@ export const Desktop: React.FC<DesktopProps> = ({ onOpenTerminal }) => {
 
             {/* Main content area */}
             <div className="flex-1 flex flex-col items-center justify-center px-6 max-w-4xl mx-auto text-center">
-                    {/* Clock */}
-                    <time
-                        dateTime={time.toISOString()}
-                        className="text-4xl sm:text-5xl md:text-8xl font-extralight text-elegant-text-primary mb-1 tabular-nums tracking-tighter"
-                    >
-                         {time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                    </time>
-                    <p className="text-sm md:text-base text-elegant-text-muted mb-14 tracking-wide">
-                        {time.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
-                    </p>
-
                     {/* SEO-rich intro */}
                     <div className="mb-6">
                         <h1 className="text-2xl md:text-3xl font-bold text-elegant-text-primary mb-1.5 tracking-tight">
@@ -52,13 +35,10 @@ export const Desktop: React.FC<DesktopProps> = ({ onOpenTerminal }) => {
                         <h2 className="text-base text-elegant-accent font-medium mb-4">
                             Full Stack Developer
                         </h2>
-                        <div className="text-elegant-text-secondary text-sm leading-relaxed max-w-3xl mx-auto space-y-4">
+                        <div className="text-elegant-text-secondary text-sm md:text-base leading-relaxed max-w-2xl mx-auto mb-10">
                             <p>
-                                I'm Bahauddin Alam, a freelance Full Stack Developer based in Patna, India. I build high-performance web applications and developer-focused tools using React, TypeScript, Tailwind CSS, Python, and Node.js, with deployment experience on AWS and edge platforms.
-
-                                With a systems-level foundation in C++, I approach web development with a strong focus on performance, scalability, and clean architecture — handling projects end-to-end from interface design to backend logic and infrastructure.
+                                I build high-performance web applications and developer-focused systems using tools like React, TypeScript, and Python. Explore my portfolio spanning frontend architectures to edge-deployed backends.
                             </p>
-
                         </div>
                     </div>
 

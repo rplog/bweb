@@ -1,9 +1,0 @@
-
-C:\Users\X\Projects\bweb\src\components\PerlinBackground.tsx
-  134:22  warning  The ref value 'containerRef.current' will likely have changed by the time this effect cleanup function runs. If this ref points to a node rendered by React, copy 'containerRef.current' to a variable inside the effect, and use that variable in the cleanup function  react-hooks/exhaustive-deps
-
-C:\Users\X\Projects\bweb\src\components\Terminal.tsx
-  127:64  error  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
-
-Γ£û 2 problems (1 error, 1 warning)
-

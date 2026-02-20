@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Spotlight } from '../Spotlight';
 import { PageHeader } from '../PageHeader';
 import { Code, X, ChevronDown, ChevronUp } from 'lucide-react';
@@ -220,7 +220,20 @@ export const About = () => {
                                     {/* Overlay for inactive state */}
                                     {activeCard !== 'about' && (
                                         <div className="absolute inset-0 z-50 flex items-start justify-center pt-2 pointer-events-none">
-                                            <span className="bg-elegant-bg/80 text-elegant-text-primary px-3 py-1 rounded-full text-xs font-bold shadow-lg border border-white/5 uppercase tracking-wider backdrop-blur-sm">View About Me</span>
+                                            <motion.span 
+                                                className="bg-elegant-bg/80 text-elegant-text-primary px-3 py-1 rounded-full text-xs font-bold shadow-lg border uppercase tracking-wider backdrop-blur-sm relative overflow-hidden pointer-events-auto cursor-pointer"
+                                                initial={{ borderColor: 'rgba(201, 166, 107, 0.8)', boxShadow: '0 0 15px rgba(201,166,107,0.4)' }}
+                                                animate={{ borderColor: 'rgba(201, 166, 107, 0.1)', boxShadow: '0 0 0px rgba(201,166,107,0)' }}
+                                                transition={{ duration: 2, ease: "easeOut" }}
+                                                whileHover={{ scale: 1.05 }}
+                                                whileTap={{ scale: 0.95 }}
+                                                onClick={(e: React.MouseEvent) => {
+                                                    e.stopPropagation();
+                                                    setActiveCard('about');
+                                                }}
+                                            >
+                                                View About Me
+                                            </motion.span>
                                         </div>
                                     )}
                                 </motion.section>
@@ -286,7 +299,20 @@ export const About = () => {
                                     {/* Overlay for inactive state */}
                                     {activeCard !== 'tech' && (
                                         <div className="absolute inset-0 z-50 flex items-start justify-center pt-2 pointer-events-none">
-                                            <span className="bg-elegant-bg/80 text-elegant-text-primary px-3 py-1 rounded-full text-xs font-bold shadow-lg border border-white/5 uppercase tracking-wider backdrop-blur-sm">View Tech Stack</span>
+                                            <motion.span 
+                                                className="bg-elegant-bg/80 text-elegant-text-primary px-3 py-1 rounded-full text-xs font-bold shadow-lg border uppercase tracking-wider backdrop-blur-sm relative overflow-hidden pointer-events-auto cursor-pointer"
+                                                initial={{ borderColor: 'rgba(201, 166, 107, 0.8)', boxShadow: '0 0 15px rgba(201,166,107,0.4)' }}
+                                                animate={{ borderColor: 'rgba(201, 166, 107, 0.1)', boxShadow: '0 0 0px rgba(201,166,107,0)' }}
+                                                transition={{ duration: 2, ease: "easeOut" }}
+                                                whileHover={{ scale: 1.05 }}
+                                                whileTap={{ scale: 0.95 }}
+                                                onClick={(e: React.MouseEvent) => {
+                                                    e.stopPropagation();
+                                                    setActiveCard('tech');
+                                                }}
+                                            >
+                                                View Tech Stack
+                                            </motion.span>
                                         </div>
                                     )}
                                 </motion.section>

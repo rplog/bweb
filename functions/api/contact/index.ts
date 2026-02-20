@@ -59,22 +59,30 @@ async function sendEmail(env: Record<string, unknown>, name: string, email: stri
     const fromAddress = String(env.SMTP_FROM || env.SMTP_USER);
     const toAddress = String(env.SMTP_TO || fromAddress);
 
-    await WorkerMailer.send({
-        host: String(env.SMTP_HOST),
-        port: port,
-        credentials: {
-            username: String(env.SMTP_USER),
-            password: String(env.SMTP_PASS)
-        },
-        startTls: port === 587,
-        secure: port === 465
-    }, {
-        from: `"${name}" <${fromAddress}>`,
-        to: toAddress,
-        subject: `New Contact: ${name}`,
-        text: `Name: ${name}\nEmail: ${email}\n\n${message}`,
-        reply: email
-    });
+    console.log(`[Email] Attempting to send from "${fromAddress}" to "${toAddress}"`);
+
+    try {
+        await WorkerMailer.send({
+            host: String(env.SMTP_HOST),
+            port: port,
+            credentials: {
+                username: String(env.SMTP_USER),
+                password: String(env.SMTP_PASS)
+            },
+            startTls: port === 587,
+            secure: port === 465
+        }, {
+            from: `"${name}" <${fromAddress}>`,
+            to: toAddress,
+            subject: `New Contact: ${name}`,
+            text: `Name: ${name}\nEmail: ${email}\n\n${message}`,
+            reply: email
+        });
+        console.log(`[Email] Successfully sent to "${toAddress}"`);
+    } catch (e: unknown) {
+        console.error(`[Email] FAILED to send to "${toAddress}". Error:`, e);
+        throw e; // Re-throw so the retry logic catches it
+    }
 }
 
 export const onRequestPost: PagesFunction<{

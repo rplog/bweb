@@ -1,4 +1,3 @@
-import { WorkerMailer } from 'worker-mailer';
 import { checkRateLimit } from "../../utils/rateLimit";
 
 // Retry helper: exponential backoff with configurable attempts
@@ -55,34 +54,26 @@ async function sendTelegram(env: Record<string, unknown>, chatId: string, name: 
 }
 
 async function sendEmail(env: Record<string, unknown>, name: string, email: string, message: string): Promise<void> {
-    const port = parseInt(String(env.SMTP_PORT || '587'));
-    const fromAddress = String(env.SMTP_FROM || env.SMTP_USER);
-    const toAddress = String(env.SMTP_TO || fromAddress);
+    const relayUrl = String(env.EMAIL_RELAY_URL);
+    const relaySecret = String(env.EMAIL_RELAY_SECRET);
 
-    console.log(`[Email] Attempting to send from "${fromAddress}" to "${toAddress}"`);
+    console.log(`[Email] Sending via relay: ${relayUrl}`);
 
-    try {
-        await WorkerMailer.send({
-            host: String(env.SMTP_HOST),
-            port: port,
-            credentials: {
-                username: String(env.SMTP_USER),
-                password: String(env.SMTP_PASS)
-            },
-            startTls: port === 587,
-            secure: port === 465
-        }, {
-            from: `"${name}" <${fromAddress}>`,
-            to: toAddress,
-            subject: `New Contact: ${name}`,
-            text: `Name: ${name}\nEmail: ${email}\n\n${message}`,
-            reply: email
-        });
-        console.log(`[Email] Successfully sent to "${toAddress}"`);
-    } catch (e: unknown) {
-        console.error(`[Email] FAILED to send to "${toAddress}". Error:`, e);
-        throw e; // Re-throw so the retry logic catches it
+    const res = await fetch(relayUrl, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Relay-Secret': relaySecret
+        },
+        body: JSON.stringify({ name, email, message })
+    });
+
+    if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`Relay ${res.status}: ${text}`);
     }
+
+    console.log(`[Email] Relay accepted successfully`);
 }
 
 export const onRequestPost: PagesFunction<{
@@ -90,12 +81,8 @@ export const onRequestPost: PagesFunction<{
     RATE_LIMITER: KVNamespace,
     TELEGRAM_BOT_TOKEN: string,
     TELEGRAM_CHAT_ID: string,
-    SMTP_HOST: string,
-    SMTP_PORT: string,
-    SMTP_USER: string,
-    SMTP_PASS: string,
-    SMTP_FROM: string,
-    SMTP_TO: string
+    EMAIL_RELAY_URL: string,
+    EMAIL_RELAY_SECRET: string
 }> = async (context) => {
     try {
         const { request, env } = context;
@@ -139,7 +126,7 @@ export const onRequestPost: PagesFunction<{
         }
 
         // 4. Send Email with retry (fire-and-forget, 3 attempts)
-        if (notificationChannels.includes('email') && env.SMTP_HOST && env.SMTP_USER && env.SMTP_PASS) {
+        if (notificationChannels.includes('email') && env.EMAIL_RELAY_URL && env.EMAIL_RELAY_SECRET) {
             context.waitUntil(
                 withRetry(() => sendEmail(env, name, email, message), 'Email', 3, 1000)
                     .catch(err => console.error('[Email] All retries failed:', err.message))

@@ -9,8 +9,23 @@ interface SEOProps {
 
 export const useSEO = ({ title, description, url, image }: SEOProps) => {
     useEffect(() => {
-        // Store original values to restore on cleanup (optional, depends on behavior preference)
-        // For this SPA, we just overwrite.
+        // Capture original values to restore on cleanup
+        const prevTitle = document.title;
+        const prevDescription = document.querySelector('meta[name="description"]')?.getAttribute('content') || '';
+        
+        const getMeta = (p: string) => document.querySelector(`meta[property="${p}"]`)?.getAttribute('content') || null;
+        const getTwitter = (n: string) => document.querySelector(`meta[name="${n}"]`)?.getAttribute('content') || null;
+        
+        const prevOgTitle = getMeta('og:title');
+        const prevOgDesc = getMeta('og:description');
+        const prevOgUrl = getMeta('og:url');
+        const prevOgImage = getMeta('og:image');
+        
+        const prevTwTitle = getTwitter('twitter:title');
+        const prevTwDesc = getTwitter('twitter:description');
+        const prevTwImage = getTwitter('twitter:image');
+        
+        const prevCanonical = document.querySelector('link[rel="canonical"]')?.getAttribute('href') || null;
 
         // Update Title
         document.title = title;
@@ -62,6 +77,44 @@ export const useSEO = ({ title, description, url, image }: SEOProps) => {
             canonical.setAttribute('href', url);
             document.head.appendChild(canonical);
         }
+
+        // Cleanup: Restore previous SEO values when component unmounts
+        return () => {
+            document.title = prevTitle;
+            const md = document.querySelector('meta[name="description"]');
+            if (md) md.setAttribute('content', prevDescription);
+
+            const restoreMeta = (p: string, c: string | null) => {
+                const el = document.querySelector(`meta[property="${p}"]`);
+                if (el) {
+                    if (c !== null) el.setAttribute('content', c);
+                    else el.remove();
+                }
+            };
+
+            restoreMeta('og:title', prevOgTitle);
+            restoreMeta('og:description', prevOgDesc);
+            restoreMeta('og:url', prevOgUrl);
+            restoreMeta('og:image', prevOgImage);
+
+            const restoreTwitter = (n: string, c: string | null) => {
+                const el = document.querySelector(`meta[name="${n}"]`);
+                if (el) {
+                    if (c !== null) el.setAttribute('content', c);
+                    else el.remove();
+                }
+            };
+
+            restoreTwitter('twitter:title', prevTwTitle);
+            restoreTwitter('twitter:description', prevTwDesc);
+            restoreTwitter('twitter:image', prevTwImage);
+
+            const can = document.querySelector('link[rel="canonical"]');
+            if (can) {
+                if (prevCanonical !== null) can.setAttribute('href', prevCanonical);
+                else can.remove();
+            }
+        };
 
     }, [title, description, url, image]);
 };

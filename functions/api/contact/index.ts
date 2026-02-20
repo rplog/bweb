@@ -56,6 +56,8 @@ async function sendTelegram(env: Record<string, unknown>, chatId: string, name: 
 
 async function sendEmail(env: Record<string, unknown>, name: string, email: string, message: string): Promise<void> {
     const port = parseInt(String(env.SMTP_PORT || '587'));
+    const fromAddress = String(env.SMTP_FROM || env.SMTP_USER);
+    const toAddress = String(env.SMTP_TO || fromAddress);
 
     await WorkerMailer.send({
         host: String(env.SMTP_HOST),
@@ -67,8 +69,8 @@ async function sendEmail(env: Record<string, unknown>, name: string, email: stri
         startTls: port === 587,
         secure: port === 465
     }, {
-        from: String(env.SMTP_FROM || env.SMTP_USER),
-        to: String(env.SMTP_FROM || env.SMTP_USER),
+        from: `"${name}" <${fromAddress}>`,
+        to: toAddress,
         subject: `New Contact: ${name}`,
         text: `Name: ${name}\nEmail: ${email}\n\n${message}`,
         reply: email
@@ -84,7 +86,8 @@ export const onRequestPost: PagesFunction<{
     SMTP_PORT: string,
     SMTP_USER: string,
     SMTP_PASS: string,
-    SMTP_FROM: string
+    SMTP_FROM: string,
+    SMTP_TO: string
 }> = async (context) => {
     try {
         const { request, env } = context;
@@ -112,7 +115,9 @@ export const onRequestPost: PagesFunction<{
 
         // 2. Check notification preferences
         const configResult = await env.DB.prepare("SELECT value FROM config WHERE key = 'notification_channels'").first();
-        const notificationChannels = (configResult?.value as string || 'telegram,email').split(',');
+        const notificationChannels = (configResult?.value as string || 'telegram,email')
+            .split(',')
+            .map(s => s.trim().toLowerCase());
 
         // 3. Send Telegram with retry (fire-and-forget, 3 attempts)
         if (notificationChannels.includes('telegram') && env.TELEGRAM_BOT_TOKEN && env.TELEGRAM_CHAT_ID) {

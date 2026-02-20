@@ -41,12 +41,13 @@ export const Projects = () => {
     ];
 
     return (
-        <div className="h-full w-full bg-elegant-bg text-elegant-text-secondary font-mono selection:bg-elegant-accent/20 overflow-y-auto">
-            <div className="min-h-full flex flex-col">
+        <div className="h-full w-full bg-elegant-bg text-elegant-text-secondary font-mono selection:bg-elegant-accent/20 overflow-hidden">
+            <div className="h-full flex flex-col">
                 <Spotlight onNavigate={handleNavigate} />
                 <PageHeader currentPath="projects" onNavigate={handleNavigate} className="shrink-0" maxWidth="max-w-7xl" />
 
-                <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 flex flex-col">
+                {/* Main Content */}
+                <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-4 lg:py-8 flex flex-col min-h-0 overflow-y-auto custom-scrollbar">
                     {/* Breadcrumbs */}
                     <nav aria-label="Breadcrumb" className="mb-8 text-base font-semibold text-elegant-text-muted flex items-center gap-2 shrink-0">
                         <button

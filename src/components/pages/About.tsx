@@ -37,13 +37,13 @@ export const About = () => {
     });
 
     return (
-        <div className="h-full w-full bg-elegant-bg text-elegant-text-secondary font-mono selection:bg-elegant-accent/20 overflow-y-auto">
-            <div className="min-h-full flex flex-col">
+        <div className="h-full w-full bg-elegant-bg text-elegant-text-secondary font-mono selection:bg-elegant-accent/20 overflow-hidden">
+            <div className="h-full flex flex-col">
                 <Spotlight onNavigate={handleNavigate} />
                 <PageHeader currentPath="about" onNavigate={handleNavigate} className="shrink-0" maxWidth="max-w-7xl" />
 
                 {/* Main Content */}
-                <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 flex flex-col">
+                <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-4 lg:py-8 flex flex-col min-h-0 overflow-y-auto custom-scrollbar">
                     {/* Breadcrumbs */}
                     <nav aria-label="Breadcrumb" className="mb-6 text-base font-semibold text-elegant-text-muted flex items-center gap-2 shrink-0">
                         <button
@@ -59,7 +59,7 @@ export const About = () => {
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                         {/* Profile Card */}
                         <aside className="lg:col-span-1" aria-label="User Profile">
-                            <div className="bg-elegant-card border border-elegant-border rounded-sm p-6 lg:sticky lg:top-8">
+                            <div className="bg-elegant-card border border-elegant-border rounded-lg p-6 lg:sticky lg:top-8 shadow-xl">
                                 <div className="flex flex-col items-center text-center">
                                     <div
                                         className="w-24 h-24 lg:w-32 lg:h-32 rounded-full bg-elegant-bg border border-elegant-border p-1 mb-4 lg:mb-6 cursor-pointer hover:border-elegant-accent transition-colors group"
@@ -141,14 +141,14 @@ export const About = () => {
                                         scale: activeCard === 'about' ? 1 : 0.94,
                                         rotate: activeCard === 'about' ? 0 : 2,
                                         zIndex: activeCard === 'about' ? 10 : 1,
-                                        opacity: activeCard === 'about' ? 1 : 0.5,
                                     }}
                                     transition={{ type: 'spring', stiffness: 200, damping: 20 }}
                                     onClick={() => activeCard !== 'about' && setActiveCard('about')}
                                     style={{ cursor: activeCard !== 'about' ? 'pointer' : 'auto' }}
                                     aria-labelledby="about-me-heading"
                                 >
-                                    <div className="flex items-center gap-3 mb-4 lg:mb-6">
+                                    <div className={`transition-opacity duration-300 ${activeCard === 'about' ? 'opacity-100 pointer-events-auto' : 'opacity-30 pointer-events-none'}`}>
+                                        <div className="flex items-center gap-3 mb-4 lg:mb-6">
                                         <Code className="text-elegant-text-muted" size={20} aria-hidden="true" />
                                         <h2 id="about-me-heading" className="text-lg font-bold text-elegant-text-primary">About Me</h2>
                                     </div>
@@ -215,6 +215,7 @@ export const About = () => {
                                             </div>
                                         </div>
                                     </div>
+                                    </div>
                                     
                                     {/* Overlay for inactive state */}
                                     {activeCard !== 'about' && (
@@ -233,14 +234,14 @@ export const About = () => {
                                         scale: activeCard === 'tech' ? 1 : 0.94,
                                         rotate: activeCard === 'tech' ? 0 : -2,
                                         zIndex: activeCard === 'tech' ? 10 : 1,
-                                        opacity: activeCard === 'tech' ? 1 : 0.5,
                                     }}
                                     transition={{ type: 'spring', stiffness: 200, damping: 20 }}
                                     onClick={() => activeCard !== 'tech' && setActiveCard('tech')}
                                     style={{ cursor: activeCard !== 'tech' ? 'pointer' : 'auto' }}
                                     aria-labelledby="tech-stack-heading"
                                 >
-                                    <h2 id="tech-stack-heading" className="text-lg font-bold text-elegant-text-primary mb-6">Tech Stack</h2>
+                                    <div className={`flex flex-col h-full transition-opacity duration-300 ${activeCard === 'tech' ? 'opacity-100 pointer-events-auto' : 'opacity-30 pointer-events-none'}`}>
+                                        <h2 id="tech-stack-heading" className="text-lg font-bold text-elegant-text-primary mb-6">Tech Stack</h2>
                                     <div className="flex flex-col gap-3 w-full">
                                         {[
                                             { name: 'React', icon: SiReact, hex: '#61DAFB', progress: 95 },
@@ -279,6 +280,7 @@ export const About = () => {
                                                 </div>
                                             </div>
                                         ))}
+                                    </div>
                                     </div>
                                     
                                     {/* Overlay for inactive state */}

@@ -58,13 +58,13 @@ export const Contact = () => {
     };
 
     return (
-        <div className="h-full w-full bg-elegant-bg text-elegant-text-secondary font-mono selection:bg-elegant-accent/20 overflow-y-auto lg:overflow-hidden">
+        <div className="h-full w-full bg-elegant-bg text-elegant-text-secondary font-mono selection:bg-elegant-accent/20 overflow-hidden">
             <div className="h-full flex flex-col">
                 <Spotlight onNavigate={handleNavigate} />
                 <PageHeader currentPath="contact" onNavigate={handleNavigate} className="shrink-0" maxWidth="max-w-7xl" />
 
                 {/* Main Content */}
-                <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 flex flex-col">
+                <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-4 lg:py-8 flex flex-col min-h-0 overflow-y-auto custom-scrollbar">
                     {/* Breadcrumbs */}
                     <nav aria-label="Breadcrumb" className="mb-6 text-base font-semibold text-elegant-text-muted flex items-center gap-2 shrink-0">
                         <button

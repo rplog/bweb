@@ -313,12 +313,12 @@ export const Notes = () => {
     }
 
     return (
-        <div className="h-full w-full bg-elegant-bg text-elegant-text-secondary font-mono selection:bg-elegant-accent/20 overflow-y-auto">
-            <div className="min-h-full flex flex-col">
+        <div className="h-full w-full bg-elegant-bg text-elegant-text-secondary font-mono selection:bg-elegant-accent/20 overflow-hidden">
+            <div className="h-full flex flex-col">
                 <Spotlight onNavigate={handleNavigate} />
-                <PageHeader currentPath="notes" onNavigate={handleNavigate} className="sticky top-0 z-30" maxWidth="max-w-7xl" />
+                <PageHeader currentPath="notes" onNavigate={handleNavigate} className="sticky top-0 z-30 shrink-0" maxWidth="max-w-7xl" />
 
-                <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
+                <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-4 lg:py-8 flex flex-col min-h-0 overflow-y-auto custom-scrollbar">
                     {/* Header Section */}
                     <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div className="flex items-center gap-2 text-base font-semibold text-elegant-text-muted">

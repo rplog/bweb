@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import { useCallback } from 'react';
 import { useNavigate } from 'react-router';
 import { SiGithub, SiX, SiLinkedin, SiTelegram } from 'react-icons/si';
 import { Dock } from './Dock';

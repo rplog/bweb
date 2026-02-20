@@ -1,4 +1,4 @@
-import React from 'react';
+
 import type { Album } from './types';
 import { AlbumCard } from './AlbumCard';
 

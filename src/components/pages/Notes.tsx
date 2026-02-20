@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Spotlight } from '../Spotlight';
 import { PageHeader } from '../PageHeader';
 import { Dock } from '../Dock';
@@ -287,8 +287,9 @@ export const Notes = () => {
                 fetchNotes();
             }
 
-        } catch (e: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
-            showAlert(`Error saving note: ${e.message}`, 'error');
+        } catch (e: unknown) {
+            const msg = e instanceof Error ? e.message : 'Unknown error';
+            showAlert(`Error saving note: ${msg}`, 'error');
             throw e;
         }
     };

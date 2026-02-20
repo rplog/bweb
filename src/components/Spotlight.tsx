@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Search, Home, Terminal, Image, User, Mail, FolderGit2, FileText } from 'lucide-react';
 
 interface SpotlightProps {

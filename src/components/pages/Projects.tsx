@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { Spotlight } from '../Spotlight';
 import { PageHeader } from '../PageHeader';
 import { Dock } from '../Dock';

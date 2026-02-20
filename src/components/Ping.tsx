@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 
 interface PingProps {
     host: string;
@@ -163,7 +163,7 @@ export const Ping = ({ host, onComplete, count }: PingProps) => {
 
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.ctrlKey && e.key === 'c') {
-                if (isRunning) {
+                if (isRunningRef.current) {
                     if (abortControllerRef.current) abortControllerRef.current.abort();
                     clearTimeout(timeoutId);
                     finalizePing(true);
@@ -179,8 +179,7 @@ export const Ping = ({ host, onComplete, count }: PingProps) => {
             if (abortControllerRef.current) abortControllerRef.current.abort();
             window.removeEventListener('keydown', handleKeyDown);
         };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [host, count, isValidHost, finalizePing]);
+    }, [host, count, isValidHost, finalizePing, onComplete]);
 
     return (
         <div className="text-elegant-text-primary">

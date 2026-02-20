@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 interface TypewriterProps {
     text: string;
@@ -8,16 +8,19 @@ interface TypewriterProps {
 
 export const Typewriter = ({ text, speed = 10, onComplete }: TypewriterProps) => {
     const [currentLength, setCurrentLength] = useState(0);
-    const onCompleteRef = React.useRef(onComplete);
+    const [prevText, setPrevText] = useState(text);
+
+    // Modern React pattern: Derive state during render instead of forcing an effect update
+    if (text !== prevText) {
+        setPrevText(text);
+        setCurrentLength(0);
+    }
+
+    const onCompleteRef = useRef(onComplete);
 
     useEffect(() => {
         onCompleteRef.current = onComplete;
     }, [onComplete]);
-
-    useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setCurrentLength(0);
-    }, [text]);
 
     useEffect(() => {
         const timer = setInterval(() => {

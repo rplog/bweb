@@ -130,3 +130,13 @@ body {
 .animate-fade-out {
   animation: fade-out 3s forwards;
 }
+
+/* Tech Stack Component Styles */
+@layer components {
+  .tech-stack-icon {
+    @apply w-full h-full opacity-80 group-hover:opacity-100 transition-opacity;
+  }
+  .tech-stack-text {
+    @apply text-sm md:text-base font-medium text-elegant-text-secondary whitespace-nowrap;
+  }
+}

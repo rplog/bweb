@@ -236,7 +236,7 @@ export const About = () => {
                                                     </div>
                                                     <div className="tech-stack-text">{skill.name}</div>
                                                 </div>
-                                                <div className="text-xs text-elegant-text-muted font-mono opacity-60 group-hover:opacity-100 transition-opacity pr-2">
+                                                <div className="text-sm font-medium text-elegant-text-secondary font-mono">
                                                     {skill.progress}%
                                                 </div>
                                             </div>

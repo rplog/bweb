@@ -202,7 +202,7 @@ export const About = () => {
                             {/* Skills Card */}
                             <section className="bg-elegant-card border border-elegant-border rounded-sm p-6" aria-labelledby="tech-stack-heading">
                                 <h2 id="tech-stack-heading" className="text-lg font-bold text-elegant-text-primary mb-6">Tech Stack</h2>
-                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                <div className="flex flex-wrap gap-3">
                                     {[
                                         { name: 'React', icon: SiReact, color: 'text-[#61DAFB]' },
                                         { name: 'TypeScript', icon: SiTypescript, color: 'text-[#3178C6]' },
@@ -213,12 +213,14 @@ export const About = () => {
                                     ].map((skill) => (
                                         <div
                                             key={skill.name}
-                                            className="bg-elegant-bg border border-elegant-border rounded-sm p-3 hover:border-elegant-text-muted transition-all cursor-default flex items-center gap-3 group"
+                                            className="bg-elegant-bg border border-elegant-border rounded-sm p-3 md:p-4 hover:border-elegant-text-muted transition-all cursor-default flex items-center gap-3 group shrink-0"
                                             role="article"
                                             aria-label={`Skill: ${skill.name}`}
                                         >
-                                            <skill.icon size={20} className={`${skill.color} opacity-80 group-hover:opacity-100 transition-opacity`} aria-hidden="true" />
-                                            <div className="text-xs text-elegant-text-secondary">{skill.name}</div>
+                                            <div className="shrink-0 flex items-center justify-center w-6 h-6 md:w-8 md:h-8">
+                                                <skill.icon size={28} className={`w-full h-full ${skill.color} opacity-80 group-hover:opacity-100 transition-opacity`} aria-hidden="true" />
+                                            </div>
+                                            <div className="text-sm md:text-base font-medium text-elegant-text-secondary whitespace-nowrap">{skill.name}</div>
                                         </div>
                                     ))}
                                 </div>

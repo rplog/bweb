@@ -21,7 +21,7 @@ export const Desktop = ({ onOpenTerminal }: DesktopProps) => {
     }, [onOpenTerminal, navigate]);
 
     return (
-        <div className="h-full w-full bg-[#1e1e1e]/50 backdrop-blur-3xl relative overflow-hidden font-mono flex flex-col p-4">
+        <div className="fixed inset-0 bg-elegant-bg flex flex-col items-center justify-center font-mono select-none">
             {/* Dock Component now handles navigation natively */}
             <div className="flex-1 flex flex-col items-center justify-center px-6 max-w-4xl mx-auto text-center">
                     {/* SEO-rich intro */}

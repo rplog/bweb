@@ -28,13 +28,15 @@ export const Dock: React.FC<DockProps> = ({ onNavigate, currentPage, className =
     const itemRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
 
     useEffect(() => {
-        if (currentPage) {
+        if (currentPage && scrollContainerRef.current) {
             const element = itemRefs.current.get(currentPage);
-            if (element) {
-                element.scrollIntoView({
-                    behavior: 'smooth',
-                    inline: 'center',
-                    block: 'nearest'
+            const container = scrollContainerRef.current;
+            
+            if (element && container) {
+                const scrollLeft = element.offsetLeft - (container.clientWidth / 2) + (element.clientWidth / 2);
+                container.scrollTo({
+                    left: scrollLeft,
+                    behavior: 'smooth'
                 });
             }
         }

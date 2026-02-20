@@ -2,8 +2,8 @@
 @plugin "@tailwindcss/typography";
 
 @font-face {
-  font-family: 'Fira Code';
-  src: url('/fonts/FiraCode-VariableFont_wght.woff2') format('woff2-variations');
+  font-family: "Fira Code";
+  src: url("/fonts/FiraCode-VariableFont_wght.woff2") format("woff2-variations");
   font-weight: 300 700;
   font-style: normal;
   font-display: swap;
@@ -18,14 +18,15 @@
   --color-elegant-text-secondary: #a0a0a0;
   --color-elegant-text-muted: #888888;
 
-  --color-elegant-accent: #C9A66B;
-  --color-elegant-accent-hover: #E0C080;
+  --color-elegant-accent: #c9a66b;
+  --color-elegant-accent-hover: #e0c080;
 }
 
 :root {
   --term-color: var(--color-elegant-text-primary);
   --term-bg: var(--color-elegant-bg);
-  --term-font: 'Fira Code', 'Consolas', 'Monaco', 'Andale Mono', 'Ubuntu Mono', monospace;
+  --term-font:
+    "Fira Code", "Consolas", "Monaco", "Andale Mono", "Ubuntu Mono", monospace;
   --term-prompt: var(--color-elegant-accent);
   --term-error: #ff5555;
   --term-link: var(--color-elegant-accent-hover);
@@ -36,6 +37,7 @@ html {
   position: fixed;
   inset: 0;
   overflow: hidden;
+  font-size: 18px; /* Scales everything sized across the site built on rems */
 }
 
 html,
@@ -51,9 +53,12 @@ body {
   background-color: var(--term-bg);
   color: var(--term-color);
   font-family: var(--term-font);
-  font-size: 18px;
+  font-size: 1rem;
+  font-weight: 500;
   line-height: 1.6;
   overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* Scrollbar styles for desktop */
@@ -90,7 +95,6 @@ body {
 
 /* Animations */
 @keyframes swipe-hint {
-
   0%,
   100% {
     transform: translateX(0);

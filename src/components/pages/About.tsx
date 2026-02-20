@@ -8,7 +8,7 @@ import { useNavigate } from 'react-router';
 
 import { useSEO } from '../../hooks/useSEO';
 
-export const About: React.FC = () => {
+export const About = () => {
     const navigate = useNavigate();
     const onExit = () => navigate('/');
     

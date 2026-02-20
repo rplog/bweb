@@ -24,12 +24,12 @@ interface GalleryModalsProps {
     setConfirmConfig: (config: ConfirmConfig | null) => void;
 }
 
-export const GalleryModals: React.FC<GalleryModalsProps> = ({
+export const GalleryModals = ({
     promptConfig, setPromptConfig,
     alertConfig, setAlertConfig,
     editAlbumConfig, setEditAlbumConfig,
     confirmConfig, setConfirmConfig,
-}) => {
+}: GalleryModalsProps) => {
     return (
         <>
             <ActionModals

@@ -33,7 +33,7 @@ const resolveNestedPath = (parts: string[], albums: Album[]): { album: Album | n
 
 import { useSEO } from '../../hooks/useSEO';
 
-export const Gallery: React.FC = () => {
+export const Gallery = () => {
     const navigate = useNavigate();
     const onExit = useCallback(() => navigate('/'), [navigate]);
     useSEO({

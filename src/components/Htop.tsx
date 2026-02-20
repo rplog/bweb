@@ -63,7 +63,7 @@ interface HtopProps {
     onExit: () => void;
 }
 
-export const Htop: React.FC<HtopProps> = ({ onExit }) => {
+export const Htop = ({ onExit }: HtopProps) => {
     const [cpu, setCpu] = useState<number[][]>([
         [15, 10, 5, 2], // CPU 0: [user, system, nice, iowait]
         [20, 8, 3, 1],  // CPU 1

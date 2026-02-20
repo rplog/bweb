@@ -8,12 +8,12 @@ interface PageHeaderProps {
     maxWidth?: string;
 }
 
-export const PageHeader: React.FC<PageHeaderProps> = ({
+export const PageHeader = ({
     currentPath,
     onNavigate,
     className = "",
     maxWidth = "max-w-6xl"
-}) => {
+}: PageHeaderProps) => {
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
 

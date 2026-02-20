@@ -8,7 +8,7 @@ interface DesktopProps {
     onOpenTerminal: () => void;
 }
 
-export const Desktop: React.FC<DesktopProps> = ({ onOpenTerminal }) => {
+export const Desktop = ({ onOpenTerminal }: DesktopProps) => {
     const navigate = useNavigate();
 
     const handleDockNavigate = useCallback((dest: string) => {

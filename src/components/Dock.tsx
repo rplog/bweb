@@ -23,7 +23,7 @@ const items: DockItem[] = [
     { label: 'Terminal', icon: TerminalIcon, accent: true },
 ];
 
-export const Dock: React.FC<DockProps> = ({ onNavigate, currentPage, className = '' }) => {
+export const Dock = ({ onNavigate, currentPage, className = '' }: DockProps) => {
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const itemRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
 

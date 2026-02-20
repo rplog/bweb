@@ -45,7 +45,7 @@ interface GalleryAdminProps {
     onNewAlbumClick: () => void;
 }
 
-export const GalleryAdmin: React.FC<GalleryAdminProps> = ({
+export const GalleryAdmin = ({
     isAdmin,
     activeAlbumTitle,
     showUploadModal,
@@ -62,7 +62,7 @@ export const GalleryAdmin: React.FC<GalleryAdminProps> = ({
     resetUploadForm,
     albums,
     onNewAlbumClick
-}) => {
+}: GalleryAdminProps) => {
     const [isAlbumDropdownOpen, setIsAlbumDropdownOpen] = useState(false);
     const albumDropdownRef = useRef<HTMLDivElement>(null);
 

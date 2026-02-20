@@ -5,7 +5,7 @@ interface SpotlightProps {
     onNavigate: (destination: string) => void;
 }
 
-export const Spotlight: React.FC<SpotlightProps> = ({ onNavigate }) => {
+export const Spotlight = ({ onNavigate }: SpotlightProps) => {
     const [isOpen, setIsOpen] = useState(false);
     const [query, setQuery] = useState('');
     const [selectedIndex, setSelectedIndex] = useState(0);

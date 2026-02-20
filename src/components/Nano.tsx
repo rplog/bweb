@@ -7,7 +7,7 @@ interface NanoProps {
     onExit: () => void;
 }
 
-export const Nano: React.FC<NanoProps> = ({ filename: initialFilename, initialContent, onSaveAs, onExit }) => {
+export const Nano = ({ filename: initialFilename, initialContent, onSaveAs, onExit }: NanoProps) => {
     const [content, setContent] = useState(initialContent);
     const [filename, setFilename] = useState(initialFilename);
     const [message, setMessage] = useState('');

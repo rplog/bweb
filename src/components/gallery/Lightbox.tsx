@@ -25,7 +25,7 @@ interface LightboxProps {
     onUpdateCaption: () => void;
 }
 
-export const Lightbox: React.FC<LightboxProps> = ({ activePhoto, onClose, onNext, onPrev, isAdmin, onDelete, onRename, onUpdateCaption }) => {
+export const Lightbox = ({ activePhoto, onClose, onNext, onPrev, isAdmin, onDelete, onRename, onUpdateCaption }: LightboxProps) => {
     // Swipe Logic
     const [touchStart, setTouchStart] = useState<number | null>(null);
     const [touchEnd, setTouchEnd] = useState<number | null>(null);

@@ -17,7 +17,7 @@ interface TerminalProps {
     onClose: () => void;
 }
 
-export const Terminal: React.FC<TerminalProps> = ({ terminalMode, onMinimize, onMaximize, onRestore, onClose }) => {
+export const Terminal = ({ terminalMode, onMinimize, onMaximize, onRestore, onClose }: TerminalProps) => {
     const {
         history,
         getPromptPath,

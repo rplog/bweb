@@ -69,7 +69,7 @@ interface PhotoGridProps {
     onDeletePhoto: (key: string) => void;
 }
 
-export const PhotoGrid: React.FC<PhotoGridProps> = ({ photos, isAdmin, onOpenPhoto, onDeletePhoto }) => {
+export const PhotoGrid = ({ photos, isAdmin, onOpenPhoto, onDeletePhoto }: PhotoGridProps) => {
     return (
         <div className="columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4">
             {photos.map((photo, i) => (

@@ -34,11 +34,11 @@ interface ActionModalsProps {
     setConfirmConfig?: (config: ConfirmConfig | null) => void;
 }
 
-export const ActionModals: React.FC<ActionModalsProps> = ({
+export const ActionModals = ({
     promptConfig, setPromptConfig,
     alertConfig, setAlertConfig,
     confirmConfig, setConfirmConfig,
-}) => {
+}: ActionModalsProps) => {
     return (
         <>
             {/* Prompt Modal */}

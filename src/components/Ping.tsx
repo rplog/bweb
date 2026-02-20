@@ -6,7 +6,7 @@ interface PingProps {
     count?: number; // Optional: limit number of pings
 }
 
-export const Ping: React.FC<PingProps> = ({ host, onComplete, count }) => {
+export const Ping = ({ host, onComplete, count }: PingProps) => {
     const [lines, setLines] = useState<string[]>([]);
     const [isRunning, setIsRunning] = useState(true);
     const [stats, setStats] = useState<{ tx: number; rx: number; loss: number; min: number; avg: number; max: number } | null>(null);

@@ -8,7 +8,7 @@ import { SiGithub } from 'react-icons/si';
 
 import { useSEO } from '../../hooks/useSEO';
 
-export const Projects: React.FC = () => {
+export const Projects = () => {
     const navigate = useNavigate();
     const onExit = () => navigate('/');
     

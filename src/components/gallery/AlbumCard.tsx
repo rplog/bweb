@@ -35,7 +35,7 @@ interface AlbumCardProps {
     onDelete: (title: string, isAlbum?: boolean) => void;
 }
 
-export const AlbumCard: React.FC<AlbumCardProps> = ({ album, displayTitle, isAdmin, onOpen, onEditAlbum, onDelete }) => (
+export const AlbumCard = ({ album, displayTitle, isAdmin, onOpen, onEditAlbum, onDelete }: AlbumCardProps) => (
     <div
         className="group relative bg-elegant-card border border-elegant-border rounded-sm overflow-hidden hover:border-elegant-text-muted transition-all duration-300 cursor-pointer"
         onClick={() => onOpen(album)}

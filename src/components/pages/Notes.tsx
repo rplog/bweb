@@ -31,7 +31,7 @@ import { useNavigate } from 'react-router';
 
 import { useSEO } from '../../hooks/useSEO';
 
-export const Notes: React.FC = () => {
+export const Notes = () => {
     const navigate = useNavigate();
     const onExit = () => navigate('/');
     

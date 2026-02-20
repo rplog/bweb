@@ -6,7 +6,7 @@ interface TypewriterProps {
     onComplete?: () => void;
 }
 
-export const Typewriter: React.FC<TypewriterProps> = ({ text, speed = 10, onComplete }) => {
+export const Typewriter = ({ text, speed = 10, onComplete }: TypewriterProps) => {
     const [currentLength, setCurrentLength] = useState(0);
     const onCompleteRef = React.useRef(onComplete);
 

@@ -10,7 +10,7 @@ interface AlbumGridProps {
     onDelete: (title: string, isAlbum?: boolean) => void;
 }
 
-export const AlbumGrid: React.FC<AlbumGridProps> = ({ albums, isAdmin, onOpen, onEditAlbum, onDelete }) => {
+export const AlbumGrid = ({ albums, isAdmin, onOpen, onEditAlbum, onDelete }: AlbumGridProps) => {
     return (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {albums.map((album) => (

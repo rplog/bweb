@@ -41,7 +41,7 @@ const HistoryItem = React.memo(({ entry }: { entry: TerminalOutput }) => (
     </div>
 ));
 
-export const OutputDisplay: React.FC<OutputDisplayProps> = ({ history }) => {
+export const OutputDisplay = ({ history }: OutputDisplayProps) => {
     return (
         <div className="flex flex-col space-y-2 mb-2">
             {history.map((entry) => (

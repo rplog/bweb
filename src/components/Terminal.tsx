@@ -148,6 +148,7 @@ export const Terminal = ({ terminalMode, onMinimize, onMaximize, onRestore, onCl
                                 minHeight={240}
                                 bounds="window"
                                 dragHandleClassName="terminal-drag-handle"
+                                cancel=".no-drag"
                                 className="pointer-events-auto rounded-lg shadow-2xl shadow-black/60 border border-elegant-border bg-elegant-bg absolute"
                             >
                                 <div className="w-full h-full flex flex-col overflow-hidden rounded-lg">
@@ -155,10 +156,15 @@ export const Terminal = ({ terminalMode, onMinimize, onMaximize, onRestore, onCl
                                     <div 
                                         className="terminal-drag-handle w-full h-10 bg-elegant-card flex items-center px-4 justify-end border-b border-elegant-border flex-shrink-0 select-none relative z-20 cursor-grab active:cursor-grabbing"
                                     >
-                                        <div className="absolute left-4 transform-none md:left-1/2 md:-translate-x-1/2 text-gray-400 text-lg font-medium font-mono truncate max-w-[60%] md:max-w-none">
+                                        <div className="absolute left-4 transform-none md:left-1/2 md:-translate-x-1/2 text-gray-400 text-lg font-medium font-mono truncate max-w-[60%] md:max-w-none pointer-events-none">
                                             {user}@neosphere:~
                                         </div>
-                                        <div className="flex gap-3 relative z-10 cursor-auto" onPointerDown={(e) => e.stopPropagation()}>
+                                        <div 
+                                            className="flex gap-3 relative z-10 cursor-auto no-drag" 
+                                            onPointerDown={(e) => e.stopPropagation()}
+                                            onTouchStart={(e) => e.stopPropagation()}
+                                            onMouseDown={(e) => e.stopPropagation()}
+                                        >
                                             <div
                                                 onClick={onMinimize}
                                                 className="p-1.5 hover:bg-white/10 rounded-full transition-colors cursor-pointer text-gray-500 hover:text-white"
@@ -211,10 +217,15 @@ export const Terminal = ({ terminalMode, onMinimize, onMaximize, onRestore, onCl
                             >
                                 {/* Top Bar - KDE / Linux Style */}
                                 <div className="w-full h-10 bg-elegant-card flex items-center px-4 justify-end border-b border-elegant-border flex-shrink-0 select-none relative z-20">
-                                    <div className="absolute left-4 transform-none md:left-1/2 md:-translate-x-1/2 text-gray-400 text-lg font-medium font-mono truncate max-w-[60%] md:max-w-none">
+                                    <div className="absolute left-4 transform-none md:left-1/2 md:-translate-x-1/2 text-gray-400 text-lg font-medium font-mono truncate max-w-[60%] md:max-w-none pointer-events-none">
                                         {user}@neosphere:~
                                     </div>
-                                    <div className="flex gap-3 relative z-10">
+                                    <div 
+                                        className="flex gap-3 relative z-10 cursor-auto no-drag"
+                                        onPointerDown={(e) => e.stopPropagation()}
+                                        onTouchStart={(e) => e.stopPropagation()}
+                                        onMouseDown={(e) => e.stopPropagation()}
+                                    >
                                         <div
                                             onClick={onMinimize}
                                             className="p-1.5 hover:bg-white/10 rounded-full transition-colors cursor-pointer text-gray-500 hover:text-white"

@@ -4,7 +4,6 @@ import { Htop } from '../components/Htop';
 import { Ping } from '../components/Ping';
 import { Nano } from '../components/Nano';
 
-import { createNavigator } from './navigation';
 import React from 'react';
 
 export interface CommandContext {
@@ -13,7 +12,7 @@ export interface CommandContext {
     user: string;
     setUser?: (user: string) => void;
     setFileSystem?: (updater: ((prev: Record<string, FileSystemNode>) => Record<string, FileSystemNode>) | Record<string, FileSystemNode>) => void;
-    setFullScreenWithRoute?: (component: React.ReactNode, route: string) => void;
+    navigate?: (path: string) => void;
     setFullScreen?: (component: React.ReactNode | null) => void;
     setIsInputVisible: (visible: boolean) => void;
     addToHistory?: (command: string, output: string | React.ReactNode) => void;
@@ -748,13 +747,12 @@ export const commands: Record<string, Command> = {
     },
     notes: {
         description: 'View visitor notes',
-        execute: (_args, { setFullScreen }) => {
-            if (setFullScreen) {
-                const navigate = createNavigator(setFullScreen);
-                navigate('Notes');
+        execute: (_args, { navigate }) => {
+            if (navigate) {
+                navigate('/notes');
                 return '';
             }
-            return 'Error: Fullscreen mode not supported';
+            return 'Error: Navigation not supported';
         }
     },
     ping: {
@@ -895,46 +893,42 @@ export const commands: Record<string, Command> = {
     },
     gallery: {
         description: 'Open Gallery',
-        execute: (_args, { setFullScreen }) => {
-            if (setFullScreen) {
-                const navigate = createNavigator(setFullScreen);
-                navigate('Gallery');
+        execute: (_args, { navigate }) => {
+            if (navigate) {
+                navigate('/gallery');
                 return '';
             }
-            return 'Fullscreen not supported';
+            return 'Navigation not supported';
         }
     },
     about: {
         description: 'Open About page',
-        execute: (_args, { setFullScreen }) => {
-            if (setFullScreen) {
-                const navigate = createNavigator(setFullScreen);
-                navigate('About');
+        execute: (_args, { navigate }) => {
+            if (navigate) {
+                navigate('/about');
                 return '';
             }
-            return 'Fullscreen not supported';
+            return 'Navigation not supported';
         }
     },
     contact: {
         description: 'Open Contact page',
-        execute: (_args, { setFullScreen }) => {
-            if (setFullScreen) {
-                const navigate = createNavigator(setFullScreen);
-                navigate('Contact');
+        execute: (_args, { navigate }) => {
+            if (navigate) {
+                navigate('/contact');
                 return '';
             }
-            return 'Fullscreen not supported';
+            return 'Navigation not supported';
         }
     },
     projects: {
         description: 'Open Projects page',
-        execute: (_args, { setFullScreen }) => {
-            if (setFullScreen) {
-                const navigate = createNavigator(setFullScreen);
-                navigate('Projects');
+        execute: (_args, { navigate }) => {
+            if (navigate) {
+                navigate('/projects');
                 return '';
             }
-            return 'Fullscreen not supported';
+            return 'Navigation not supported';
         }
     },
     grep: {

@@ -1,18 +1,12 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { commands } from '../utils/commands';
 import { resolvePath, resolvePathArray } from '../utils/fileSystemUtils';
-import { createNavigator } from '../utils/navigation';
 import { useCommandHistory, type TerminalOutput } from './terminal/useCommandHistory';
 import { useFileSystem } from './terminal/useFileSystem';
 import { useTerminalUser } from './terminal/useTerminalUser';
-import { useRouting } from './terminal/useRouting';
+import { useNavigate } from 'react-router';
 
-// Import pages for direct routing
-import { Gallery } from '../components/pages/Gallery';
-import { About } from '../components/pages/About';
-import { Contact } from '../components/pages/Contact';
-import { Projects } from '../components/pages/Projects';
-import { Notes } from '../components/pages/Notes';
+// Component imports removed since routing is handled by React Router
 
 export type { TerminalOutput };
 
@@ -20,8 +14,11 @@ export const useTerminal = () => {
     const { user, setUser } = useTerminalUser();
     const { fileSystem, setFileSystem, currentPath, setCurrentPath, getPromptPath } = useFileSystem();
     const { history, addToHistory, clearHistory, inputHistory, setInputHistory } = useCommandHistory(user, getPromptPath);
-    const { activeComponent, activeComponentRef, isInputVisible, setIsInputVisible, setFullScreenWithRoute, setActiveComponent } = useRouting();
+    
+    const [activeComponent, setActiveComponent] = useState<React.ReactNode | null>(null);
+    const [isInputVisible, setIsInputVisible] = useState(true);
 
+    const navigate = useNavigate();
     const initializedRef = useRef(false);
     const executeRef = useRef<(commandStr: string, isInitialLoad?: boolean) => Promise<void>>(async () => { });
 
@@ -71,7 +68,8 @@ export const useTerminal = () => {
             try {
                 const context = {
                     currentPath,
-                    setFullScreen: setFullScreenWithRoute,
+                    navigate,
+                    setFullScreen: setActiveComponent,
                     setIsInputVisible,
                     fileSystem,
                     setFileSystem,
@@ -98,7 +96,7 @@ export const useTerminal = () => {
         } else {
             addToHistory(trimmed, `${cmdName}: command not found`);
         }
-    }, [addToHistory, clearHistory, currentPath, fileSystem, setFullScreenWithRoute, setInputHistory, setCurrentPath, setFileSystem, user, setUser, setIsInputVisible]);
+    }, [addToHistory, clearHistory, currentPath, fileSystem, navigate, setActiveComponent, setInputHistory, setCurrentPath, setFileSystem, user, setUser, setIsInputVisible]);
 
     // Keep executeRef current so the popstate handler never captures a stale closure
     useEffect(() => {
@@ -106,77 +104,17 @@ export const useTerminal = () => {
     });
 
     // Handle initial routing - runs once on mount
-    useEffect(() => {
+    useLayoutEffect(() => {
         if (initializedRef.current) return;
         initializedRef.current = true;
-
-        const path = window.location.pathname;
-        const navigate = createNavigator(setFullScreenWithRoute);
-
-        // Direct routing for initial load
-        if (path === '/gallery' || path.startsWith('/gallery/')) {
-            setFullScreenWithRoute(<Gallery onExit={() => setFullScreenWithRoute(null)} onNavigate={navigate} />, path);
-        } else if (path === '/about') {
-            setFullScreenWithRoute(<About onExit={() => setFullScreenWithRoute(null)} onNavigate={navigate} />, path);
-        } else if (path === '/contact') {
-            setFullScreenWithRoute(<Contact onExit={() => setFullScreenWithRoute(null)} onNavigate={navigate} />, path);
-        } else if (path === '/projects') {
-            setFullScreenWithRoute(<Projects onExit={() => setFullScreenWithRoute(null)} onNavigate={navigate} />, path);
-        } else if (path === '/notes') {
-            setFullScreenWithRoute(<Notes onExit={() => setFullScreenWithRoute(null)} onNavigate={navigate} />, path);
-        } else if (path !== '/' && path !== '/index.html') {
-            addToHistory(`access ${path}`, (
-                <div className="flex flex-col">
-                    <span className="text-red-500 font-bold">404 ERROR: ROUTE NOT FOUND</span>
-                    <span className="text-elegant-text-primary">The requested path '{path}' does not exist in this sector.</span>
-                    <span className="text-elegant-text-secondary italic">Redirecting to safe harbor...</span>
-                </div>
-            ));
-            window.history.replaceState({}, '', '/');
-        }
 
         const params = new URLSearchParams(window.location.search);
         const dir = params.get('dir');
         if (dir) {
             executeRef.current(`cd ${dir}`, true);
-            window.history.replaceState({}, '', '/');
+            window.history.replaceState({}, '', window.location.pathname);
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
-
-    // Popstate handler - registered once
-    useEffect(() => {
-        const handlePopState = () => {
-            const path = window.location.pathname;
-            const navigate = createNavigator(setFullScreenWithRoute);
-
-            if (path === '/') {
-                setActiveComponent(null);
-                activeComponentRef.current = null;
-            } else if (path === '/gallery' || path.startsWith('/gallery/')) {
-                // For gallery, only mount if not already active to avoid resetting state during internal navigation
-                // BUT if we are coming from another page, we MUST mount it.
-                if (!activeComponentRef.current || !activeComponentRef.current.toString().includes('Gallery')) {
-                    // Note: checking toString() on component is flaky, but checking path through useRouting context/state would be better
-                    // However, simplify: Just remount. React reconciliation should handle it if it's the same type?
-                    // Actually, Gallery handles its own internal routing. We just ensure Gallery is mounted.
-                    // The safe bet is: if we are at /gallery path, ensure Gallery component is the active one.
-                    setFullScreenWithRoute(<Gallery onExit={() => setFullScreenWithRoute(null)} onNavigate={navigate} />, path);
-                }
-            } else if (path === '/about') {
-                setFullScreenWithRoute(<About onExit={() => setFullScreenWithRoute(null)} onNavigate={navigate} />, path);
-            } else if (path === '/contact') {
-                setFullScreenWithRoute(<Contact onExit={() => setFullScreenWithRoute(null)} onNavigate={navigate} />, path);
-            } else if (path === '/projects') {
-                setFullScreenWithRoute(<Projects onExit={() => setFullScreenWithRoute(null)} onNavigate={navigate} />, path);
-            } else if (path === '/notes') {
-                setFullScreenWithRoute(<Notes onExit={() => setFullScreenWithRoute(null)} onNavigate={navigate} />, path);
-            }
-        };
-
-        window.addEventListener('popstate', handlePopState);
-        return () => window.removeEventListener('popstate', handlePopState);
-    }, [setActiveComponent, activeComponentRef, setFullScreenWithRoute]);
 
     const handleTabCompletion = (input: string): string => {
         if (!input) return '';
@@ -219,6 +157,8 @@ export const useTerminal = () => {
         clearHistory,
         activeComponent,
         isInputVisible,
+        setIsInputVisible,
+        setActiveComponent,
         handleTabCompletion,
         fileSystem,
         setFileSystem,

@@ -4,7 +4,7 @@ import { Spotlight } from '../Spotlight';
 import { PageHeader } from '../PageHeader';
 import { Dock } from '../Dock';
 import { ArrowLeft, FolderPlus } from 'lucide-react';
-import { createNavigationHandler } from '../../utils/navigation';
+import { useNavigate } from 'react-router';
 import type { Album, Photo } from '../gallery/types';
 import { AlbumGrid } from '../gallery/AlbumGrid';
 import { PhotoGrid } from '../gallery/PhotoGrid';
@@ -31,14 +31,11 @@ const resolveNestedPath = (parts: string[], albums: Album[]): { album: Album | n
     return { album: null, photoFilename: null };
 };
 
-interface GalleryProps {
-    onExit: () => void;
-    onNavigate: (path: string) => void;
-}
-
 import { useSEO } from '../../hooks/useSEO';
 
-export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
+export const Gallery: React.FC = () => {
+    const navigate = useNavigate();
+    const onExit = useCallback(() => navigate('/'), [navigate]);
     useSEO({
         title: 'Gallery | Bahauddin Alam',
         description: 'Explore my photography portfolio. A collection of moments captured from my travels and daily life.',
@@ -174,7 +171,16 @@ export const Gallery: React.FC<GalleryProps> = ({ onExit, onNavigate }) => {
     }, [albums]);
 
 
-    const handleNavigate = createNavigationHandler(onExit, onNavigate);
+    const handleNavigate = useCallback((dest: string) => {
+        if (dest === 'Terminal') {
+            onExit();
+            window.dispatchEvent(new CustomEvent('open-terminal'));
+        } else if (dest === 'Home') {
+            onExit();
+        } else {
+            navigate(`/${dest.toLowerCase()}`);
+        }
+    }, [navigate, onExit]);
 
     const encodeAlbumPath = useCallback((title: string) => {
         return title.split('/').map(s => encodeURIComponent(s)).join('/');

@@ -4,28 +4,35 @@ import { PageHeader } from '../PageHeader';
 import { Code, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { Dock } from '../Dock';
 import { SiGithub, SiX, SiLinkedin, SiReact, SiTypescript, SiRust, SiTailwindcss, SiPython, SiTelegram, SiNodedotjs } from 'react-icons/si';
-import { createNavigationHandler } from '../../utils/navigation';
+import { useNavigate } from 'react-router';
 
 import { useSEO } from '../../hooks/useSEO';
 
-interface AboutProps {
-    onExit: () => void;
-    onNavigate?: (dest: string) => void;
-}
+export const About: React.FC = () => {
+    const navigate = useNavigate();
+    const onExit = () => navigate('/');
+    
+    const handleNavigate = (dest: string) => {
+        if (dest === 'Terminal') {
+            onExit();
+            window.dispatchEvent(new CustomEvent('open-terminal'));
+        } else if (dest === 'Home') {
+            onExit();
+        } else {
+            navigate(`/${dest.toLowerCase()}`);
+        }
+    };
 
-export const About: React.FC<AboutProps> = ({ onExit, onNavigate }) => {
+    const [showProfile, setShowProfile] = useState(false);
+    const [hasImageError, setHasImageError] = useState(false);
+    const [isExpanded, setIsExpanded] = useState(false);
+
     useSEO({
         title: 'About | Bahauddin Alam',
         description: 'About Bahauddin Alam - Full Stack Developer specializing in React, TypeScript, and Rust. Based in Patna, India.',
         url: 'https://bahauddin.in/about',
         image: 'https://bahauddin.in/assets/me.jpg'
     });
-
-    const handleNavigate = createNavigationHandler(onExit, onNavigate);
-
-    const [showProfile, setShowProfile] = useState(false);
-    const [hasImageError, setHasImageError] = useState(false);
-    const [isExpanded, setIsExpanded] = useState(false);
 
     return (
         <div className="h-full w-full bg-elegant-bg text-elegant-text-secondary font-mono selection:bg-elegant-accent/20 overflow-y-auto">

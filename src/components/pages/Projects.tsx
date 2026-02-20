@@ -3,24 +3,31 @@ import { Spotlight } from '../Spotlight';
 import { PageHeader } from '../PageHeader';
 import { Dock } from '../Dock';
 import { FolderGit2 } from 'lucide-react';
-import { createNavigationHandler } from '../../utils/navigation';
+import { useNavigate } from 'react-router';
 import { SiGithub } from 'react-icons/si';
 
 import { useSEO } from '../../hooks/useSEO';
 
-interface ProjectsProps {
-    onExit: () => void;
-    onNavigate?: (dest: string) => void;
-}
-
-export const Projects: React.FC<ProjectsProps> = ({ onExit, onNavigate }) => {
+export const Projects: React.FC = () => {
+    const navigate = useNavigate();
+    const onExit = () => navigate('/');
+    
     useSEO({
         title: 'Projects | Bahauddin Alam',
         description: 'Showcase of my recent projects. From web applications to system tools, explore what I\'ve built.',
         url: 'https://bahauddin.in/projects'
     });
 
-    const handleNavigate = createNavigationHandler(onExit, onNavigate);
+    const handleNavigate = (dest: string) => {
+        if (dest === 'Terminal') {
+            onExit();
+            window.dispatchEvent(new CustomEvent('open-terminal'));
+        } else if (dest === 'Home') {
+            onExit();
+        } else {
+            navigate(`/${dest.toLowerCase()}`);
+        }
+    };
 
     const projects = [
         {

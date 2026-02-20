@@ -1,4 +1,5 @@
 import React, { useRef, useEffect } from 'react';
+import { useLocation } from 'react-router';
 import { useTerminal } from '../hooks/useTerminal';
 import type { CommandInputHandle } from './CommandInput';
 import type { TerminalMode } from '../App';
@@ -28,8 +29,11 @@ export const Terminal: React.FC<TerminalProps> = ({ terminalMode, onMinimize, on
     const inputRef = useRef<CommandInputHandle>(null);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
 
+    const location = useLocation();
+    const isHome = location.pathname === '/' || location.pathname === '/index.html';
+
     const isWindowed = terminalMode === 'windowed';
-    const isVisible = terminalMode !== 'hidden' && !activeComponent;
+    const isVisible = terminalMode !== 'hidden' && !activeComponent && isHome;
 
     // Reset SEO when returning to Desktop/Home
     useEffect(() => {

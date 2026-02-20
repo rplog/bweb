@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Spotlight } from '../Spotlight';
 import { PageHeader } from '../PageHeader';
 import { Dock } from '../Dock';
-import { createNavigationHandler } from '../../utils/navigation';
 import { FileText, Calendar, User, Search, X, Loader2, Maximize2, Plus, Edit, Trash2, Share2, AlertCircle } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -28,14 +27,25 @@ interface NoteDetail {
     content: string;
 }
 
-interface NotesProps {
-    onExit: () => void;
-    onNavigate: (path: string) => void;
-}
+import { useNavigate } from 'react-router';
 
 import { useSEO } from '../../hooks/useSEO';
 
-export const Notes: React.FC<NotesProps> = ({ onExit, onNavigate }) => {
+export const Notes: React.FC = () => {
+    const navigate = useNavigate();
+    const onExit = () => navigate('/');
+    
+    const handleNavigate = (dest: string) => {
+        if (dest === 'Terminal') {
+            onExit();
+            window.dispatchEvent(new CustomEvent('open-terminal'));
+        } else if (dest === 'Home') {
+            onExit();
+        } else {
+            navigate(`/${dest.toLowerCase()}`);
+        }
+    };
+
     const [selectedNote, setSelectedNote] = useState<Note | null>(null);
 
     useSEO({
@@ -43,8 +53,6 @@ export const Notes: React.FC<NotesProps> = ({ onExit, onNavigate }) => {
         description: selectedNote ? `Read ${selectedNote.filename} on my personal digital garden.` : 'My personal digital garden. A collection of notes, thoughts, and learnings on software development and technology.',
         url: selectedNote ? `https://bahauddin.in/notes?note=${encodeURIComponent(selectedNote.filename)}` : 'https://bahauddin.in/notes'
     });
-
-    const handleNavigate = createNavigationHandler(onExit, onNavigate);
     const [notes, setNotes] = useState<Note[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');

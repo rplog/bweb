@@ -1,14 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router';
 import { SiGithub, SiX, SiLinkedin, SiTelegram } from 'react-icons/si';
 import { Dock } from './Dock';
 import { Spotlight } from './Spotlight';
 
 interface DesktopProps {
     onOpenTerminal: () => void;
-    onNavigate: (dest: string) => void;
 }
 
-export const Desktop: React.FC<DesktopProps> = ({ onOpenTerminal, onNavigate }) => {
+export const Desktop: React.FC<DesktopProps> = ({ onOpenTerminal }) => {
+    const navigate = useNavigate();
     const [time, setTime] = useState(new Date());
 
     useEffect(() => {
@@ -22,9 +23,9 @@ export const Desktop: React.FC<DesktopProps> = ({ onOpenTerminal, onNavigate }) 
         } else if (dest === 'Home') {
             // Already on desktop, no-op
         } else {
-            onNavigate(dest);
+            navigate(`/${dest.toLowerCase()}`);
         }
-    }, [onOpenTerminal, onNavigate]);
+    }, [onOpenTerminal, navigate]);
 
     return (
         <div className="fixed inset-0 bg-elegant-bg flex flex-col items-center justify-center font-mono select-none">

@@ -3,16 +3,25 @@ import { Spotlight } from '../Spotlight';
 import { PageHeader } from '../PageHeader';
 import { Send, User, Mail, MessageSquare } from 'lucide-react';
 import { Dock } from '../Dock';
-import { createNavigationHandler } from '../../utils/navigation';
+import { useNavigate } from 'react-router';
 
 import { useSEO } from '../../hooks/useSEO';
 
-interface ContactProps {
-    onExit: () => void;
-    onNavigate?: (dest: string) => void;
-}
+export const Contact: React.FC = () => {
+    const navigate = useNavigate();
+    const onExit = () => navigate('/');
+    
+    const handleNavigate = (dest: string) => {
+        if (dest === 'Terminal') {
+            onExit();
+            window.dispatchEvent(new CustomEvent('open-terminal'));
+        } else if (dest === 'Home') {
+            onExit();
+        } else {
+            navigate(`/${dest.toLowerCase()}`);
+        }
+    };
 
-export const Contact: React.FC<ContactProps> = ({ onExit, onNavigate }) => {
     useSEO({
         title: 'Contact | Bahauddin Alam',
         description: 'Get in touch with Bahauddin Alam. Available for freelance projects and collaborations.',
@@ -20,10 +29,6 @@ export const Contact: React.FC<ContactProps> = ({ onExit, onNavigate }) => {
     });
 
     const [formData, setFormData] = useState({ name: '', email: '', message: '' });
-
-
-    const handleNavigate = createNavigationHandler(onExit, onNavigate);
-
     const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
 
     const handleSubmit = async (e: React.FormEvent) => {

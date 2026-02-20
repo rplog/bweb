@@ -111,8 +111,8 @@ export const About = () => {
                                         <div className="flex justify-between py-2 border-t border-elegant-border">
                                             <span className="text-elegant-text-secondary">Status</span>
                                             <span className="text-elegant-text-muted flex items-center gap-1.5">
-                                                <span className="w-1.5 h-1.5 bg-elegant-accent rounded-full" aria-hidden="true"></span>
-                                                Online
+                                                <span className="w-1.5 h-1.5 bg-green-500 rounded-full" aria-hidden="true"></span>
+                                                Active
                                             </span>
                                         </div>
                                         <div className="flex justify-between py-2 border-t border-elegant-border">

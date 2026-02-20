@@ -316,7 +316,7 @@ export const Notes = () => {
             <div className="h-full flex flex-col">
                 <PageHeader currentPath="notes" onNavigate={handleNavigate} className="sticky top-0 z-30 shrink-0" maxWidth="max-w-7xl" />
                     
-                <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-4 pb-28 lg:pt-8 lg:pb-32 flex flex-col min-h-0 overflow-y-auto custom-scrollbar">
+                <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-4 pb-28 lg:pt-8 lg:pb-32 flex flex-col min-h-0 overflow-y-auto">
                     {/* Header Section */}
                     <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div className="flex items-center gap-2 text-base font-semibold text-elegant-text-muted">
@@ -473,7 +473,7 @@ export const Notes = () => {
                                 </div>
 
                                 {/* Modal Content */}
-                                <div className="flex-1 overflow-y-auto p-6 md:p-8 bg-elegant-bg custom-scrollbar">
+                                <div className="flex-1 overflow-y-auto p-6 md:p-8 bg-elegant-bg">
                                     {contentLoading ? (
                                         <div className="flex flex-col items-center justify-center py-20 text-elegant-text-muted">
                                             <Loader2 size={32} className="animate-spin mb-4" />

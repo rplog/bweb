@@ -132,7 +132,7 @@ export const Spotlight = () => {
                         </div>
                         <div
                             ref={listRef}
-                            className="max-h-[60vh] sm:max-h-[300px] overflow-y-auto py-2 custom-scrollbar"
+                            className="max-h-[60vh] sm:max-h-[300px] overflow-y-auto py-2"
                         >
                             {filtered.map((opt, i) => (
                                 <button

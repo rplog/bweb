@@ -89,7 +89,7 @@ export const About = () => {
                                                     loading="eager"
                                                 />
                                             ) : (
-                                                <span className="text-4xl font-bold text-elegant-text-muted">N</span>
+                                                <span className="text-4xl font-bold text-elegant-text-muted">B</span>
                                             )}
                                         </div>
                                     </div>
@@ -137,7 +137,7 @@ export const About = () => {
                         {/* Content Section */}
                         <div className="lg:col-span-2 flex flex-col pt-4 lg:pt-8 w-full min-w-0">
                             {/* Desktop & Mobile: Stacked Cards with Framer Motion */}
-                            <div className="relative grid grid-cols-1 grid-rows-1 items-start w-full perspective-[1000px]">
+                            <div className="relative grid grid-cols-1 grid-rows-1 items-start w-full">
                                 {/* Bio Card */}
                                 <motion.section 
                                     className="col-start-1 row-start-1 bg-elegant-card border border-elegant-border rounded-lg shadow-2xl p-6 origin-top w-full overflow-hidden"
@@ -255,7 +255,7 @@ export const About = () => {
                                         zIndex: activeCard === 'tech' ? 10 : 1,
                                     }}
                                     transition={{ type: 'spring', stiffness: 200, damping: 20 }}
-                                    onClick={() => activeCard !== 'tech' && setActiveCard('tech')}
+                                    onClick={() => { if (activeCard !== 'tech') { setActiveCard('tech'); setIsExpanded(false); } }}
                                     style={{ cursor: activeCard !== 'tech' ? 'pointer' : 'auto' }}
                                     aria-labelledby="tech-stack-heading"
                                 >
@@ -265,9 +265,9 @@ export const About = () => {
                                         {[
                                             { name: 'React', icon: SiReact, hex: '#61DAFB', progress: 95 },
                                             { name: 'TypeScript', icon: SiTypescript, hex: '#3178C6', progress: 90 },
-                                            { name: 'Rust', icon: SiRust, hex: '#646CFF', progress: 75 },
+                                            { name: 'Rust', icon: SiRust, hex: '#CE422B', progress: 75 },
                                             { name: 'Node.js', icon: SiNodedotjs, hex: '#339933', progress: 90 },
-                                            { name: 'Python', icon: SiPython, hex: '#F38020', progress: 85 },
+                                            { name: 'Python', icon: SiPython, hex: '#3776AB', progress: 85 },
                                             { name: 'Tailwind', icon: SiTailwindcss, hex: '#06B6D4', progress: 98 }
                                         ].map((skill, index) => (
                                             <div
@@ -315,6 +315,7 @@ export const About = () => {
                                                 onClick={(e: React.MouseEvent) => {
                                                     e.stopPropagation();
                                                     setActiveCard('tech');
+                                                    setIsExpanded(false);
                                                 }}
                                             >
                                                 View Tech Stack
@@ -339,6 +340,7 @@ export const About = () => {
                         <button
                             className="absolute top-4 right-4 p-2 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors"
                             onClick={() => setShowProfile(false)}
+                            aria-label="Close profile picture"
                         >
                             <X size={24} />
                         </button>

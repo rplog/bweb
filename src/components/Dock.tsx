@@ -43,8 +43,8 @@ export const Dock = ({ onNavigate, currentPage, className = '' }: DockProps) => 
     }, [currentPage]);
 
     return (
-        <nav className={`w-full px-3 ${className}`} aria-label="Navigation">
-            <div className="mx-auto max-w-fit bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl px-3 py-2 overflow-hidden">
+        <nav className={`fixed bottom-0 left-0 right-0 z-50 w-full px-4 pb-4 pt-2 pointer-events-none ${className}`} aria-label="Navigation">
+            <div className="mx-auto max-w-fit bg-elegant-bg/70 backdrop-blur-xl border border-white/10 rounded-2xl px-3 py-2 shadow-2xl pointer-events-auto">
                 <div 
                     ref={scrollContainerRef}
                     className="flex items-center overflow-x-auto no-scrollbar" 

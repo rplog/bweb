@@ -28,6 +28,14 @@ export const About = () => {
     const [hasImageError, setHasImageError] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
     const [activeCard, setActiveCard] = useState<'about' | 'tech'>('about');
+    const [hasGlowed, setHasGlowed] = useState(false);
+
+    React.useEffect(() => {
+        const timer = setTimeout(() => {
+            setHasGlowed(true);
+        }, 2000);
+        return () => clearTimeout(timer);
+    }, []);
 
     useSEO({
         title: 'About | Bahauddin Alam',
@@ -222,7 +230,7 @@ export const About = () => {
                                         <div className="absolute inset-0 z-50 flex items-start justify-center pt-2 pointer-events-none">
                                             <motion.span 
                                                 className="bg-elegant-bg/80 text-elegant-text-primary px-3 py-1 rounded-full text-xs font-bold shadow-lg border uppercase tracking-wider backdrop-blur-sm relative overflow-hidden pointer-events-auto cursor-pointer"
-                                                initial={{ borderColor: 'rgba(201, 166, 107, 0.8)', boxShadow: '0 0 15px rgba(201,166,107,0.4)' }}
+                                                initial={!hasGlowed ? { borderColor: 'rgba(201, 166, 107, 0.8)', boxShadow: '0 0 15px rgba(201,166,107,0.4)' } : { borderColor: 'rgba(201, 166, 107, 0.1)', boxShadow: '0 0 0px rgba(201,166,107,0)' }}
                                                 animate={{ borderColor: 'rgba(201, 166, 107, 0.1)', boxShadow: '0 0 0px rgba(201,166,107,0)' }}
                                                 transition={{ duration: 2, ease: "easeOut" }}
                                                 whileHover={{ scale: 1.05 }}
@@ -301,7 +309,7 @@ export const About = () => {
                                         <div className="absolute inset-0 z-50 flex items-start justify-center pt-2 pointer-events-none">
                                             <motion.span 
                                                 className="bg-elegant-bg/80 text-elegant-text-primary px-3 py-1 rounded-full text-xs font-bold shadow-lg border uppercase tracking-wider backdrop-blur-sm relative overflow-hidden pointer-events-auto cursor-pointer"
-                                                initial={{ borderColor: 'rgba(201, 166, 107, 0.8)', boxShadow: '0 0 15px rgba(201,166,107,0.4)' }}
+                                                initial={!hasGlowed ? { borderColor: 'rgba(201, 166, 107, 0.8)', boxShadow: '0 0 15px rgba(201,166,107,0.4)' } : { borderColor: 'rgba(201, 166, 107, 0.1)', boxShadow: '0 0 0px rgba(201,166,107,0)' }}
                                                 animate={{ borderColor: 'rgba(201, 166, 107, 0.1)', boxShadow: '0 0 0px rgba(201,166,107,0)' }}
                                                 transition={{ duration: 2, ease: "easeOut" }}
                                                 whileHover={{ scale: 1.05 }}

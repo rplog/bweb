@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { Spotlight } from '../Spotlight';
 import { PageHeader } from '../PageHeader';
 import { Code, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { Dock } from '../Dock';
@@ -47,7 +46,6 @@ export const About = () => {
     return (
         <div className="h-full w-full bg-elegant-bg text-elegant-text-secondary font-mono selection:bg-elegant-accent/20 overflow-hidden">
             <div className="h-full flex flex-col">
-                <Spotlight onNavigate={handleNavigate} />
                 <PageHeader currentPath="about" onNavigate={handleNavigate} className="shrink-0" maxWidth="max-w-7xl" />
 
                 {/* Main Content */}

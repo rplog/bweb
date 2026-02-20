@@ -3,6 +3,7 @@ import { RouterProvider, createBrowserRouter, Outlet, useLocation } from 'react-
 import { Terminal } from './components/Terminal';
 import { Desktop } from './components/Desktop';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { Spotlight } from './components/Spotlight';
 
 // Pages
 import { Gallery } from './components/pages/Gallery';
@@ -43,6 +44,8 @@ function RootLayout() {
           onClose={() => setTerminalMode('hidden')}
         />
       </ErrorBoundary>
+
+      <Spotlight />
 
       {/* Full Screen Component Layer */}
       {!isHome && (

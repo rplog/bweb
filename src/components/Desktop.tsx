@@ -2,7 +2,6 @@ import { useCallback } from 'react';
 import { useNavigate } from 'react-router';
 import { SiGithub, SiX, SiLinkedin, SiTelegram } from 'react-icons/si';
 import { Dock } from './Dock';
-import { Spotlight } from './Spotlight';
 
 interface DesktopProps {
     onOpenTerminal: () => void;
@@ -22,10 +21,8 @@ export const Desktop = ({ onOpenTerminal }: DesktopProps) => {
     }, [onOpenTerminal, navigate]);
 
     return (
-        <div className="fixed inset-0 bg-elegant-bg flex flex-col items-center justify-center font-mono select-none">
-            <Spotlight onNavigate={handleDockNavigate} />
-
-            {/* Main content area */}
+        <div className="h-full w-full bg-[#1e1e1e]/50 backdrop-blur-3xl relative overflow-hidden font-mono flex flex-col p-4">
+            {/* Dock Component now handles navigation natively */}
             <div className="flex-1 flex flex-col items-center justify-center px-6 max-w-4xl mx-auto text-center">
                     {/* SEO-rich intro */}
                     <div className="mb-6">
@@ -37,7 +34,7 @@ export const Desktop = ({ onOpenTerminal }: DesktopProps) => {
                         </h2>
                         <div className="text-elegant-text-secondary text-sm md:text-base leading-relaxed max-w-2xl mx-auto mb-10">
                             <p>
-                                I build high-performance web applications and developer-focused systems using tools like React, TypeScript, and Python. Explore my portfolio spanning frontend architectures to edge-deployed backends.
+                                I build high-performance web applications and developer focused systems using tools like React, TypeScript, and Python. Explore my portfolio spanning frontend architectures to edge deployed backends.
                             </p>
                         </div>
                     </div>

@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { Spotlight } from '../Spotlight';
 import { PageHeader } from '../PageHeader';
-import { Send, User, Mail, MessageSquare } from 'lucide-react';
+import { Mail, MessageSquare, Send, User } from 'lucide-react';
 import { Dock } from '../Dock';
 import { useNavigate } from 'react-router';
 
@@ -58,13 +57,12 @@ export const Contact = () => {
     };
 
     return (
-        <div className="h-full w-full bg-elegant-bg text-elegant-text-secondary font-mono selection:bg-elegant-accent/20 overflow-hidden">
+        <div className="h-full w-full bg-elegant-bg text-elegant-text-secondary font-mono overflow-hidden">
             <div className="h-full flex flex-col">
-                <Spotlight onNavigate={handleNavigate} />
-                <PageHeader currentPath="contact" onNavigate={handleNavigate} className="shrink-0" maxWidth="max-w-7xl" />
+                <PageHeader currentPath="contact" onNavigate={handleNavigate} className="shrink-0" maxWidth="max-w-4xl" />
 
                 {/* Main Content */}
-                <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-4 pb-28 lg:pt-8 lg:pb-32 flex flex-col min-h-0 overflow-y-auto custom-scrollbar">
+                <main className="flex-1 max-w-4xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-4 pb-28 lg:pt-8 lg:pb-32 flex flex-col min-h-0 overflow-y-auto custom-scrollbar">
                     {/* Breadcrumbs */}
                     <nav aria-label="Breadcrumb" className="mb-6 text-base font-semibold text-elegant-text-muted flex items-center gap-2 shrink-0">
                         <button

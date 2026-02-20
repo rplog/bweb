@@ -1,5 +1,3 @@
-
-import { Spotlight } from '../Spotlight';
 import { PageHeader } from '../PageHeader';
 import { Dock } from '../Dock';
 import { FolderGit2 } from 'lucide-react';
@@ -43,7 +41,6 @@ export const Projects = () => {
     return (
         <div className="h-full w-full bg-elegant-bg text-elegant-text-secondary font-mono selection:bg-elegant-accent/20 overflow-hidden">
             <div className="h-full flex flex-col">
-                <Spotlight onNavigate={handleNavigate} />
                 <PageHeader currentPath="projects" onNavigate={handleNavigate} className="shrink-0" maxWidth="max-w-7xl" />
 
                 {/* Main Content */}

@@ -39,6 +39,7 @@ function RootLayout() {
           terminalMode={terminalMode}
           onMinimize={() => setTerminalMode('hidden')}
           onMaximize={() => setTerminalMode('maximized')}
+          onRestore={() => setTerminalMode('windowed')}
           onClose={() => setTerminalMode('hidden')}
         />
       </ErrorBoundary>

@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { useLocation } from 'react-router';
 import { useTerminal } from '../hooks/useTerminal';
 import type { CommandInputHandle } from './CommandInput';
@@ -6,15 +6,18 @@ import type { TerminalMode } from '../App';
 import { CommandInput } from './CommandInput';
 import { OutputDisplay } from './OutputDisplay';
 import { Minus, Square, Maximize2, X } from 'lucide-react';
+import { Rnd } from 'react-rnd';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface TerminalProps {
     terminalMode: TerminalMode;
     onMinimize: () => void;
     onMaximize: () => void;
+    onRestore: () => void;
     onClose: () => void;
 }
 
-export const Terminal: React.FC<TerminalProps> = ({ terminalMode, onMinimize, onMaximize, onClose }) => {
+export const Terminal: React.FC<TerminalProps> = ({ terminalMode, onMinimize, onMaximize, onRestore, onClose }) => {
     const {
         history,
         getPromptPath,
@@ -34,6 +37,31 @@ export const Terminal: React.FC<TerminalProps> = ({ terminalMode, onMinimize, on
 
     const isWindowed = terminalMode === 'windowed';
     const isVisible = terminalMode !== 'hidden' && !activeComponent && isHome;
+
+    // Track Rnd state for smooth restoring
+    const [rndState, setRndState] = useState({
+        x: window.innerWidth * 0.1,
+        y: window.innerHeight * 0.1,
+        width: window.innerWidth * 0.8,
+        height: window.innerHeight * 0.8
+    });
+
+    // Handle responsive default spawn size
+    useEffect(() => {
+        const handleResize = () => {
+             setRndState((prev: { x: number, y: number, width: number, height: number }) => ({
+                ...prev,
+                x: window.innerWidth * 0.1,
+                y: window.innerHeight * 0.1,
+                width: window.innerWidth * 0.8,
+                height: window.innerHeight * 0.8
+             }));
+        };
+        // Set initial
+        handleResize();
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     // Reset SEO when returning to Desktop/Home
     useEffect(() => {
@@ -95,69 +123,146 @@ export const Terminal: React.FC<TerminalProps> = ({ terminalMode, onMinimize, on
             )}
 
             {/* Terminal Window */}
-            <div className={`fixed z-30 transition-all duration-300 ease-out ${
-                !isVisible
-                    ? 'opacity-0 invisible pointer-events-none scale-95'
-                    : 'opacity-100 scale-100'
-            } ${
-                isWindowed
-                    ? 'inset-3 md:inset-[8%] lg:inset-x-[12%] lg:inset-y-[8%] rounded-lg shadow-2xl shadow-black/60 border border-elegant-border'
-                    : 'inset-0'
-            }`}>
-                <div className={`w-full h-full flex flex-col overflow-hidden ${isWindowed ? 'rounded-lg' : ''} bg-elegant-bg`}>
-                    {/* Top Bar - KDE / Linux Style */}
-                    <div className={`w-full h-10 bg-elegant-card flex items-center px-4 justify-end border-b border-elegant-border flex-shrink-0 select-none relative z-20 ${
-                        isWindowed ? 'cursor-default' : ''
-                    }`}>
-                        <div className="absolute left-4 transform-none md:left-1/2 md:-translate-x-1/2 text-gray-400 text-lg font-medium font-mono truncate max-w-[60%] md:max-w-none">
-                            {user}@neosphere:~
-                        </div>
-                        <div className="flex gap-3 relative z-10">
-                            <div
-                                onClick={onMinimize}
-                                className="p-1.5 hover:bg-white/10 rounded-full transition-colors cursor-pointer text-gray-500 hover:text-white"
-                                title="Minimize"
-                            >
-                                <Minus size={14} />
-                            </div>
-                            <div
-                                onClick={isWindowed ? onMaximize : onMinimize}
-                                className="p-1.5 hover:bg-white/10 rounded-full transition-colors cursor-pointer text-gray-500 hover:text-white"
-                                title={isWindowed ? 'Maximize' : 'Restore'}
-                            >
-                                {isWindowed ? <Square size={12} /> : <Maximize2 size={12} />}
-                            </div>
-                            <div
-                                onClick={onClose}
-                                className="p-1.5 hover:bg-red-500 hover:text-white rounded-full transition-colors cursor-pointer text-gray-500"
-                                title="Close"
-                            >
-                                <X size={14} />
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Scrollable Terminal Content */}
-                    <div
-                        ref={scrollContainerRef}
-                        className="flex-1 min-h-0 p-4 overflow-y-auto font-mono text-lg font-medium"
-                        onClick={handleContainerClick}
+            <AnimatePresence>
+                {isVisible && (
+                    <motion.div
+                        className="fixed inset-0 z-30 pointer-events-none"
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.2 } }}
+                        transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
                     >
-                        <div className="max-w-5xl mx-auto">
-                            <OutputDisplay history={history} />
-                            {isInputVisible && (
-                                <CommandInput
-                                    ref={inputRef}
-                                    promptPath={getPromptPath()}
-                                    user={user}
-                                    onSubmit={execute}
-                                    inputHistory={inputHistory}
-                                    onTabComplete={handleTabCompletion} />
-                            )}
-                        </div>
-                    </div>
-                </div>
-            </div>
+                        {isWindowed ? (
+                            <Rnd
+                                size={{ width: rndState.width, height: rndState.height }}
+                                position={{ x: rndState.x, y: rndState.y }}
+                                onDragStop={(_e: unknown, d: { x: number, y: number }) => setRndState((prev: { width: number, height: number }) => ({ ...prev, x: d.x, y: d.y }))}
+                                onResizeStop={(_e: unknown, _direction: unknown, ref: HTMLElement, _delta: unknown, position: { x: number, y: number }) => {
+                                    setRndState({
+                                        width: parseFloat(ref.style.width),
+                                        height: parseFloat(ref.style.height),
+                                        ...position
+                                    });
+                                }}
+                                minWidth={320}
+                                minHeight={240}
+                                bounds="window"
+                                dragHandleClassName="terminal-drag-handle"
+                                className="pointer-events-auto rounded-lg shadow-2xl shadow-black/60 border border-elegant-border bg-elegant-bg absolute"
+                            >
+                                <div className="w-full h-full flex flex-col overflow-hidden rounded-lg">
+                                    {/* Top Bar - KDE / Linux Style */}
+                                    <div 
+                                        className="terminal-drag-handle w-full h-10 bg-elegant-card flex items-center px-4 justify-end border-b border-elegant-border flex-shrink-0 select-none relative z-20 cursor-grab active:cursor-grabbing"
+                                    >
+                                        <div className="absolute left-4 transform-none md:left-1/2 md:-translate-x-1/2 text-gray-400 text-lg font-medium font-mono truncate max-w-[60%] md:max-w-none">
+                                            {user}@neosphere:~
+                                        </div>
+                                        <div className="flex gap-3 relative z-10 cursor-auto" onPointerDown={(e) => e.stopPropagation()}>
+                                            <div
+                                                onClick={onMinimize}
+                                                className="p-1.5 hover:bg-white/10 rounded-full transition-colors cursor-pointer text-gray-500 hover:text-white"
+                                                title="Minimize"
+                                            >
+                                                <Minus size={14} />
+                                            </div>
+                                            <div
+                                                onClick={onMaximize}
+                                                className="p-1.5 hover:bg-white/10 rounded-full transition-colors cursor-pointer text-gray-500 hover:text-white"
+                                                title="Maximize"
+                                            >
+                                                <Square size={12} />
+                                            </div>
+                                            <div
+                                                onClick={onClose}
+                                                className="p-1.5 hover:bg-red-500 hover:text-white rounded-full transition-colors cursor-pointer text-gray-500"
+                                                title="Close"
+                                            >
+                                                <X size={14} />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Scrollable Terminal Content */}
+                                    <div
+                                        ref={scrollContainerRef}
+                                        className="flex-1 min-h-0 p-4 overflow-y-auto font-mono text-lg font-medium cursor-auto"
+                                        onClick={handleContainerClick}
+                                    >
+                                        <div className="max-w-5xl mx-auto">
+                                            <OutputDisplay history={history} />
+                                            {isInputVisible && (
+                                                <CommandInput
+                                                    ref={inputRef}
+                                                    promptPath={getPromptPath()}
+                                                    user={user}
+                                                    onSubmit={execute}
+                                                    inputHistory={inputHistory}
+                                                    onTabComplete={handleTabCompletion} />
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            </Rnd>
+                        ) : (
+                            <motion.div 
+                                layoutId="terminal-maximized"
+                                className="pointer-events-auto absolute inset-0 w-full h-full bg-elegant-bg flex flex-col overflow-hidden"
+                            >
+                                {/* Top Bar - KDE / Linux Style */}
+                                <div className="w-full h-10 bg-elegant-card flex items-center px-4 justify-end border-b border-elegant-border flex-shrink-0 select-none relative z-20">
+                                    <div className="absolute left-4 transform-none md:left-1/2 md:-translate-x-1/2 text-gray-400 text-lg font-medium font-mono truncate max-w-[60%] md:max-w-none">
+                                        {user}@neosphere:~
+                                    </div>
+                                    <div className="flex gap-3 relative z-10">
+                                        <div
+                                            onClick={onMinimize}
+                                            className="p-1.5 hover:bg-white/10 rounded-full transition-colors cursor-pointer text-gray-500 hover:text-white"
+                                            title="Minimize"
+                                        >
+                                            <Minus size={14} />
+                                        </div>
+                                        <div
+                                            onClick={onRestore}
+                                            className="p-1.5 hover:bg-white/10 rounded-full transition-colors cursor-pointer text-gray-500 hover:text-white"
+                                            title="Restore"
+                                        >
+                                            <Maximize2 size={12} />
+                                        </div>
+                                        <div
+                                            onClick={onClose}
+                                            className="p-1.5 hover:bg-red-500 hover:text-white rounded-full transition-colors cursor-pointer text-gray-500"
+                                            title="Close"
+                                        >
+                                            <X size={14} />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Scrollable Terminal Content */}
+                                <div
+                                    ref={scrollContainerRef}
+                                    className="flex-1 min-h-0 p-4 overflow-y-auto font-mono text-lg font-medium"
+                                    onClick={handleContainerClick}
+                                >
+                                    <div className="max-w-5xl mx-auto">
+                                        <OutputDisplay history={history} />
+                                        {isInputVisible && (
+                                            <CommandInput
+                                                ref={inputRef}
+                                                promptPath={getPromptPath()}
+                                                user={user}
+                                                onSubmit={execute}
+                                                inputHistory={inputHistory}
+                                                onTabComplete={handleTabCompletion} />
+                                        )}
+                                    </div>
+                                </div>
+                            </motion.div>
+                        )}
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </>
     );
 };

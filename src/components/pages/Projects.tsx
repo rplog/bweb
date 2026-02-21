@@ -41,22 +41,10 @@ export const Projects = () => {
     return (
         <div className="h-full w-full bg-elegant-bg text-elegant-text-secondary font-mono selection:bg-elegant-accent/20 overflow-hidden">
             <div className="h-full flex flex-col">
-                <PageHeader currentPath="projects" onNavigate={handleNavigate} className="shrink-0" maxWidth="max-w-7xl" />
+                <div className="flex-1 min-h-0 overflow-y-auto">
+                <PageHeader currentPath="projects" onNavigate={handleNavigate} maxWidth="max-w-7xl" />
 
-                {/* Main Content */}
-                <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-4 pb-28 lg:pt-8 lg:pb-32 flex flex-col min-h-0 overflow-y-auto">
-                    {/* Breadcrumbs */}
-                    <nav aria-label="Breadcrumb" className="mb-8 text-base font-semibold text-elegant-text-muted flex items-center gap-2 shrink-0">
-                        <button
-                            onClick={() => onExit()}
-                            className="hover:text-elegant-text-primary transition-colors hover:underline decoration-elegant-text-muted underline-offset-4"
-                        >
-                            ~
-                        </button>
-                        <span>/</span>
-                        <span className="text-elegant-text-primary font-bold">projects</span>
-                    </nav>
-
+                <main className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-4 pb-28 lg:pt-8 lg:pb-32">
                     <section aria-labelledby="projects-heading">
                         <div className="flex items-center gap-3 mb-6">
                             <FolderGit2 className="text-elegant-text-muted" size={24} aria-hidden="true" />
@@ -91,6 +79,7 @@ export const Projects = () => {
                         </div>
                     </section>
                 </main>
+                </div>
 
                 <Dock onNavigate={handleNavigate} currentPage="Projects" className="py-3" />
             </div>

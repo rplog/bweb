@@ -23,7 +23,7 @@ export const Contact = () => {
 
     useSEO({
         title: 'Contact | Bahauddin Alam',
-        description: 'Get in touch with Bahauddin Alam. Available for freelance projects and collaborations.',
+        description: 'Get in touch with Bahauddin Alam. Available for new projects and collaborations.',
         url: 'https://bahauddin.in/contact'
     });
 
@@ -59,22 +59,11 @@ export const Contact = () => {
     return (
         <div className="h-full w-full bg-elegant-bg text-elegant-text-secondary font-mono overflow-hidden">
             <div className="h-full flex flex-col">
-                <PageHeader currentPath="contact" onNavigate={handleNavigate} className="shrink-0" maxWidth="max-w-4xl" />
+                <div className="flex-1 min-h-0 overflow-y-auto">
+                <PageHeader currentPath="contact" onNavigate={handleNavigate} maxWidth="max-w-4xl" />
 
                 {/* Main Content */}
-                <main className="flex-1 max-w-4xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-4 pb-28 lg:pt-8 lg:pb-32 flex flex-col min-h-0 overflow-y-auto">
-                    {/* Breadcrumbs */}
-                    <nav aria-label="Breadcrumb" className="mb-6 text-base font-semibold text-elegant-text-muted flex items-center gap-2 shrink-0">
-                        <button
-                            onClick={() => onExit()}
-                            className="hover:text-elegant-text-primary transition-colors hover:underline decoration-elegant-text-muted underline-offset-4"
-                        >
-                            ~
-                        </button>
-                        <span>/</span>
-                        <span className="text-elegant-text-primary font-bold">contact</span>
-                    </nav>
-
+                <main className="max-w-4xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-4 pb-28 lg:pt-8 lg:pb-32">
                     <section className="max-w-2xl mx-auto w-full" aria-labelledby="contact-heading">
                         <div className="bg-elegant-card border border-elegant-border rounded-sm p-6 shadow-2xl">
                             <div className="flex items-center gap-3 mb-6">
@@ -159,8 +148,8 @@ export const Contact = () => {
                         </div>
                     </section>
                 </main>
+                </div>
 
-                {/* Dock */}
                 <Dock onNavigate={handleNavigate} currentPage="Contact" className="py-3" />
             </div>
         </div>

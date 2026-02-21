@@ -593,70 +593,14 @@ export const Gallery = () => {
         return albums.filter(a => a.title.startsWith(prefix) && a.title.split('/').length === depth);
     }, [albums, activeAlbum]);
 
-    const breadcrumbSegments = useMemo(() => {
-        if (!activeAlbum) return [];
-        return activeAlbum.title.split('/');
-    }, [activeAlbum]);
-
-    const navigateToBreadcrumb = useCallback((segmentIndex: number) => {
-        const targetPath = breadcrumbSegments.slice(0, segmentIndex + 1).join('/');
-        const targetAlbum = albums.find(a => a.title === targetPath);
-        if (targetAlbum) {
-    openAlbum(targetAlbum);
-        }
-    }, [breadcrumbSegments, albums, openAlbum]);
 
     return (
         <div className="h-full w-full bg-elegant-bg text-elegant-text-secondary font-mono selection:bg-elegant-accent/20 overflow-hidden">
             <div className="h-full flex flex-col">
-                <PageHeader currentPath="gallery" onNavigate={handleNavigate} className="sticky top-0 z-30 shrink-0" maxWidth="max-w-7xl" />
+                <div className="flex-1 min-h-0 overflow-y-auto">
+                <PageHeader currentPath="gallery" onNavigate={handleNavigate} maxWidth="max-w-7xl" />
 
-                <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-4 pb-28 lg:pt-8 lg:pb-32 flex flex-col min-h-0 overflow-y-auto">
-                    {/* Breadcrumbs + Mobile Admin Actions */}
-                    <div className="mb-8 flex items-center justify-between gap-4">
-                        <div className="text-base font-semibold text-elegant-text-muted flex items-center gap-2 flex-wrap min-w-0">
-                            <button onClick={() => onExit()} className="hover:text-elegant-text-primary transition-colors hover:underline decoration-elegant-text-muted underline-offset-4">~</button>
-                            <span>/</span>
-                            <span
-                                className={activeAlbum ? "hover:text-elegant-text-primary transition-colors cursor-pointer hover:underline decoration-elegant-text-muted underline-offset-4" : "text-elegant-text-primary font-bold"}
-                                onClick={() => { if (activeAlbum) closeAlbum(); }}
-                            >gallery</span>
-                            {activeAlbum && breadcrumbSegments.map((segment, idx) => {
-                                const isLastSegment = idx === breadcrumbSegments.length - 1;
-                                const isLast = isLastSegment && !activePhoto;
-                                const isClickable = !isLast;
-                                return (
-                                    <React.Fragment key={idx}>
-                                        <span>/</span>
-                                        <span
-                                            className={isLast ? "text-elegant-accent font-bold" : "hover:text-elegant-text-primary transition-colors cursor-pointer hover:underline decoration-elegant-text-muted underline-offset-4"}
-                                            onClick={() => {
-                                                if (!isClickable) return;
-                                                if (activePhoto) {
-                                                    if (isLastSegment) {
-                                                        // Current album segment - just close photo, stay in album
-                                                        closePhoto();
-                                                    } else {
-                                                        // Parent album segment - navigate there (openAlbum also clears activePhotoKey)
-                                                        navigateToBreadcrumb(idx);
-                                                    }
-                                                } else {
-                                                    navigateToBreadcrumb(idx);
-                                                }
-                                            }}
-                                        >{segment.toLowerCase()}</span>
-                                    </React.Fragment>
-                                );
-                            })}
-                            {activePhoto && (
-                                <>
-                                    <span>/</span>
-                                    <span className="text-elegant-accent font-bold">{(activePhoto.key.split('/').pop() || '').replace(PHOTO_EXT, '')}</span>
-                                </>
-                            )}
-                        </div>
-                    </div>
-
+                <main className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-4 pb-28 lg:pt-8 lg:pb-32 flex flex-col min-h-0">
                     {loading ? (
                         <div className="text-center py-20 text-elegant-text-muted animate-pulse">Loading gallery...</div>
                     ) : !activeAlbum ? (
@@ -727,6 +671,7 @@ export const Gallery = () => {
                         </>
                     )}
                 </main>
+                </div>
 
                 <Dock onNavigate={handleNavigate} currentPage="Gallery" className="py-3" />
 

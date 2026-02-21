@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { PageHeader } from '../PageHeader';
 import { Code, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { Dock } from '../Dock';
@@ -11,7 +11,7 @@ import { useNavigate } from 'react-router';
 
 import { useSEO } from '../../hooks/useSEO';
 
-const ROLES = ['Full Stack Developer', 'Systems Programmer', 'Software Engineering Student', 'Open Source Builder', 'Solopreneur'];
+const ROLES = ['Full Stack Developer', 'Amateur Photographer', 'Software Engineering Student', 'Open Source Contributor', 'Solopreneur'];
 
 const CURRENTLY = [
     { label: 'Building', value: 'bahauddin.in — this portfolio' },
@@ -109,22 +109,6 @@ export const About = () => {
         }
     }, [roleDisplayed, typePhase, roleIdx, prefersReducedMotion]);
 
-    // Ref to the right scrollable column
-    const rightColRef = useRef<HTMLDivElement>(null);
-
-    // Forward wheel events from anywhere on the page to the right column on desktop
-    useEffect(() => {
-        const handleWheel = (e: WheelEvent) => {
-            const col = rightColRef.current;
-            if (!col) return;
-            // Skip forwarding when the user is already scrolling inside the right column
-            if (col.contains(e.target as Node)) return;
-            col.scrollTop += e.deltaY;
-        };
-        window.addEventListener('wheel', handleWheel, { passive: true });
-        return () => window.removeEventListener('wheel', handleWheel);
-    }, []);
-
     // Keyboard arrow switching
     useEffect(() => {
         const handler = (e: KeyboardEvent) => {
@@ -157,32 +141,14 @@ export const About = () => {
     return (
         <div className="h-full w-full bg-elegant-bg text-elegant-text-secondary font-mono selection:bg-elegant-accent/20 overflow-hidden">
             <div className="h-full flex flex-col">
-                <PageHeader currentPath="about" onNavigate={handleNavigate} className="shrink-0" maxWidth="max-w-7xl" />
+                <div className="flex-1 min-h-0 overflow-y-auto">
+                <PageHeader currentPath="about" onNavigate={handleNavigate} maxWidth="max-w-7xl" />
 
-                {/* Everything below the header */}
                 <main className="flex-1 flex flex-col min-h-0">
+                    <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8">
 
-                    {/* ── Breadcrumbs: OUTSIDE the scroll container, always visible ── */}
-                    <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-4 lg:pt-6 shrink-0">
-                        <nav aria-label="Breadcrumb" className="mb-4 text-base font-semibold text-elegant-text-muted flex items-center gap-2">
-                            <button
-                                onClick={onExit}
-                                className="hover:text-elegant-text-primary transition-colors hover:underline decoration-elegant-text-muted underline-offset-4"
-                            >
-                                ~
-                            </button>
-                            <span>/</span>
-                            <span className="text-elegant-text-primary font-bold">about</span>
-                        </nav>
-                    </div>
-
-                    {/* ── Content area ──
-                         Mobile  : single overflow-y-auto — everything scrolls as one column.
-                         Desktop : overflow-hidden on wrapper; only the right column gets
-                                   overflow-y-auto, so the profile sidebar stays fixed.       ── */}
-                    <div className="flex-1 min-h-0 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 overflow-y-auto lg:overflow-hidden">
                         <motion.div
-                            className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:h-full pb-28 lg:pb-0"
+                            className="grid grid-cols-1 lg:grid-cols-3 gap-8 pt-4 lg:pt-6 pb-28 lg:pb-32"
                             initial={prefersReducedMotion ? false : { opacity: 0 }}
                             animate={{ opacity: 1 }}
                             transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
@@ -191,7 +157,7 @@ export const About = () => {
                                  Mobile : normal document flow, scrolls with the page.
                                  Desktop: grid cell fills column height; card sits at the top.
                                           No sticky needed — the left column itself doesn't scroll. ── */}
-                            <aside className="lg:col-span-1" aria-label="User Profile">
+                            <aside className="lg:col-span-1 lg:sticky lg:top-10 lg:self-start" aria-label="User Profile">
                                 <div className="bg-elegant-card border border-elegant-border rounded-lg p-6 shadow-xl">
                                     <div className="flex flex-col items-center text-center">
                                         <div
@@ -284,7 +250,7 @@ export const About = () => {
                             </aside>
 
                             {/* ── Right: only this column scrolls on desktop ── */}
-                            <div ref={rightColRef} className="lg:col-span-2 lg:overflow-y-auto lg:pb-32 flex flex-col pt-2 lg:pt-6 w-full min-w-0">
+                            <div className="lg:col-span-2 flex flex-col pt-2 lg:pt-6 w-full min-w-0">
 
                                 {/* Card Tab Switcher — sits well above the stacked cards */}
                                 <div className="mb-10 shrink-0">
@@ -518,6 +484,7 @@ export const About = () => {
                         </motion.div>
                     </div>
                 </main>
+                </div>
 
                 <Dock onNavigate={handleNavigate} currentPage="About" className="py-3" />
 

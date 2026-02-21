@@ -30,9 +30,14 @@ export const PageHeader = ({
     const pages = ['Projects', 'Gallery', 'Notes', 'About', 'Contact'];
 
     return (
-        <header className={`border-b border-elegant-border bg-elegant-bg px-4 sm:px-6 lg:px-8 py-3 ${className}`}>
+        <header className={`sticky top-0 z-30 border-b border-white/[0.07] bg-elegant-bg/80 backdrop-blur-md px-4 sm:px-6 lg:px-8 py-2 ${className}`}>
             <div className={`${maxWidth} mx-auto flex items-center justify-end font-mono text-base relative`}>
-                <span className="text-elegant-text-muted mr-2 select-none font-semibold">neo@neosphere:~/</span>
+                <span className="text-elegant-text-muted select-none font-semibold">neo@neosphere:</span>
+                <button
+                    onClick={() => onNavigate('Home')}
+                    className="text-elegant-text-muted font-semibold hover:text-elegant-text-primary transition-colors mr-2 select-none"
+                    aria-label="Go home"
+                >~/</button>
                 <div className="relative" ref={dropdownRef}>
                     <button
                         onClick={() => setIsOpen(!isOpen)}

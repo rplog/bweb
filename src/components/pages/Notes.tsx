@@ -314,18 +314,12 @@ export const Notes = () => {
     return (
         <div className="h-full w-full bg-elegant-bg text-elegant-text-secondary font-mono overflow-hidden">
             <div className="h-full flex flex-col">
-                <PageHeader currentPath="notes" onNavigate={handleNavigate} className="sticky top-0 z-30 shrink-0" maxWidth="max-w-7xl" />
-                    
-                <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-4 pb-28 lg:pt-8 lg:pb-32 flex flex-col min-h-0 overflow-y-auto">
+                <div className="flex-1 min-h-0 overflow-y-auto">
+                <PageHeader currentPath="notes" onNavigate={handleNavigate} maxWidth="max-w-7xl" />
+
+                <main className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-4 pb-28 lg:pt-8 lg:pb-32 flex flex-col min-h-0">
                     {/* Header Section */}
                     <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <div className="flex items-center gap-2 text-base font-semibold text-elegant-text-muted">
-                            <button onClick={onExit} className="hover:text-elegant-text-primary transition-colors hover:underline decoration-elegant-text-muted underline-offset-4">~</button>
-                            <span>/</span>
-                            <span className="text-elegant-text-primary font-bold">notes</span>
-                            <span className="text-elegant-text-muted mx-2">({notes.length})</span>
-                        </div>
-
                         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full md:w-auto">
                             {/* Create Button */}
                             <button
@@ -414,6 +408,7 @@ export const Notes = () => {
                         </div>
                     )}
                 </main>
+                </div>
 
                 <Dock onNavigate={handleNavigate} currentPage="Notes" className="py-3" />
 

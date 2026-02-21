@@ -60,7 +60,7 @@ export const Desktop = ({ onOpenTerminal }: DesktopProps) => {
             <Dock
                 onNavigate={handleDockNavigate}
                 currentPage="Home"
-                className="pb-5 md:pb-6"
+                className="py-3"
             />
         </div>
     );

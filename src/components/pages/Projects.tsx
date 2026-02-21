@@ -32,8 +32,7 @@ export const Projects = () => {
             title: "Terminal Portfolio",
             description: "A retro-futuristic terminal interface built with React, TypeScript, and Tailwind CSS. Features a simulated file system, command history, and immersive CLI experience.",
             tech: ["React", "TypeScript", "Tailwind"],
-            link: "https://github.com/bahauddin-alam",
-            color: "border-green-500/50"
+            link: "https://github.com/bahauddin-alam"
         },
         // Add more projects here
     ];

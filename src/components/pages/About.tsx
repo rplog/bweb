@@ -144,19 +144,13 @@ export const About = () => {
                 <div className="flex-1 min-h-0 overflow-y-auto">
                 <PageHeader currentPath="about" onNavigate={handleNavigate} maxWidth="max-w-7xl" />
 
-                <main className="flex-1 flex flex-col min-h-0">
-                    <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8">
-
+                <main className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8">
                         <motion.div
                             className="grid grid-cols-1 lg:grid-cols-3 gap-8 pt-4 lg:pt-6 pb-28 lg:pb-32"
                             initial={prefersReducedMotion ? false : { opacity: 0 }}
                             animate={{ opacity: 1 }}
                             transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
                         >
-                            {/* ── Left: Profile card ──
-                                 Mobile : normal document flow, scrolls with the page.
-                                 Desktop: grid cell fills column height; card sits at the top.
-                                          No sticky needed — the left column itself doesn't scroll. ── */}
                             <aside className="lg:col-span-1 lg:sticky lg:top-10 lg:self-start" aria-label="User Profile">
                                 <div className="bg-elegant-card border border-elegant-border rounded-lg p-6 shadow-xl">
                                     <div className="flex flex-col items-center text-center">
@@ -482,7 +476,6 @@ export const About = () => {
 
                             </div>
                         </motion.div>
-                    </div>
                 </main>
                 </div>
 

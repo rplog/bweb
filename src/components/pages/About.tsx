@@ -166,7 +166,7 @@ export const About = () => {
                     <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-4 lg:pt-6 shrink-0">
                         <nav aria-label="Breadcrumb" className="mb-4 text-base font-semibold text-elegant-text-muted flex items-center gap-2">
                             <button
-                                onClick={() => onExit()}
+                                onClick={onExit}
                                 className="hover:text-elegant-text-primary transition-colors hover:underline decoration-elegant-text-muted underline-offset-4"
                             >
                                 ~
@@ -195,7 +195,7 @@ export const About = () => {
                                 <div className="bg-elegant-card border border-elegant-border rounded-lg p-6 shadow-xl">
                                     <div className="flex flex-col items-center text-center">
                                         <div
-                                            className="w-24 h-24 lg:w-32 lg:h-32 rounded-full bg-elegant-bg border border-elegant-border p-1 mb-4 lg:mb-6 cursor-pointer hover:border-elegant-accent transition-colors group"
+                                            className="w-24 h-24 lg:w-32 lg:h-32 rounded-full bg-elegant-bg border border-elegant-border p-1 mb-4 lg:mb-6 cursor-pointer hover:border-elegant-accent transition-colors"
                                             onClick={() => setShowProfile(true)}
                                             role="button"
                                             tabIndex={0}

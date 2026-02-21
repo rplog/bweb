@@ -34,7 +34,7 @@ export const Desktop = ({ onOpenTerminal }: DesktopProps) => {
                         </h2>
                         <div className="text-elegant-text-secondary text-sm md:text-base leading-relaxed max-w-2xl mx-auto mb-10">
                             <p>
-                                I build high-performance web applications and developer focused systems using tools like React, TypeScript, and Python. Explore my portfolio spanning frontend architectures to edge deployed backends.
+                                I build high performance web applications and developer focused systems using tools like React, TypeScript, and Python. Explore my portfolio spanning frontend architectures to edge deployed backends.
                             </p>
                         </div>
                     </div>

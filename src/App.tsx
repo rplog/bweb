@@ -49,7 +49,7 @@ function RootLayout() {
 
       {/* Full Screen Component Layer */}
       {!isHome && (
-        <div className="fixed inset-0 z-50 bg-elegant-bg text-elegant-text-primary font-mono text-base p-4 overflow-hidden">
+        <div className="fixed inset-0 z-50 bg-elegant-bg text-elegant-text-primary font-mono text-base overflow-hidden">
           <Outlet />
         </div>
       )}

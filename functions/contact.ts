@@ -6,7 +6,7 @@ export const onRequest: PagesFunction = async (context) => {
     const response = await context.env.ASSETS.fetch(indexRequest);
     return injectSEO(response, {
         title: 'Contact | Bahauddin Alam',
-        description: 'Get in touch with Bahauddin Alam. Available for freelance projects and collaborations.',
+        description: 'Get in touch with Bahauddin Alam. Available for new projects and collaborations.',
         url: 'https://bahauddin.in/contact'
     });
 };

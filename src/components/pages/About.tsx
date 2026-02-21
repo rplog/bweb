@@ -269,7 +269,7 @@ export const About = () => {
                                         ))}
                                     </div>
                                     {/* Keyboard hint on its own line — never overlaps cards */}
-                                    <p className="text-[10px] text-elegant-text-muted hidden sm:block select-none" aria-hidden="true">
+                                    <p className="text-xs text-elegant-text-muted hidden sm:block select-none" aria-hidden="true">
                                         ← → arrow keys to switch
                                     </p>
                                 </div>

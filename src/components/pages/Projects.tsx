@@ -47,7 +47,7 @@ export const Projects = () => {
                     <section aria-labelledby="projects-heading">
                         <div className="flex items-center gap-3 mb-6">
                             <FolderGit2 className="text-elegant-text-muted" size={24} aria-hidden="true" />
-                            <h1 id="projects-heading" className="text-2xl font-bold text-elegant-text-primary">Featured Projects</h1>
+                            <h1 id="projects-heading" className="text-xl font-bold text-elegant-text-primary">Featured Projects</h1>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
